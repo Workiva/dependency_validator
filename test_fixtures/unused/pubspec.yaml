@@ -1,0 +1,7 @@
+name: unused
+version: 0.0.0
+private: true
+dev_dependencies:
+  dart_dev: any
+  dependency_validator:
+    path: ../..

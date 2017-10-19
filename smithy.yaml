@@ -1,0 +1,24 @@
+project: dart
+language: dart
+
+# Dart 1.24.2 image from https://github.com/Workiva/smithy-runner-generator
+runner_image: drydock-prod.workiva.net/workiva/smithy-runner-generator:179735
+
+before_script:
+  - dart --version
+  - pub get
+
+script:
+  - pub run dart_dev format --check
+  - pub run dart_dev analyze
+  - pub run dependency_validator -i coverage,dartdoc,dart_style
+  - pub run dart_dev test
+
+after_script:
+  - tar czvf dependency_validator.pub.tgz README.md pubspec.yaml bin/ lib/
+
+artifacts:
+  build:
+    - ./pubspec.lock
+  pub:
+    - ./dependency_validator.pub.tar.gz

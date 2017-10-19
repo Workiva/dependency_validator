@@ -1,0 +1,7 @@
+name: under_promoted
+version: 0.0.0
+private: true
+dev_dependencies:
+  dependency_validator:
+    path: ../..
+  logging: any

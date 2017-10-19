@@ -1,0 +1,25 @@
+name: dependency_validator
+version: 1.0.0
+description: Checks for missing, under-promoted, over-promoted, and unused dependencies.
+publish_to: https://pub.workiva.org
+author: >
+    Jace Hensley <jace.hensley@workiva.com>
+    Evan Weible <evan.weible@workiva.com>
+
+environment:
+  sdk: ">=1.24.2 <2.0.0"
+
+dependencies:
+  args: ^0.13.7
+  logging: ^0.11.3+1
+  yaml: ^2.1.13
+
+dev_dependencies:
+  coverage: ^0.9.3
+  dartdoc: ^0.14.1
+  dart_dev: ^1.8.0
+  dart_style: ^1.0.8
+  test: ^0.12.24+8
+
+executables:
+  dependency_validator:
