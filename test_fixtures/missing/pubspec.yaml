@@ -1,0 +1,6 @@
+name: missing
+version: 0.0.0
+private: true
+dev_dependencies:
+  dependency_validator:
+    path: ../..

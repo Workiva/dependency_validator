@@ -1,0 +1,8 @@
+name: over_promoted
+version: 0.0.0
+private: true
+dependencies:
+  path: any
+dev_dependencies:
+  dependency_validator:
+    path: ../..

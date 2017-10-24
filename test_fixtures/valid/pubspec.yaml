@@ -1,0 +1,16 @@
+name: valid
+version: 0.0.0
+private: true
+dependencies:
+  logging: any
+dev_dependencies:
+  dart_dev: any
+  dart_to_js_script_rewriter: any
+  dependency_validator:
+    path: ../..
+  test: any
+
+transformers:
+  - dart_to_js_script_rewriter
+  - test/pub_serve:
+    $include: test/**_test{.*,}.dart

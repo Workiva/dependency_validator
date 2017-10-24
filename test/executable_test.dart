@@ -1,0 +1,76 @@
+@TestOn('vm')
+
+import 'dart:io';
+
+import 'package:test/test.dart';
+
+const String projectWithMissingDeps = 'test_fixtures/missing';
+const String projectWithOverPromotedDeps = 'test_fixtures/over_promoted';
+const String projectWithUnderPromotedDeps = 'test_fixtures/under_promoted';
+const String projectWithUnusedDeps = 'test_fixtures/unused';
+const String projectWithNoProblems = 'test_fixtures/valid';
+
+ProcessResult checkProject(String projectPath, {List<String> ignoredPackages = const []}) {
+  Process.runSync('pub', ['get'], workingDirectory: projectPath);
+
+  final args = ['run', 'dependency_validator'];
+
+  if (ignoredPackages.isNotEmpty) {
+    args..add('--ignore')..add(ignoredPackages.join(','));
+  }
+
+  final result = Process.runSync('pub', args, workingDirectory: projectPath);
+  return result;
+}
+
+void main() {
+  group('dependency_validator', () {
+    test('fails when there are packages missing from the pubspec', () {
+      final result = checkProject(projectWithMissingDeps);
+
+      expect(result.exitCode, equals(1));
+      expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
+      expect(result.stderr, contains('yaml'));
+    });
+
+    test('fails when there are over promoted packages', () {
+      final result = checkProject(projectWithOverPromotedDeps);
+
+      expect(result.exitCode, 1);
+      expect(result.stderr,
+          contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
+      expect(result.stderr, contains('path'));
+    });
+
+    test('fails when there are under promoted packages', () {
+      final result = checkProject(projectWithUnderPromotedDeps);
+
+      expect(result.exitCode, 1);
+      expect(result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
+      expect(result.stderr, contains('logging'));
+    });
+
+    test('fails when there are unused packages', () {
+      final result = checkProject(projectWithUnusedDeps);
+
+      expect(result.exitCode, 1);
+      expect(result.stderr,
+          contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+      expect(result.stderr, contains('dart_dev'));
+    });
+
+    test('passes when all dependencies are used and valid', () {
+      final result = checkProject(projectWithNoProblems);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No infractions found, valid is good to go!'));
+    });
+
+    test('passes when there are unused packages, and the ignored packages are passed in', () {
+      final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['dart_dev']);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No infractions found, unused is good to go!'));
+    });
+  });
+}
