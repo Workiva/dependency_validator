@@ -1,0 +1,14 @@
+version: 1
+
+exclude:
+  - test/
+  - tool/
+
+raven_monitored_classes: null
+
+raven_monitored_files: null
+
+raven_monitored_functions: null
+
+raven_monitored_keywords: null
+
