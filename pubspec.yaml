@@ -2,7 +2,6 @@ name: dependency_validator
 version: 1.0.0
 description: Checks for missing, under-promoted, over-promoted, and unused dependencies.
 homepage: https://github.com/Workiva/dependency_validator
-publish_to: https://pub.workiva.org
 authors:
   - Jace Hensley <jace.hensley@workiva.com>
   - Evan Weible <evan.weible@workiva.com>

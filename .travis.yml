@@ -1,0 +1,14 @@
+language: dart
+
+dart:
+  - stable
+
+script:
+  - pub run dart_dev format --check
+  - pub run dart_dev analyze
+  - pub run dependency_validator -i coverage,dartdoc,dart_style
+  - pub run dart_dev test
+
+cache:
+ directories:
+   - $HOME/.pub-cache
