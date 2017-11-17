@@ -16,26 +16,19 @@ import 'dart:io' show stderr, stdout;
 
 import 'package:args/args.dart';
 import 'package:logging/logging.dart';
-import 'package:dependency_validator/dependency_validator.dart';
-
-final ArgParser argParser = new ArgParser()
-  ..addFlag('verbose', defaultsTo: false)
-  ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true);
+import 'package:dependency_validator/dependency_validator.dart' show run;
 
 void main(List<String> args) {
-  final argResults = argParser.parse(args);
-
-  if (argResults.wasParsed('verbose') && argResults['verbose']) {
-    Logger.root.level = Level.ALL;
-  }
-
   List<String> ignoredPackages;
 
-  if (argResults.wasParsed('ignore')) {
-    ignoredPackages = argResults['ignore'];
-  } else {
-    ignoredPackages = const <String>[];
-  }
+  new ArgParser()
+    ..addFlag('verbose', defaultsTo: false, callback: (value) {
+      if (value) Logger.root.level = Level.ALL;
+    })
+    ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true, callback: (List<String> value) {
+      ignoredPackages = value;
+    })
+    ..parse(args);
 
   Logger.root.onRecord
       .where((record) => record.level < Level.WARNING)
