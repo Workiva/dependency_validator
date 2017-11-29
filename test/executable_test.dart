@@ -73,6 +73,13 @@ void main() {
       expect(result.stderr, contains('dart_dev'));
     });
 
+    test('warns when the analyzer pacakge is ', () {
+      final result = checkProject(projectWithNoProblems);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No infractions found, valid is good to go!'));
+    });
+
     test('passes when all dependencies are used and valid', () {
       final result = checkProject(projectWithNoProblems);
 

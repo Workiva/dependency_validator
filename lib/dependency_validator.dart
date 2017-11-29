@@ -170,9 +170,15 @@ void run({List<String> ignoredPackages = const []}) {
           // Remove all deps being used for their transformer(s)
           .difference(packagesUsedViaTransformers)
             // Remove this package, since we know they're using our executable
-            ..remove(dependencyValidatorPackageName)
-            // Ignore known unused packages
-            ..removeAll(ignoredPackages);
+            ..remove(dependencyValidatorPackageName);
+
+  if (unusedDependencies.contains('analyzer')) {
+    logger.warning('You do not need to depend on the analyzer to run the dart analyzer.');
+  }
+
+  unusedDependencies
+    // Ignore known unused packages
+    ..removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
     logDependencyInfractions(
