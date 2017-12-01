@@ -4,3 +4,7 @@ private: true
 
 dependencies:
   analyzer: any
+
+dev_dependencies:
+  dependency_validator:
+    path: ../..
