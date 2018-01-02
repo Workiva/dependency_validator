@@ -1,0 +1,10 @@
+name: analyzer_dep
+version: 0.0.0
+private: true
+
+dependencies:
+  analyzer: any
+
+dev_dependencies:
+  dependency_validator:
+    path: ../..

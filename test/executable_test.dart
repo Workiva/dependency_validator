@@ -22,6 +22,7 @@ const String projectWithMissingDeps = 'test_fixtures/missing';
 const String projectWithOverPromotedDeps = 'test_fixtures/over_promoted';
 const String projectWithUnderPromotedDeps = 'test_fixtures/under_promoted';
 const String projectWithUnusedDeps = 'test_fixtures/unused';
+const String projectWithAnalyzer = 'test_fixtures/analyzer';
 const String projectWithNoProblems = 'test_fixtures/valid';
 
 ProcessResult checkProject(String projectPath, {List<String> ignoredPackages = const []}) {
@@ -71,6 +72,13 @@ void main() {
       expect(result.stderr,
           contains('These packages may be unused, or you may be using executables or assets from these packages:'));
       expect(result.stderr, contains('dart_dev'));
+    });
+
+    test('warns when the analyzer pacakge is depended on but not used', () {
+      final result = checkProject(projectWithAnalyzer, ignoredPackages: ['analyzer']);
+
+      expect(result.exitCode, 0);
+      expect(result.stderr, contains('You do not need to depend on `analyzer` to run the Dart analyzer.'));
     });
 
     test('passes when all dependencies are used and valid', () {
