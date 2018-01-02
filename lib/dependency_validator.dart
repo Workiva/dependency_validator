@@ -173,8 +173,10 @@ void run({List<String> ignoredPackages = const []}) {
             ..remove(dependencyValidatorPackageName);
 
   if (unusedDependencies.contains('analyzer')) {
-    logger.warning('''You do not need to depend on `analyzer` to run the Dart analyzer.
-        Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.''');
+    logger.warning(
+      'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
+          'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.',
+    );
   }
 
   unusedDependencies
