@@ -117,7 +117,10 @@ void run({List<String> ignoredPackages = const []}) {
           .difference(devDeps)
           .difference(deps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName);
+            ..remove(packageName)
+            // Ignore known unused packages
+            ..removeAll(ignoredPackages);
+
 
   if (missingDevDependencies.isNotEmpty) {
     logDependencyInfractions(
