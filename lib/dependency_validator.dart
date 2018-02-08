@@ -98,7 +98,9 @@ void run({List<String> ignoredPackages = const []}) {
           .difference(deps)
           .difference(devDeps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName);
+            ..remove(packageName)
+            // Ignore known missing packages.
+            ..removeAll(ignoredPackages);
 
   if (missingDependencies.isNotEmpty) {
     logDependencyInfractions(
@@ -118,9 +120,8 @@ void run({List<String> ignoredPackages = const []}) {
           .difference(deps)
             // Ignore self-imports - packages have implicit access to themselves.
             ..remove(packageName)
-            // Ignore known unused packages
+            // Ignore known missing packages.
             ..removeAll(ignoredPackages);
-
 
   if (missingDevDependencies.isNotEmpty) {
     logDependencyInfractions(
