@@ -88,11 +88,18 @@ void main() {
       expect(result.stdout, contains('No infractions found, valid is good to go!'));
     });
 
-    test('passes when there are unused packages, and the ignored packages are passed in', () {
+    test('passes when there are unused packages, but the unused packages are ignored', () {
       final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['dart_dev']);
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No infractions found, unused is good to go!'));
+    });
+
+    test('passes when there are missing packages, but the missing packages are ignored', () {
+      final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml']);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No infractions found, missing is good to go!'));
     });
   });
 }
