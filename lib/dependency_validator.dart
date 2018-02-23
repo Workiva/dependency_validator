@@ -61,7 +61,9 @@ void run({
       '${bulletItems(packagesUsedViaTransformers)}\n');
 
   // Recursively list all Dart files in lib/
-  final publicDartFiles = <File>[]..addAll(listDartFilesIn('lib/', excludedDirs))..addAll(listDartFilesIn('bin/', excludedDirs));
+  final publicDartFiles = <File>[]
+    ..addAll(listDartFilesIn('lib/', excludedDirs))
+    ..addAll(listDartFilesIn('bin/', excludedDirs));
   logger.fine('public facing dart files:\n'
       '${bulletItems(publicDartFiles.map((f) => f.path))}\n');
 

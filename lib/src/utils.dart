@@ -31,18 +31,15 @@ String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\
 
 Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
-  final files = new Directory(dirPath)
-      .listSync(recursive: true)
-      .where((entity) {
-        if (entity is! File) return false;
-        if (entity.path.contains('/packages/')) return false;
-        if (!entity.path.endsWith('.dart')) return false;
-        if (excludedDirs.any(entity.path.startsWith)) return false;
 
-        return true;
-      });
+  return new Directory(dirPath).listSync(recursive: true).where((entity) {
+    if (entity is! File) return false;
+    if (entity.path.contains('/packages/')) return false;
+    if (!entity.path.endsWith('.dart')) return false;
+    if (excludedDirs.any(entity.path.startsWith)) return false;
 
-  return files;
+    return true;
+  });
 }
 
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
