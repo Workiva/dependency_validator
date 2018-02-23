@@ -29,11 +29,20 @@ final Logger logger = new Logger('dependency_validator');
 
 String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
 
-Iterable<File> listDartFilesIn(String dirPath) {
+Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
-  return new Directory(dirPath)
+  final files = new Directory(dirPath)
       .listSync(recursive: true)
-      .where((entity) => entity is File && !entity.path.contains('/packages/') && entity.path.endsWith('.dart'));
+      .where((entity) {
+        if (entity is! File) return false;
+        if (entity.path.contains('/packages/')) return false;
+        if (!entity.path.endsWith('.dart')) return false;
+        if (excludedDirs.any(entity.path.startsWith)) return false;
+
+        return true;
+      });
+
+  return files;
 }
 
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {

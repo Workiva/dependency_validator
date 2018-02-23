@@ -28,6 +28,7 @@ const String projectWithNoProblems = 'test_fixtures/valid';
 ProcessResult checkProject(
   String projectPath, {
   List<String> ignoredPackages = const [],
+  List<String> excludeDirs = const [],
   bool fatalUnderPromoted = true,
   bool fatalOverPromoted = true,
   bool fatalMissing = true,
@@ -39,6 +40,7 @@ ProcessResult checkProject(
   final args = ['run', 'dependency_validator'];
 
   if (ignoredPackages.isNotEmpty) args..add('--ignore')..add(ignoredPackages.join(','));
+  if (excludeDirs.isNotEmpty) args..add('--exclude-dir')..add(excludeDirs.join(','));
   if (!fatalDevMissing) args.add('--no-fatal-dev-mising');
   if (!fatalMissing) args.add('--no-fatal-missing');
   if (!fatalOverPromoted) args.add('--no-fatal-over-promoted');
@@ -65,6 +67,13 @@ void main() {
         expect(result.exitCode, equals(0));
         expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
         expect(result.stderr, contains('yaml'));
+      });
+
+      test('expect when the lib directory is excluded', () {
+        final result = checkProject(projectWithMissingDeps, excludeDirs: ['lib/']);
+
+        expect(result.exitCode, equals(0));
+        expect(result.stderr, isEmpty);
       });
     });
 
