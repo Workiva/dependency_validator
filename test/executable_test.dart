@@ -25,53 +25,107 @@ const String projectWithUnusedDeps = 'test_fixtures/unused';
 const String projectWithAnalyzer = 'test_fixtures/analyzer';
 const String projectWithNoProblems = 'test_fixtures/valid';
 
-ProcessResult checkProject(String projectPath, {List<String> ignoredPackages = const []}) {
+ProcessResult checkProject(
+  String projectPath, {
+  List<String> ignoredPackages = const [],
+  bool fatalUnderPromoted = true,
+  bool fatalOverPromoted = true,
+  bool fatalMissing = true,
+  bool fatalDevMissing = true,
+  bool fatalUnused = true,
+}) {
   Process.runSync('pub', ['get'], workingDirectory: projectPath);
 
   final args = ['run', 'dependency_validator'];
 
-  if (ignoredPackages.isNotEmpty) {
-    args..add('--ignore')..add(ignoredPackages.join(','));
-  }
+  if (ignoredPackages.isNotEmpty) args..add('--ignore')..add(ignoredPackages.join(','));
+  if (!fatalDevMissing) args.add('--no-fatal-dev-mising');
+  if (!fatalMissing) args.add('--no-fatal-missing');
+  if (!fatalOverPromoted) args.add('--no-fatal-over-promoted');
+  if (!fatalUnderPromoted) args.add('--no-fatal-under-promoted');
+  if (!fatalUnused) args.add('--no-fatal-unused');
 
-  final result = Process.runSync('pub', args, workingDirectory: projectPath);
-  return result;
+  return Process.runSync('pub', args, workingDirectory: projectPath);
 }
 
 void main() {
   group('dependency_validator', () {
-    test('fails when there are packages missing from the pubspec', () {
-      final result = checkProject(projectWithMissingDeps);
+    group('fails when there are packages missing from the pubspec', () {
+      test('', () {
+        final result = checkProject(projectWithMissingDeps);
 
-      expect(result.exitCode, equals(1));
-      expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
-      expect(result.stderr, contains('yaml'));
+        expect(result.exitCode, equals(1));
+        expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test('expect when the --no-fatal-missing flag is passed in', () {
+        final result = checkProject(projectWithMissingDeps, fatalMissing: false);
+
+        expect(result.exitCode, equals(0));
+        expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
+        expect(result.stderr, contains('yaml'));
+      });
     });
 
-    test('fails when there are over promoted packages', () {
-      final result = checkProject(projectWithOverPromotedDeps);
+    group('fails when there are over promoted packages', () {
+      test('', () {
+        final result = checkProject(projectWithOverPromotedDeps);
 
-      expect(result.exitCode, 1);
-      expect(result.stderr,
-          contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
-      expect(result.stderr, contains('path'));
+        expect(result.exitCode, 1);
+        expect(result.stderr,
+            contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
+        expect(result.stderr, contains('path'));
+      });
+
+      test('except when the --no-fatal-over-promoted flag is passed in', () {
+        final result = checkProject(projectWithOverPromotedDeps, fatalOverPromoted: false);
+
+        expect(result.exitCode, 0);
+        expect(result.stderr,
+            contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
+        expect(result.stderr, contains('path'));
+      });
     });
 
-    test('fails when there are under promoted packages', () {
-      final result = checkProject(projectWithUnderPromotedDeps);
+    group('fails when there are under promoted packages', () {
+      test('', () {
+        final result = checkProject(projectWithUnderPromotedDeps);
 
-      expect(result.exitCode, 1);
-      expect(result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
-      expect(result.stderr, contains('logging'));
+        expect(result.exitCode, 1);
+        expect(
+            result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
+        expect(result.stderr, contains('logging'));
+      });
+
+      test('except when the --no-fatal-under-promoted flag is passed in', () {
+        final result = checkProject(projectWithUnderPromotedDeps, fatalUnderPromoted: false);
+
+        expect(result.exitCode, 0);
+        expect(
+            result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
+        expect(result.stderr, contains('logging'));
+      });
     });
 
-    test('fails when there are unused packages', () {
-      final result = checkProject(projectWithUnusedDeps);
+    group('fails when there are unused packages', () {
+      test('', () {
+        final result = checkProject(projectWithUnusedDeps);
 
-      expect(result.exitCode, 1);
-      expect(result.stderr,
-          contains('These packages may be unused, or you may be using executables or assets from these packages:'));
-      expect(result.stderr, contains('dart_dev'));
+        expect(result.exitCode, 1);
+        expect(result.stderr,
+            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+        expect(result.stderr, contains('dart_dev'));
+      });
+
+      test('except when the --no-fatal-unused flag is passed in', () {
+        final result = checkProject(projectWithUnusedDeps, fatalUnused: false);
+
+        expect(result.exitCode, 0);
+        expect(result.stderr,
+            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+        expect(result.stderr, contains('dart_dev'));
+      });
     });
 
     test('warns when the analyzer pacakge is depended on but not used', () {
@@ -85,21 +139,21 @@ void main() {
       final result = checkProject(projectWithNoProblems);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No infractions found, valid is good to go!'));
+      expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
     });
 
     test('passes when there are unused packages, but the unused packages are ignored', () {
       final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['dart_dev']);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No infractions found, unused is good to go!'));
+      expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
     });
 
     test('passes when there are missing packages, but the missing packages are ignored', () {
       final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml']);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No infractions found, missing is good to go!'));
+      expect(result.stdout, contains('No fatal infractions found, missing is good to go!'));
     });
   });
 }

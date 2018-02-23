@@ -19,7 +19,14 @@ import 'package:yaml/yaml.dart';
 import './src/utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run({List<String> ignoredPackages = const []}) {
+void run({
+  List<String> ignoredPackages = const [],
+  bool fatalUnderPromoted = true,
+  bool fatalOverPromoted = true,
+  bool fatalMissing = true,
+  bool fatalDevMissing = true,
+  bool fatalUnused = true,
+}) {
   // Read and parse the pubspec.yaml in the current working directory.
   final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync());
 
@@ -107,7 +114,7 @@ void run({List<String> ignoredPackages = const []}) {
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    exitCode = 1;
+    if (fatalMissing) exitCode = 1;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
@@ -128,7 +135,7 @@ void run({List<String> ignoredPackages = const []}) {
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    exitCode = 1;
+    if (fatalDevMissing) exitCode = 1;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -145,7 +152,7 @@ void run({List<String> ignoredPackages = const []}) {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    exitCode = 1;
+    if (fatalOverPromoted) exitCode = 1;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -160,7 +167,7 @@ void run({List<String> ignoredPackages = const []}) {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    exitCode = 1;
+    if (fatalUnderPromoted) exitCode = 1;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -193,10 +200,10 @@ void run({List<String> ignoredPackages = const []}) {
       unusedDependencies,
     );
 
-    exitCode = 1;
+    if (fatalUnused) exitCode = 1;
   }
 
   if (exitCode == 0) {
-    logger.info('No infractions found, $packageName is good to go!');
+    logger.info('No fatal infractions found, $packageName is good to go!');
   }
 }
