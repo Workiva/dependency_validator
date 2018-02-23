@@ -20,7 +20,12 @@ import 'package:dependency_validator/dependency_validator.dart';
 
 final ArgParser argParser = new ArgParser()
   ..addFlag('verbose', defaultsTo: false)
-  ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true);
+  ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true)
+  ..addFlag('fatal-under-promoted', defaultsTo: true)
+  ..addFlag('fatal-over-promoted', defaultsTo: true)
+  ..addFlag('fatal-missing', defaultsTo: true)
+  ..addFlag('fatal-dev-missing', defaultsTo: true)
+  ..addFlag('fatal-unused', defaultsTo: true);
 
 void main(List<String> args) {
   final argResults = argParser.parse(args);
@@ -28,6 +33,12 @@ void main(List<String> args) {
   if (argResults.wasParsed('verbose') && argResults['verbose']) {
     Logger.root.level = Level.ALL;
   }
+
+  final fatalUnderPromoted = argResults['fatal-under-promoted'] ?? true;
+  final fatalOverPromoted = argResults['fatal-over-promoted'] ?? true;
+  final fatalMissing = argResults['fatal-missing'] ?? true;
+  final fatalDevMissing = argResults['fatal-dev-missing'] ?? true;
+  final fatalUnused = argResults['fatal-unused'] ?? true;
 
   List<String> ignoredPackages;
 
@@ -45,5 +56,13 @@ void main(List<String> args) {
       .where((record) => record.level >= Level.WARNING)
       .map((record) => record.message)
       .listen(stderr.writeln);
-  run(ignoredPackages: ignoredPackages);
+
+  run(
+    ignoredPackages: ignoredPackages,
+    fatalUnderPromoted: fatalUnderPromoted,
+    fatalOverPromoted: fatalOverPromoted,
+    fatalMissing: fatalMissing,
+    fatalDevMissing: fatalDevMissing,
+    fatalUnused: fatalUnused,
+  );
 }
