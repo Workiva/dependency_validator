@@ -35,7 +35,7 @@ Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
 
   return new Directory(dirPath).listSync(recursive: true).where((entity) {
     if (entity is! File) return false;
-    if (entity.path.split(p.separator).contains('packages')) return false;
+    if (p.split(entity.path).contains('packages')) return false;
     if (p.extension(entity.path) != ('.dart')) return false;
     if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
 
