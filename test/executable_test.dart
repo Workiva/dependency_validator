@@ -61,7 +61,7 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('expect when the --no-fatal-missing flag is passed in', () {
+      test('except when the --no-fatal-missing flag is passed in', () {
         final result = checkProject(projectWithMissingDeps, fatalMissing: false);
 
         expect(result.exitCode, equals(0));
@@ -69,7 +69,7 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('expect when the lib directory is excluded', () {
+      test('except when the lib directory is excluded', () {
         final result = checkProject(projectWithMissingDeps, excludeDirs: ['lib/']);
 
         expect(result.exitCode, equals(0));

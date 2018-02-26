@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 final RegExp importExportPackageRegex =
     new RegExp(r'''^(import|export)\s+['"]package:([a-zA-Z_]+)\/.+$''', multiLine: true);
@@ -34,9 +35,9 @@ Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
 
   return new Directory(dirPath).listSync(recursive: true).where((entity) {
     if (entity is! File) return false;
-    if (entity.path.contains('/packages/')) return false;
-    if (!entity.path.endsWith('.dart')) return false;
-    if (excludedDirs.any(entity.path.startsWith)) return false;
+    if (entity.path.split(p.separator).contains('packages')) return false;
+    if (p.extension(entity.path) != ('.dart')) return false;
+    if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
 
     return true;
   });
