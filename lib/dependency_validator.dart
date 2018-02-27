@@ -21,6 +21,7 @@ import './src/utils.dart';
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
   List<String> ignoredPackages = const [],
+  List<String> excludedDirs = const [],
   bool fatalUnderPromoted = true,
   bool fatalOverPromoted = true,
   bool fatalMissing = true,
@@ -60,7 +61,9 @@ void run({
       '${bulletItems(packagesUsedViaTransformers)}\n');
 
   // Recursively list all Dart files in lib/
-  final publicDartFiles = <File>[]..addAll(listDartFilesIn('lib/'))..addAll(listDartFilesIn('bin/'));
+  final publicDartFiles = <File>[]
+    ..addAll(listDartFilesIn('lib/', excludedDirs))
+    ..addAll(listDartFilesIn('bin/', excludedDirs));
   logger.fine('public facing dart files:\n'
       '${bulletItems(publicDartFiles.map((f) => f.path))}\n');
 
@@ -78,10 +81,10 @@ void run({
 
   // Recursively list all Dart files in known directories other than lib/
   final nonLibDartFiles = <File>[]
-    ..addAll(listDartFilesIn('example/'))
-    ..addAll(listDartFilesIn('test/'))
-    ..addAll(listDartFilesIn('tool/'))
-    ..addAll(listDartFilesIn('web/'));
+    ..addAll(listDartFilesIn('example/', excludedDirs))
+    ..addAll(listDartFilesIn('test/', excludedDirs))
+    ..addAll(listDartFilesIn('tool/', excludedDirs))
+    ..addAll(listDartFilesIn('web/', excludedDirs));
   logger.fine('non-lib dart files:\n'
       '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n');
 

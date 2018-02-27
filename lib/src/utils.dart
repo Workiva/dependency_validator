@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 
 final RegExp importExportPackageRegex =
     new RegExp(r'''^(import|export)\s+['"]package:([a-zA-Z_]+)\/.+$''', multiLine: true);
@@ -29,11 +30,17 @@ final Logger logger = new Logger('dependency_validator');
 
 String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
 
-Iterable<File> listDartFilesIn(String dirPath) {
+Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
-  return new Directory(dirPath)
-      .listSync(recursive: true)
-      .where((entity) => entity is File && !entity.path.contains('/packages/') && entity.path.endsWith('.dart'));
+
+  return new Directory(dirPath).listSync(recursive: true).where((entity) {
+    if (entity is! File) return false;
+    if (p.split(entity.path).contains('packages')) return false;
+    if (p.extension(entity.path) != ('.dart')) return false;
+    if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
+
+    return true;
+  });
 }
 
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {

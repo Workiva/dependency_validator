@@ -21,6 +21,7 @@ import 'package:dependency_validator/dependency_validator.dart';
 final ArgParser argParser = new ArgParser()
   ..addFlag('verbose', defaultsTo: false)
   ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true)
+  ..addOption('exclude-dir', abbr: 'x', allowMultiple: true, splitCommas: true)
   ..addFlag('fatal-under-promoted', defaultsTo: true)
   ..addFlag('fatal-over-promoted', defaultsTo: true)
   ..addFlag('fatal-missing', defaultsTo: true)
@@ -48,6 +49,14 @@ void main(List<String> args) {
     ignoredPackages = const <String>[];
   }
 
+  List<String> excludedDirs;
+
+  if (argResults.wasParsed('exclude-dir')) {
+    excludedDirs = argResults['exclude-dir'];
+  } else {
+    excludedDirs = const <String>[];
+  }
+
   Logger.root.onRecord
       .where((record) => record.level < Level.WARNING)
       .map((record) => record.message)
@@ -59,6 +68,7 @@ void main(List<String> args) {
 
   run(
     ignoredPackages: ignoredPackages,
+    excludedDirs: excludedDirs,
     fatalUnderPromoted: fatalUnderPromoted,
     fatalOverPromoted: fatalOverPromoted,
     fatalMissing: fatalMissing,
