@@ -35,6 +35,14 @@ main() {
           sharedTest('$importOrExport \'package:foo/bar.dart\';', importOrExport, 'foo');
         });
 
+        test('with triple double-quotes', () {
+          sharedTest('$importOrExport """package:foo/bar.dart""";', importOrExport, 'foo');
+        });
+
+        test('with triple single-quotes', () {
+          sharedTest('$importOrExport \'\'\'package:foo/bar.dart\'\'\';', importOrExport, 'foo');
+        });
+
         test('with underscores in the package name', () {
           sharedTest('$importOrExport "package:foo_foo/bar.dart";', importOrExport, 'foo_foo');
         });
@@ -45,6 +53,10 @@ main() {
 
         test('that starts with an underscore', () {
           sharedTest('$importOrExport "package:_foo/bar.dart";', importOrExport, '_foo');
+        });
+
+        test('with extra whitespace in the line', () {
+          sharedTest('   $importOrExport   "package:foo/bar.dart"   ;   ', importOrExport, 'foo');
         });
       });
     }
