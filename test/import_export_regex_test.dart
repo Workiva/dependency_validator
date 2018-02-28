@@ -43,16 +43,18 @@ main() {
           sharedTest('$importOrExport \'\'\'package:foo/bar.dart\'\'\';', importOrExport, 'foo');
         });
 
-        test('with underscores in the package name', () {
-          sharedTest('$importOrExport "package:foo_foo/bar.dart";', importOrExport, 'foo_foo');
-        });
+        group('with a package name that', () {
+          test('contains underscores', () {
+            sharedTest('$importOrExport "package:foo_foo/bar.dart";', importOrExport, 'foo_foo');
+          });
 
-        test('with numbers in the package name', () {
-          sharedTest('$importOrExport "package:foo1/bar.dart";', importOrExport, 'foo1');
-        });
+          test('contains numbers', () {
+            sharedTest('$importOrExport "package:foo1/bar.dart";', importOrExport, 'foo1');
+          });
 
-        test('that starts with an underscore', () {
-          sharedTest('$importOrExport "package:_foo/bar.dart";', importOrExport, '_foo');
+          test('starts with an underscore', () {
+            sharedTest('$importOrExport "package:_foo/bar.dart";', importOrExport, '_foo');
+          });
         });
 
         test('with extra whitespace in the line', () {
