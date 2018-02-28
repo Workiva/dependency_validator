@@ -60,6 +60,18 @@ main() {
         test('with extra whitespace in the line', () {
           sharedTest('   $importOrExport   "package:foo/bar.dart"   ;   ', importOrExport, 'foo');
         });
+
+        test('with multiple ${importOrExport}s in the same line', () {
+          final input = '$importOrExport "package:foo/bar.dart"; $importOrExport "package:bar/foo.dart";';
+
+          expect(input, matches(importExportPackageRegex));
+
+          final allMatches = importExportPackageRegex.allMatches(input).toList();
+          expect(allMatches, hasLength(2));
+
+          expect(allMatches[0].groups([1, 2]), [importOrExport, 'foo']);
+          expect(allMatches[1].groups([1, 2]), [importOrExport, 'bar']);
+        });
       });
     }
   });
