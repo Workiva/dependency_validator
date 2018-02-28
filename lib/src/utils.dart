@@ -18,7 +18,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
 final RegExp importExportPackageRegex =
-    new RegExp(r'''^(import|export)\s+['"]package:([a-zA-Z_]+)\/.+$''', multiLine: true);
+    new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
 const dependenciesKey = 'dependencies';
 const dependencyValidatorPackageName = 'dependency_validator';
