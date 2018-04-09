@@ -2,6 +2,7 @@ language: dart
 
 dart:
   - stable
+  - dev
 
 script:
   - pub run dart_dev format --check

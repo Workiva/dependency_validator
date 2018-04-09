@@ -17,19 +17,35 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
+/// Regex used to detect all import and export directives.
 final RegExp importExportPackageRegex =
     new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
-const dependenciesKey = 'dependencies';
-const dependencyValidatorPackageName = 'dependency_validator';
-const devDependenciesKey = 'dev_dependencies';
-const nameKey = 'name';
-const transformersKey = 'transformers';
+/// String key in pubspec.yaml for the dependencies map.
+const String dependenciesKey = 'dependencies';
 
+/// Name of this package.
+const String dependencyValidatorPackageName = 'dependency_validator';
+
+/// String key in pubspec.yaml for the dev_dependencies map.
+const String devDependenciesKey = 'dev_dependencies';
+
+/// String key in pubspec.yaml for the package name.
+const String nameKey = 'name';
+
+/// String key in pubspec.yaml for the transformers map.
+const String transformersKey = 'transformers';
+
+/// Logger instance to use within dependency_validator.
 final Logger logger = new Logger('dependency_validator');
 
+/// Returns a multi-line string with all [items] in a bulleted list format.
 String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
 
+/// Returns an iterable of all Dart files (files ending in .dart) in the given
+/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+///
+/// This also excludes Dart files that are in a `packages/` subdirectory.
 Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
 
@@ -43,6 +59,8 @@ Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) {
   });
 }
 
+/// Logs a warning with the given [infraction] and lists all of the given
+/// [dependencies] under that infraction.
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
   logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));

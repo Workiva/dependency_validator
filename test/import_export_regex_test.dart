@@ -18,7 +18,7 @@ import 'package:test/test.dart';
 
 import 'package:dependency_validator/src/utils.dart';
 
-main() {
+void main() {
   group('importExportPackageRegex matches correctly for', () {
     void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
       expect(input, matches(importExportPackageRegex));

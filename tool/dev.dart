@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:async';
+
 import 'package:dart_dev/dart_dev.dart' show dev, config;
 
-main(List<String> args) async {
+Future<Null> main(List<String> args) async {
   config.format
     ..lineLength = 120
     ..paths = const ['bin/', 'lib/', 'test/', 'tool/'];
