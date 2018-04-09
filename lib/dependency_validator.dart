@@ -193,9 +193,8 @@ void run({
     );
   }
 
-  unusedDependencies
-    // Ignore known unused packages
-    ..removeAll(ignoredPackages);
+  // Ignore known unused packages
+  unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
     logDependencyInfractions(
