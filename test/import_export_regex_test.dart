@@ -21,8 +21,8 @@ import 'package:dependency_validator/src/utils.dart';
 void main() {
   group('importExportPackageRegex matches correctly for', () {
     void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
-      expect(input, matches(importExportPackageRegex));
-      expect(importExportPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
+      expect(input, matches(importExportDartPackageRegex));
+      expect(importExportDartPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
     }
 
     for (var importOrExport in ['import', 'export']) {
@@ -64,9 +64,9 @@ void main() {
         test('with multiple ${importOrExport}s in the same line', () {
           final input = '$importOrExport "package:foo/bar.dart"; $importOrExport "package:bar/foo.dart";';
 
-          expect(input, matches(importExportPackageRegex));
+          expect(input, matches(importExportDartPackageRegex));
 
-          final allMatches = importExportPackageRegex.allMatches(input).toList();
+          final allMatches = importExportDartPackageRegex.allMatches(input).toList();
           expect(allMatches, hasLength(2));
 
           expect(allMatches[0].groups([1, 2]), [importOrExport, 'foo']);

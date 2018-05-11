@@ -60,22 +60,37 @@ void run({
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
 
-  // Recursively list all Dart files in lib/
+  // Recursively list all Dart and Scss files in lib/
   final publicDartFiles = <File>[]
     ..addAll(listDartFilesIn('lib/', excludedDirs))
     ..addAll(listDartFilesIn('bin/', excludedDirs));
-  logger.fine('public facing dart files:\n'
-      '${bulletItems(publicDartFiles.map((f) => f.path))}\n');
+
+  final publicScssFiles = <File>[]
+    ..addAll(listScssFilesIn('lib/', excludedDirs))
+    ..addAll(listDartFilesIn('bin/', excludedDirs));
+
+  logger
+    ..fine('public facing dart files:\n'
+        '${bulletItems(publicDartFiles.map((f) => f.path))}\n')
+    ..fine('public facing scss files:\n'
+        '${bulletItems(publicScssFiles.map((f) => f.path))}\n');
 
   // Read each file in lib/ and parse the package names from every import and
   // export directive.
   final packagesUsedInPublicFiles = new Set<String>();
   for (final file in publicDartFiles) {
-    final matches = importExportPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedInPublicFiles.add(match.group(2));
     }
   }
+  for (final file in publicScssFiles) {
+    final matches = importExportScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedInPublicFiles.add(match.group(1)); // TODO: why is this 1?
+    }
+  }
+
   logger.fine('packages used in public facing files:\n'
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
@@ -85,18 +100,34 @@ void run({
     ..addAll(listDartFilesIn('test/', excludedDirs))
     ..addAll(listDartFilesIn('tool/', excludedDirs))
     ..addAll(listDartFilesIn('web/', excludedDirs));
-  logger.fine('non-lib dart files:\n'
-      '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n');
+  final nonLibScssFiles = <File>[]
+    ..addAll(listScssFilesIn('example/', excludedDirs))
+    ..addAll(listScssFilesIn('test/', excludedDirs))
+    ..addAll(listScssFilesIn('tool/', excludedDirs))
+    ..addAll(listScssFilesIn('web/', excludedDirs));
+
+  logger
+    ..fine('non-lib dart files:\n'
+        '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n')
+    ..fine('non-lib scss files:\n'
+        '${bulletItems(nonLibScssFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
   final packagesUsedOutsideLib = new Set<String>();
   for (final file in nonLibDartFiles) {
-    final matches = importExportPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedOutsideLib.add(match.group(2));
     }
   }
+  for (final file in nonLibScssFiles) {
+    final matches = importExportScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedOutsideLib.add(match.group(1));
+    }
+  }
+
   logger.fine('packages used outside lib:\n'
       '${bulletItems(packagesUsedOutsideLib)}\n');
 

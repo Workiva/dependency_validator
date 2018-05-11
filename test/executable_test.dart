@@ -47,6 +47,9 @@ ProcessResult checkProject(
   if (!fatalUnderPromoted) args.add('--no-fatal-under-promoted');
   if (!fatalUnused) args.add('--no-fatal-unused');
 
+  // This makes it easier to print(result.stdout) for debugging tests
+  args.add('--verbose');
+
   return Process.runSync('pub', args, workingDirectory: projectPath);
 }
 
@@ -59,6 +62,7 @@ void main() {
         expect(result.exitCode, equals(1));
         expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
         expect(result.stderr, contains('yaml'));
+        expect(result.stderr, contains('somescsspackage'));
       });
 
       test('except when the --no-fatal-missing flag is passed in', () {
@@ -67,6 +71,7 @@ void main() {
         expect(result.exitCode, equals(0));
         expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
         expect(result.stderr, contains('yaml'));
+        expect(result.stderr, contains('somescsspackage'));
       });
 
       test('except when the lib directory is excluded', () {
@@ -85,6 +90,7 @@ void main() {
         expect(result.stderr,
             contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
         expect(result.stderr, contains('path'));
+        expect(result.stderr, contains('yaml'));
       });
 
       test('except when the --no-fatal-over-promoted flag is passed in', () {
@@ -94,6 +100,7 @@ void main() {
         expect(result.stderr,
             contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
         expect(result.stderr, contains('path'));
+        expect(result.stderr, contains('yaml'));
       });
     });
 
@@ -105,6 +112,7 @@ void main() {
         expect(
             result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
         expect(result.stderr, contains('logging'));
+        expect(result.stderr, contains('yaml'));
       });
 
       test('except when the --no-fatal-under-promoted flag is passed in', () {
@@ -114,6 +122,7 @@ void main() {
         expect(
             result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
         expect(result.stderr, contains('logging'));
+        expect(result.stderr, contains('yaml'));
       });
     });
 
@@ -159,7 +168,10 @@ void main() {
     });
 
     test('passes when there are missing packages, but the missing packages are ignored', () {
-      final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml']);
+      final result = checkProject(projectWithMissingDeps, ignoredPackages: [
+        'yaml',
+        'somescsspackage',
+      ]);
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, missing is good to go!'));

@@ -2,6 +2,7 @@ name: under_promoted
 version: 0.0.0
 private: true
 dev_dependencies:
+  yaml: any
   dependency_validator:
     path: ../..
   logging: any
