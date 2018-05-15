@@ -87,7 +87,7 @@ void run({
   for (final file in publicScssFiles) {
     final matches = importExportScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedInPublicFiles.add(match.group(1)); // TODO: why is this 1?
+      packagesUsedInPublicFiles.add(match.group(1));
     }
   }
 
