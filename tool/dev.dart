@@ -29,6 +29,26 @@ Future<Null> main(List<String> args) async {
     ..platforms = ['vm']
     ..unitTests = ['test/generated_runner.dart'];
 
+  List<String> ignoreDeps = [
+    // executables
+    'coverage',
+    'dartdoc',
+    'dart_style',
+
+    // in unit tests. these happen to pass the regex and trick the executable
+    '_foo', 'foo',
+    '_bar', 'bar',
+    'foo1',
+    'foo_foo',
+  ];
+
+  config.taskRunner.tasksToRun = [
+    'pub run dart_dev format --check',
+    'pub run dart_dev analyze',
+    'pub run dependency_validator -i ${ignoreDeps.join(',')}',
+    'pub run dart_dev test',
+  ];
+
   config.genTestRunner.configs = [
     new TestRunnerConfig(
       directory: 'test',
