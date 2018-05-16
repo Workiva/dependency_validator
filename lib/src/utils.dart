@@ -22,7 +22,7 @@ final RegExp importExportDartPackageRegex =
     new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
 /// Regex used to detect all Sass import directives.
-final RegExp importExportScssPackageRegex = new RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
+final RegExp importScssPackageRegex = new RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
 
 /// String key in pubspec.yaml for the dependencies map.
 const String dependenciesKey = 'dependencies';
@@ -50,20 +50,20 @@ String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\
 ///
 /// This also excludes Dart files that are in a `packages/` subdirectory.
 Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) =>
-    listTypedFilesIn(dirPath, excludedDirs, 'dart');
+    listFilesWithExtensionIn(dirPath, excludedDirs, 'dart');
 
 /// Returns an iterable of all Scss files (files ending in .scss) in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///
 /// This also excludes Scss files that are in a `packages/` subdirectory.
 Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
-    listTypedFilesIn(dirPath, excludedDirs, 'scss');
+    listFilesWithExtensionIn(dirPath, excludedDirs, 'scss');
 
 /// Returns an iterable of all files ending in .[type] in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///
 /// This also excludes files that are in a `packages/` subdirectory.
-Iterable<File> listTypedFilesIn(String dirPath, List<String> excludedDirs, String type) {
+Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDirs, String type) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
 
   return new Directory(dirPath).listSync(recursive: true).where((entity) {

@@ -14,7 +14,7 @@
 
 import 'dart:async';
 
-import 'package:dart_dev/dart_dev.dart' show dev, config;
+import 'package:dart_dev/dart_dev.dart';
 
 Future<Null> main(List<String> args) async {
   config.format
@@ -25,7 +25,16 @@ Future<Null> main(List<String> args) async {
 
   config.copyLicense.directories = const ['bin/', 'lib/', 'test/', 'test_fixtures/', 'tool/'];
 
-  config.test.unitTests = const ['test/'];
+  config.test
+    ..platforms = ['vm']
+    ..unitTests = ['test/generated_runner.dart'];
+
+  config.genTestRunner.configs = [
+    new TestRunnerConfig(
+      directory: 'test',
+      env: Environment.vm,
+    ),
+  ];
 
   await dev(args);
 }

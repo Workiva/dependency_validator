@@ -67,7 +67,7 @@ void run({
 
   final publicScssFiles = <File>[]
     ..addAll(listScssFilesIn('lib/', excludedDirs))
-    ..addAll(listDartFilesIn('bin/', excludedDirs));
+    ..addAll(listScssFilesIn('bin/', excludedDirs));
 
   logger
     ..fine('public facing dart files:\n'
@@ -85,7 +85,7 @@ void run({
     }
   }
   for (final file in publicScssFiles) {
-    final matches = importExportScssPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedInPublicFiles.add(match.group(1));
     }
@@ -122,7 +122,7 @@ void run({
     }
   }
   for (final file in nonLibScssFiles) {
-    final matches = importExportScssPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedOutsideLib.add(match.group(1));
     }
