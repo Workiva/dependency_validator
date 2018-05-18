@@ -1,0 +1,8 @@
+name: dependency_pins
+version: 0.0.0
+private: true
+
+dev_dependencies:
+  coverage: '>=0.9.3 <=0.11.0'
+  dependency_validator:
+    path: ../..

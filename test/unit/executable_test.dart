@@ -24,15 +24,17 @@ const String projectWithUnderPromotedDeps = 'test_fixtures/under_promoted';
 const String projectWithUnusedDeps = 'test_fixtures/unused';
 const String projectWithAnalyzer = 'test_fixtures/analyzer';
 const String projectWithNoProblems = 'test_fixtures/valid';
+const String projectWithDependencyPins = 'test_fixtures/dependency_pins';
 
 ProcessResult checkProject(
   String projectPath, {
-  List<String> ignoredPackages = const [],
   List<String> excludeDirs = const [],
-  bool fatalUnderPromoted = true,
+  List<String> ignoredPackages = const [],
+  bool fatalDevMissing = true,
   bool fatalOverPromoted = true,
   bool fatalMissing = true,
-  bool fatalDevMissing = true,
+  bool fatalPins = true,
+  bool fatalUnderPromoted = true,
   bool fatalUnused = true,
 }) {
   Process.runSync('pub', ['get'], workingDirectory: projectPath);
@@ -46,6 +48,7 @@ ProcessResult checkProject(
   if (!fatalOverPromoted) args.add('--no-fatal-over-promoted');
   if (!fatalUnderPromoted) args.add('--no-fatal-under-promoted');
   if (!fatalUnused) args.add('--no-fatal-unused');
+  if (!fatalPins) args.add('--no-fatal-pins');
 
   // This makes it easier to print(result.stdout) for debugging tests
   args.add('--verbose');
@@ -175,6 +178,29 @@ void main() {
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, missing is good to go!'));
+    });
+
+    group('when a dependency is pinned', () {
+      test('fails if pins are not ignored', () {
+        final result = checkProject(
+          projectWithDependencyPins,
+          fatalUnused: false,
+        );
+
+        expect(result.exitCode, 1);
+        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * coverage'));
+      });
+
+      test('warns if pins are ignored', () {
+        final result = checkProject(
+          projectWithDependencyPins,
+          fatalPins: false,
+          fatalUnused: false,
+        );
+
+        expect(result.exitCode, 0);
+        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * coverage'));
+      });
     });
   });
 }

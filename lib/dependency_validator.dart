@@ -20,13 +20,14 @@ import './src/utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
-  List<String> ignoredPackages = const [],
   List<String> excludedDirs = const [],
-  bool fatalUnderPromoted = true,
-  bool fatalOverPromoted = true,
-  bool fatalMissing = true,
   bool fatalDevMissing = true,
+  bool fatalMissing = true,
+  bool fatalOverPromoted = true,
+  bool fatalPins = true,
+  bool fatalUnderPromoted = true,
   bool fatalUnused = true,
+  List<String> ignoredPackages = const [],
 }) {
   // Read and parse the pubspec.yaml in the current working directory.
   final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync());
@@ -34,7 +35,9 @@ void run({
   // Extract the package name.
   final packageName = pubspecYaml[nameKey];
 
-  logger.info('Validating dependencies for $packageName');
+  logger.info('Validating dependencies for $packageName\n');
+
+  checkPubpspecYamlForPins(pubspecYaml, fatal: fatalPins);
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
@@ -259,13 +262,14 @@ void run({
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
-void checkPubpspecYamlForPins(Map pubspecYaml, {bool fatal: false}) {
+void checkPubpspecYamlForPins(YamlMap pubspecYaml, {bool fatal: true}) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
     infractions.addAll(
       getDependenciesWithPins(pubspecYaml[dependenciesKey]),
     );
   }
+
   if (pubspecYaml.containsKey(devDependenciesKey)) {
     infractions.addAll(
       getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
