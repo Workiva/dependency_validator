@@ -21,7 +21,7 @@ import 'package:path/path.dart' as p;
 final RegExp directPinRegExp = new RegExp(r'\d+\.\d+\.\d+');
 
 /// Matches ^1.2.3
-final RegExp caratSyntaxRegex = new RegExp(r'^\d+\.\d+\.\d+');
+final RegExp caratSyntaxRegex = new RegExp(r'\^\d+\.\d+\.\d+');
 
 /// Matches <2.3.4
 final RegExp maxVersionRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)');
@@ -145,7 +145,6 @@ bool doesVersionPinDependency(String rawVersion) {
     int majorIndex = 0;
 
     if (maxVersion[0] == 0) {
-
       // Case: <0.0.X can't upgrade patch or minor versions
       if (maxVersion[1] == 0) {
         return true;
@@ -162,6 +161,5 @@ bool doesVersionPinDependency(String rawVersion) {
     }
   }
 
-  throw 'Unexpected Fallthrough';
-//  return false;
+  return false;
 }
