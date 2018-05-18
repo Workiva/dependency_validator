@@ -55,7 +55,7 @@ void run({
       ? new Set<String>.from(transformerEntries.map<String>((value) {
           if (value is YamlMap) return value.keys.first;
           return value;
-        }).map((value) => value.replaceFirst(new RegExp(r'\/.*'), '')))
+        }).map((value) => value.replaceFirst(new RegExp(r'/.*'), '')))
       : new Set<String>();
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
@@ -238,5 +238,41 @@ void run({
 
   if (exitCode == 0) {
     logger.info('No fatal infractions found, $packageName is good to go!');
+  }
+}
+
+/// Checks for dependency pins.
+///
+/// A pin is any dependency which does not automatically consume the next
+/// patch or minor release.
+///
+/// Examples of dependencies that should cause a failure:
+///
+/// package: 1.2.3            # blocks all releases
+/// package: ">=0.0.1 <0.0.2" # blocks all releases
+/// package: ">=0.1.1 <0.1.2" # blocks minor/patch releases
+/// package: ">=1.2.2 <1.2.3" # blocks patch releases
+/// package: ">=1.2.2 <1.3.0" # blocks minor releases
+///
+/// Example of somethign that should NOT cause a failure
+///
+/// package: ^1.2.3
+/// package: ">=1.2.3 <2.0.0"
+void checkPubpspecYamlForPins(Map pubspecYaml, {bool fatal: false}) {
+  final List<String> infractions = [];
+  if (pubspecYaml.containsKey(dependenciesKey)) {
+    infractions.addAll(
+      getDependenciesWithPins(pubspecYaml[dependenciesKey]),
+    );
+  }
+  if (pubspecYaml.containsKey(devDependenciesKey)) {
+    infractions.addAll(
+      getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
+    );
+  }
+
+  if (infractions.isNotEmpty) {
+    logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
+    if (fatal) exitCode = 1;
   }
 }

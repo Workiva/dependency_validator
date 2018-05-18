@@ -17,7 +17,19 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-/// Regex used to detect all Dart import and export directives.
+/// Matches digits.
+final RegExp digitRegExp = new RegExp('\d');
+
+/// Matches ^1.2.3. This is not a pin.
+final RegExp caratSyntaxRegex = new RegExp(r'''['"]?\^\d+\.d+\.d+['"]?'''); // ^1.2.3 with optional quotes
+
+/// Matches <2.0.0. This is not a pin as long as the version is the next version.
+final RegExp maxVersionRegex = new RegExp(r'<\d+\.\d+\.\d+');
+
+/// Matches >1.2.3 or >=1.2.3
+final RegExp minVersionRegex = new RegExp(r'>=?\d+\.\d+\.\d+');
+
+/// Regex used to detect all import and export directives.
 final RegExp importExportDartPackageRegex =
     new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
@@ -82,3 +94,82 @@ void logDependencyInfractions(String infraction, Iterable<String> dependencies) 
   final sortedDependencies = dependencies.toList()..sort();
   logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
 }
+
+
+/// Lists the packages with infractions
+List<String> getDependenciesWithPins(Map dependencies) {
+  final List<String> infractions = [];
+  for (String packageName in dependencies.keys) {
+    String version;
+    if (dependencies[packageName] is String) {
+      version = dependencies[packageName];
+    } else {
+      final Map packageMeta = dependencies[packageName];
+      if (packageMeta.containsKey('version')) {
+        version = packageMeta['version'];
+      } else {
+        // This feature only works for versions, not git refs or paths.
+        break;
+      }
+    }
+
+    if (doesVersionPinDependency(version)) {
+      infractions.add(packageName);
+    }
+  }
+
+  return infractions;
+}
+
+/// Returns whether the version restricts patch or minor upgrades.
+bool doesVersionPinDependency(String version) {
+  // Case: ^1.2.3 is always legal
+  if (caratSyntaxRegex.hasMatch(version)) {
+    return false;
+  }
+
+  // Case: 1.2.3 is always a pin
+  if (version.startsWith(digitRegExp)) {
+    return true;
+  }
+
+  // Case: Setting a definite max version is a pin.
+  if (version.contains('<=')) {
+    return true;
+  }
+
+  final maxMatch = maxVersionRegex.firstMatch(version);
+
+  // Case: no max version set, so no pin
+  if (maxMatch == null) {
+    return false;
+  }
+
+  final List<int> maxVersion = maxMatch.groups([1, 2, 3]).map<int>(int.parse);
+  final minMatch = minVersionRegex.firstMatch(version);
+
+  final List<int> minVersion = minMatch == null
+    ? [0, 0, 0]
+    : minMatch.groups([1, 2, 3]).map<int>(int.parse);
+
+  int majorIndex = 0;
+
+  if (maxVersion[0] == 0) {
+    // Case: <0.0.X can't upgrade patch or minor versions
+    if (maxVersion[1] == 0) {
+      return true;
+    }
+
+    majorIndex = 1;
+  }
+
+  // Case: >1.2.3 blocks patch and minor bumps even if the min is a major version below
+  for (int i = majorIndex + 1; i < 3; i++) {
+    if (maxVersion[i] != 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+

@@ -128,4 +128,56 @@ void main() {
       expect(allMatches[1].group(1), 'bar');
     });
   });
+
+  group('doesVersionPinDependency', () {
+    test('is false for ^1.2.3', () {
+      expect(doesVersionPinDependency('^1.23.456'), isFalse);
+      expect(doesVersionPinDependency('"^1.23.456"'), isFalse);
+      expect(doesVersionPinDependency("'^1.23.456'"), isFalse);
+    });
+
+    test('is true for 1.2.3', () {
+      expect(doesVersionPinDependency('1.23.456'), isTrue);
+      expect(doesVersionPinDependency('"1.23.456"'), isTrue);
+      expect(doesVersionPinDependency("'1.23.456'"), isTrue);
+    });
+
+    test('is true for explicit upper bound <=', () {
+      expect(doesVersionPinDependency('">=1.2.3 <=4.0.0"'), isTrue);
+      expect(doesVersionPinDependency("'>=1.2.3 <=4.0.0'"), isTrue);
+      expect(doesVersionPinDependency('"<=4.0.0"'), isTrue);
+      expect(doesVersionPinDependency("'<=4.0.0'"), isTrue);
+    });
+
+    group('is true if upper bound blocks patch or minor updates', () {
+      test('when version starts with 0', () {
+        expect(doesVersionPinDependency('">=0.2.3 <0.5.6"'), isTrue);
+        expect(doesVersionPinDependency("'>=0.2.3 <0.5.6'"), isTrue);
+        expect(doesVersionPinDependency('"<0.5.6"'), isTrue);
+        expect(doesVersionPinDependency("'<0.5.6'"), isTrue);
+      });
+
+      test('when version starts with nonzero', () {
+        // blocks minor updates
+        expect(doesVersionPinDependency('">=1.2.3 <4.5.0"'), isTrue);
+        expect(doesVersionPinDependency("'>=1.2.3 <4.5.0'"), isTrue);
+        expect(doesVersionPinDependency('"<4.5.0"'), isTrue);
+        expect(doesVersionPinDependency("'<4.5.0'"), isTrue);
+
+        // blocks patch updates
+        expect(doesVersionPinDependency('">=1.2.3 <4.0.6"'), isTrue);
+        expect(doesVersionPinDependency("'>=1.2.3 <4.0.6'"), isTrue);
+        expect(doesVersionPinDependency('"<4.0.6"'), isTrue);
+        expect(doesVersionPinDependency("'<4.0.6'"), isTrue);
+      });
+    });
+
+    test('is true if upper bound does not allow patch or minor updates', () {
+      expect(doesVersionPinDependency('">=1.2.3 <4.5.6"'), isTrue);
+      expect(doesVersionPinDependency("'>=1.2.3 <4.5.6'"), isTrue);
+      expect(doesVersionPinDependency('"<4.5.6"'), isTrue);
+      expect(doesVersionPinDependency("'<4.5.6'"), isTrue);
+    });
+
+  });
 }
