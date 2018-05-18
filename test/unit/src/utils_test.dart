@@ -178,6 +178,5 @@ void main() {
       expect(doesVersionPinDependency('"<4.5.6"'), isTrue);
       expect(doesVersionPinDependency("'<4.5.6'"), isTrue);
     });
-
   });
 }
