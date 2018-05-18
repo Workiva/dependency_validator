@@ -258,7 +258,7 @@ void run({
 /// package: ">=1.2.2 <1.3.0" # blocks minor releases
 /// package: ">=1.2.2 <=2.0.0 # blocks minor/patch releases
 ///
-/// Example of somethign that should NOT cause a failure
+/// Example of something that should NOT cause a failure
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
