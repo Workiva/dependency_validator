@@ -21,10 +21,13 @@ import 'package:path/path.dart' as p;
 final RegExp directPinRegExp = new RegExp(r'\d+\.\d+\.\d+');
 
 /// Matches ^1.2.3
-final RegExp caratSyntaxRegex = new RegExp(r'\^\d+\.\d+\.\d+');
+final RegExp caratSyntaxRegex = new RegExp(r'\^(\d+)\.(\d+)\.(\d+)');
 
 /// Matches <2.3.4
 final RegExp maxVersionRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)');
+
+/// Matches <2.3.4
+final RegExp maxVersionWithSuffixRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)[+\-].+');
 
 /// Regex used to detect all import and export directives.
 final RegExp importExportDartPackageRegex =
@@ -121,9 +124,12 @@ List<String> getDependenciesWithPins(Map dependencies) {
 bool doesVersionPinDependency(String rawVersion) {
   final String version = rawVersion.replaceAll('"', '').replaceAll('\'', '');
 
-  // Case: ^1.2.3 is always legal
-  if (caratSyntaxRegex.firstMatch(version)?.start == 0) {
-    return false;
+  final caratMatch = caratSyntaxRegex.firstMatch(version);
+  if (caratMatch != null) {
+    final List<int> caratVersion = caratMatch.groups([1, 2, 3]).map(int.parse).toList();
+
+    // Case: ^0.0.X is a pin but ^X.Y.Z for nonzero X or Y is not.
+    return caratVersion[0] == 0 && caratVersion[1] == 0;
   }
 
   // Case: 1.2.3 is a direct pin
@@ -136,10 +142,16 @@ bool doesVersionPinDependency(String rawVersion) {
     return true;
   }
 
-  // Note: it's not required to check the minimum because it is guaranteed
+  // Note: it's not required to check the minimum because it will not pass CI
+  // without a successful pub get anyway.
   final maxMatch = maxVersionRegex.firstMatch(version);
 
   if (maxMatch != null) {
+    // Case: a max version with meta blocks patch updates beyond the build or pre-release.
+    if (maxVersionWithSuffixRegex.hasMatch(version)) {
+      return true;
+    }
+
     final List<int> maxVersion = maxMatch.groups([1, 2, 3]).map(int.parse).toList();
 
     int majorIndex = 0;
