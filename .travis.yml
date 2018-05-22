@@ -5,10 +5,7 @@ dart:
   - dev
 
 script:
-  - pub run dart_dev format --check
-  - pub run dart_dev analyze
-  - pub run dependency_validator -i coverage,dartdoc,dart_style
-  - pub run dart_dev test
+  - pub run dart_dev task-runner
 
 cache:
  directories:

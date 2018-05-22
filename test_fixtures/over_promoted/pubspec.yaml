@@ -3,6 +3,7 @@ version: 0.0.0
 private: true
 dependencies:
   path: any
+  yaml: any
 dev_dependencies:
   dependency_validator:
     path: ../..

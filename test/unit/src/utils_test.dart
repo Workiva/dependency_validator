@@ -19,10 +19,10 @@ import 'package:test/test.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
-  group('importExportPackageRegex matches correctly for', () {
+  group('importExportDartPackageRegex matches correctly for', () {
     void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
-      expect(input, matches(importExportPackageRegex));
-      expect(importExportPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
+      expect(input, matches(importExportDartPackageRegex));
+      expect(importExportDartPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
     }
 
     for (var importOrExport in ['import', 'export']) {
@@ -64,9 +64,9 @@ void main() {
         test('with multiple ${importOrExport}s in the same line', () {
           final input = '$importOrExport "package:foo/bar.dart"; $importOrExport "package:bar/foo.dart";';
 
-          expect(input, matches(importExportPackageRegex));
+          expect(input, matches(importExportDartPackageRegex));
 
-          final allMatches = importExportPackageRegex.allMatches(input).toList();
+          final allMatches = importExportDartPackageRegex.allMatches(input).toList();
           expect(allMatches, hasLength(2));
 
           expect(allMatches[0].groups([1, 2]), [importOrExport, 'foo']);
@@ -74,5 +74,58 @@ void main() {
         });
       });
     }
+  });
+
+  group('importScssPackageRegex', () {
+    void sharedTest(String input, String expectedGroup) {
+      expect(input, matches(importScssPackageRegex));
+      expect(importScssPackageRegex.firstMatch(input).group(1), expectedGroup);
+    }
+
+    test('with double-quotes', () {
+      sharedTest('@import "package:foo/bar";', 'foo');
+    });
+
+    test('with single-quotes', () {
+      sharedTest('@import \'package:foo/bar\';', 'foo');
+    });
+
+    test('with triple double-quotes', () {
+      sharedTest('@import """package:foo/bar""";', 'foo');
+    });
+
+    test('with triple single-quotes', () {
+      sharedTest('@import \'\'\'package:foo/bar\'\'\';', 'foo');
+    });
+
+    group('with a package name that', () {
+      test('contains underscores', () {
+        sharedTest('@import "package:foo_foo/bar";', 'foo_foo');
+      });
+
+      test('contains numbers', () {
+        sharedTest('@import "package:foo1/bar";', 'foo1');
+      });
+
+      test('starts with an underscore', () {
+        sharedTest('@import "package:_foo/bar";', '_foo');
+      });
+    });
+
+    test('with extra whitespace in the line', () {
+      sharedTest('   @import   "package:foo/bar"   ;   ', 'foo');
+    });
+
+    test('with multiple import\'s in the same line', () {
+      final input = '@import "package:foo/bar"; @import "package:bar/foo";';
+
+      expect(input, matches(importScssPackageRegex));
+
+      final allMatches = importScssPackageRegex.allMatches(input).toList();
+      expect(allMatches, hasLength(2));
+
+      expect(allMatches[0].group(1), 'foo');
+      expect(allMatches[1].group(1), 'bar');
+    });
   });
 }

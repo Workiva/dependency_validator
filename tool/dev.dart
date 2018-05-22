@@ -14,7 +14,7 @@
 
 import 'dart:async';
 
-import 'package:dart_dev/dart_dev.dart' show dev, config;
+import 'package:dart_dev/dart_dev.dart';
 
 Future<Null> main(List<String> args) async {
   config.format
@@ -25,7 +25,36 @@ Future<Null> main(List<String> args) async {
 
   config.copyLicense.directories = const ['bin/', 'lib/', 'test/', 'test_fixtures/', 'tool/'];
 
-  config.test.unitTests = const ['test/'];
+  config.test
+    ..platforms = ['vm']
+    ..unitTests = ['test/generated_runner.dart'];
+
+  List<String> ignoreDeps = [
+    // executables
+    'coverage',
+    'dartdoc',
+    'dart_style',
+
+    // in unit tests. these happen to pass the regex and trick the executable
+    '_foo', 'foo',
+    '_bar', 'bar',
+    'foo1',
+    'foo_foo',
+  ];
+
+  config.taskRunner.tasksToRun = [
+    'pub run dart_dev format --check',
+    'pub run dart_dev analyze',
+    'pub run dependency_validator -i ${ignoreDeps.join(',')}',
+    'pub run dart_dev test',
+  ];
+
+  config.genTestRunner.configs = [
+    new TestRunnerConfig(
+      directory: 'test',
+      env: Environment.vm,
+    ),
+  ];
 
   await dev(args);
 }

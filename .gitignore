@@ -9,7 +9,9 @@ packages
 *.dart.js
 *.js_
 *.js.deps
-pubspec.lock
+
+# Test fixtures have pubspec.lock committed
+/pubspec.lock
 
 .idea
 session.json

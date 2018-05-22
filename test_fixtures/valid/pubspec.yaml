@@ -3,6 +3,7 @@ version: 0.0.0
 private: true
 dependencies:
   logging: any
+  yaml: any
 dev_dependencies:
   dart_dev: any
   dart_to_js_script_rewriter: any
@@ -13,4 +14,4 @@ dev_dependencies:
 transformers:
   - dart_to_js_script_rewriter
   - test/pub_serve:
-    $include: test/**_test{.*,}.dart
+      $include: test/**_test{.*,}.dart
