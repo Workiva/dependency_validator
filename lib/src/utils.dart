@@ -14,6 +14,7 @@
 
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
@@ -25,9 +26,6 @@ final RegExp caratSyntaxRegex = new RegExp(r'\^(\d+)\.(\d+)\.(\d+)');
 
 /// Matches <2.3.4
 final RegExp maxVersionRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)');
-
-/// Matches <2.3.4
-final RegExp maxVersionWithSuffixRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)[+\-].+');
 
 /// Regex used to detect all import and export directives.
 final RegExp importExportDartPackageRegex =
@@ -122,56 +120,45 @@ List<String> getDependenciesWithPins(Map dependencies) {
 
 /// Returns whether the version restricts patch or minor upgrades.
 bool doesVersionPinDependency(String rawVersion) {
-  final String version = rawVersion.replaceAll('"', '').replaceAll('\'', '');
+  final String version = rawVersion.replaceAll('"', '').replaceAll("'", '');
 
-  final caratMatch = caratSyntaxRegex.firstMatch(version);
-  if (caratMatch != null) {
-    final List<int> caratVersion = caratMatch.groups([1, 2, 3]).map(int.parse).toList();
+  final VersionConstraint constraint = new VersionConstraint.parse(version);
 
-    // Case: ^0.0.X is a pin but ^X.Y.Z for nonzero X or Y is not.
-    return caratVersion[0] == 0 && caratVersion[1] == 0;
+  // No max set = no pin
+  if (constraint.isAny) {
+    return false;
   }
 
-  // Case: 1.2.3 is a direct pin
-  if (directPinRegExp.firstMatch(version)?.start == 0) {
+  // Direct pin
+  if (constraint is Version) {
     return true;
   }
 
-  // Case: Setting a definite max version is a pin.
-  if (version.contains('<=')) {
-    return true;
-  }
-
-  // Note: it's not required to check the minimum because it will not pass CI
-  // without a successful pub get anyway.
-  final maxMatch = maxVersionRegex.firstMatch(version);
-
-  if (maxMatch != null) {
-    // Case: a max version with meta blocks patch updates beyond the build or pre-release.
-    if (maxVersionWithSuffixRegex.hasMatch(version)) {
+  if (constraint is VersionRange) {
+    // Defined maximum bound is a pin
+    if (constraint.includeMax) {
       return true;
     }
 
-    final List<int> maxVersion = maxMatch.groups([1, 2, 3]).map(int.parse).toList();
+    final Version max = constraint.max;
 
-    int majorIndex = 0;
-
-    if (maxVersion[0] == 0) {
-      // Case: <0.0.X can't upgrade patch or minor versions
-      if (maxVersion[1] == 0) {
-        return true;
-      }
-
-      majorIndex = 1;
+    // Builds and prereleases also block patch and minor bumps
+    if (max.build.isNotEmpty ||
+        // First preRelease here is okay because the upper bound is not inclusive
+        (max.isPreRelease && !max.isFirstPreRelease)) {
+      return true;
     }
 
-    // Case: >1.2.3 blocks patch and minor bumps even if the min is a major version below
-    for (int i = majorIndex + 1; i < 3; i++) {
-      if (maxVersion[i] != 0) {
-        return true;
+    // Check legal upper bound doesn't block minor bumps
+    if (max.major == 0) {
+      if (max.minor == 0) {
+        return true; // 0.0.x
       }
+      return max.patch != 0; // 0.x.0
     }
+    return max.minor + max.patch > 0; // x.0.0
   }
 
-  return false;
+  // Empty version constraints are pins
+  return true;
 }

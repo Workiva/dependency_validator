@@ -130,24 +130,30 @@ void main() {
   });
 
   group('doesVersionPinDependency', () {
-    group('with carat notation', () {
-      test('is true for ^0.0.1', () {
-        expect(doesVersionPinDependency('^0.0.1'), isTrue);
-        expect(doesVersionPinDependency('"^0.0.19"'), isTrue);
-        expect(doesVersionPinDependency("'^0.0.36'"), isTrue);
-      });
+    test('is false for any', () {
+      expect(doesVersionPinDependency('any'), isFalse);
+      expect(doesVersionPinDependency("'any'"), isFalse);
+      expect(doesVersionPinDependency('"any"'), isFalse);
+    });
 
-      test('is false for ^0.1.2', () {
-        expect(doesVersionPinDependency('^0.2.4'), isFalse);
-        expect(doesVersionPinDependency('"^0.23.456"'), isFalse);
-        expect(doesVersionPinDependency("'^0.23.456'"), isFalse);
-      });
+    test('is true for empty', () {
+      expect(doesVersionPinDependency('>0.0.0 <0.0.0'), isTrue);
+      expect(doesVersionPinDependency('">0.0.0 <0.0.0"'), isTrue);
+      expect(doesVersionPinDependency("'>0.0.0 <0.0.0'"), isTrue);
+    });
 
-      test('is false for ^1.2.3', () {
-        expect(doesVersionPinDependency('^1.2.4'), isFalse);
-        expect(doesVersionPinDependency('"^1.23.456"'), isFalse);
-        expect(doesVersionPinDependency("'^1.23.456'"), isFalse);
-      });
+    test('with carat notation is false', () {
+      expect(doesVersionPinDependency('^0.0.1'), isFalse);
+      expect(doesVersionPinDependency('"^0.0.19"'), isFalse);
+      expect(doesVersionPinDependency("'^0.0.36'"), isFalse);
+
+      expect(doesVersionPinDependency('^0.2.4'), isFalse);
+      expect(doesVersionPinDependency('"^0.23.456"'), isFalse);
+      expect(doesVersionPinDependency("'^0.23.456'"), isFalse);
+
+      expect(doesVersionPinDependency('^1.2.4'), isFalse);
+      expect(doesVersionPinDependency('"^1.23.456"'), isFalse);
+      expect(doesVersionPinDependency("'^1.23.456'"), isFalse);
     });
 
     test('is true for 1.2.3', () {
@@ -200,18 +206,42 @@ void main() {
       expect(doesVersionPinDependency("'<0.0.2'"), isTrue);
     });
 
-    test('is true when the maximum bound contains metadata', () {
-      print('start');
-      expect(doesVersionPinDependency('">=0.2.0 <0.3.0-alpha"'), isTrue);
-      expect(doesVersionPinDependency("'>=0.2.3 <0.3.0-alpha'"), isTrue);
-      expect(doesVersionPinDependency('"<0.2.0-alpha"'), isTrue);
-      expect(doesVersionPinDependency("'<0.2.0-alpha'"), isTrue);
+    test('is true when the maximum bound contains build', () {
+      expect(doesVersionPinDependency('">=0.2.0 <0.3.0+1"'), isTrue);
+      expect(doesVersionPinDependency("'>=0.2.3 <0.3.0+1'"), isTrue);
+      expect(doesVersionPinDependency('"<0.2.0+1"'), isTrue);
+      expect(doesVersionPinDependency("'<0.2.0+1'"), isTrue);
 
-      expect(doesVersionPinDependency('">=1.0.0 <2.0.0-alpha"'), isTrue);
-      expect(doesVersionPinDependency("'>=1.2.3 <2.0.0-alpha'"), isTrue);
-      expect(doesVersionPinDependency('"<2.0.0-alpha"'), isTrue);
-      expect(doesVersionPinDependency("'<2.0.0-alpha'"), isTrue);
-      print('end');
+      expect(doesVersionPinDependency('">=1.0.0 <2.0.0+1"'), isTrue);
+      expect(doesVersionPinDependency("'>=1.2.3 <2.0.0+1'"), isTrue);
+      expect(doesVersionPinDependency('"<2.0.0+1"'), isTrue);
+      expect(doesVersionPinDependency("'<2.0.0+1'"), isTrue);
+    });
+
+    group('is true when the maximum bound contains prerelease', () {
+      test('', () {
+        expect(doesVersionPinDependency('">=0.2.0 <0.3.0-1"'), isTrue);
+        expect(doesVersionPinDependency("'>=0.2.3 <0.3.0-1'"), isTrue);
+        expect(doesVersionPinDependency('"<0.2.0-1"'), isTrue);
+        expect(doesVersionPinDependency("'<0.2.0-1'"), isTrue);
+
+        expect(doesVersionPinDependency('">=1.0.0 <2.0.0-1"'), isTrue);
+        expect(doesVersionPinDependency("'>=1.2.3 <2.0.0-1'"), isTrue);
+        expect(doesVersionPinDependency('"<2.0.0-1"'), isTrue);
+        expect(doesVersionPinDependency("'<2.0.0-1'"), isTrue);
+      });
+
+      test('except when prerelease=0', () {
+        expect(doesVersionPinDependency('">=0.2.0 <0.3.0-0"'), isFalse);
+        expect(doesVersionPinDependency("'>=0.2.3 <0.3.0-0'"), isFalse);
+        expect(doesVersionPinDependency('"<0.2.0-0"'), isFalse);
+        expect(doesVersionPinDependency("'<0.2.0-0'"), isFalse);
+
+        expect(doesVersionPinDependency('">=1.0.0 <2.0.0-0"'), isFalse);
+        expect(doesVersionPinDependency("'>=1.2.3 <2.0.0-0'"), isFalse);
+        expect(doesVersionPinDependency('"<2.0.0-0"'), isFalse);
+        expect(doesVersionPinDependency("'<2.0.0-0'"), isFalse);
+      });
     });
 
     group('is false when the maximum version is', () {
