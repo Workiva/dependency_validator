@@ -18,7 +18,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-/// Regex used to detect all import and export directives.
+/// Regex used to detect all Dart import and export directives.
 final RegExp importExportDartPackageRegex =
     new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
