@@ -18,15 +18,6 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-/// Matches 1.2.3
-final RegExp directPinRegExp = new RegExp(r'\d+\.\d+\.\d+');
-
-/// Matches ^1.2.3
-final RegExp caratSyntaxRegex = new RegExp(r'\^(\d+)\.(\d+)\.(\d+)');
-
-/// Matches <2.3.4
-final RegExp maxVersionRegex = new RegExp(r'<(\d+)\.(\d+)\.(\d+)');
-
 /// Regex used to detect all import and export directives.
 final RegExp importExportDartPackageRegex =
     new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
