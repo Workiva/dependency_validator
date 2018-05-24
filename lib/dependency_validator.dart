@@ -16,7 +16,8 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
-import './src/utils.dart';
+import 'src/constants.dart';
+import 'src/utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
@@ -251,10 +252,10 @@ void run({
 ///
 /// Examples of dependencies that should cause a failure:
 ///
-/// package: 1.2.3            # blocks all releases
-/// package: ">=0.0.1 <0.0.2" # blocks all releases
+/// package: 1.2.3            # blocks minor/patch releases
+/// package: ">=0.0.1 <0.0.2" # blocks minor/patch releases
 /// package: ">=0.1.1 <0.1.2" # blocks minor/patch releases
-/// package: ">=1.2.2 <1.2.3" # blocks patch releases
+/// package: ">=1.2.2 <1.2.3" # blocks minor/patch releases
 /// package: ">=1.2.2 <1.3.0" # blocks minor releases
 /// package: ">=1.2.2 <=2.0.0 # blocks minor/patch releases
 ///

@@ -18,27 +18,7 @@ import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-/// Regex used to detect all Dart import and export directives.
-final RegExp importExportDartPackageRegex =
-    new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
-
-/// Regex used to detect all Sass import directives.
-final RegExp importScssPackageRegex = new RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
-
-/// String key in pubspec.yaml for the dependencies map.
-const String dependenciesKey = 'dependencies';
-
-/// Name of this package.
-const String dependencyValidatorPackageName = 'dependency_validator';
-
-/// String key in pubspec.yaml for the dev_dependencies map.
-const String devDependenciesKey = 'dev_dependencies';
-
-/// String key in pubspec.yaml for the package name.
-const String nameKey = 'name';
-
-/// String key in pubspec.yaml for the transformers map.
-const String transformersKey = 'transformers';
+import 'constants.dart';
 
 /// Logger instance to use within dependency_validator.
 final Logger logger = new Logger('dependency_validator');
@@ -89,67 +69,68 @@ List<String> getDependenciesWithPins(Map dependencies) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     String version;
+    final packageMeta = dependencies[packageName];
+
     if (dependencies[packageName] is String) {
-      version = dependencies[packageName];
+      version = packageMeta;
     } else {
-      final Map packageMeta = dependencies[packageName];
       if (packageMeta.containsKey('version')) {
         version = packageMeta['version'];
       } else {
         // This feature only works for versions, not git refs or paths.
-        break;
+        continue;
       }
     }
 
-    if (doesVersionPinDependency(version)) {
-      infractions.add(packageName);
+    final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
+
+    if (evaluation.isPin) {
+      infractions.add('$packageName -- ${evaluation.message}');
     }
   }
 
   return infractions;
 }
 
-/// Returns whether the version restricts patch or minor upgrades.
-bool doesVersionPinDependency(String rawVersion) {
-  final String version = rawVersion.replaceAll('"', '').replaceAll("'", '');
-
+/// Returns the reason a version is a pin or null if it's not.
+DependencyPinEvaluation inspectVersionForPins(String version) {
   final VersionConstraint constraint = new VersionConstraint.parse(version);
 
-  // No max set = no pin
   if (constraint.isAny) {
-    return false;
+    return DependencyPinEvaluation.notAPin;
   }
 
-  // Direct pin
   if (constraint is Version) {
-    return true;
+    return DependencyPinEvaluation.directPin;
   }
 
   if (constraint is VersionRange) {
-    // Defined maximum bound is a pin
     if (constraint.includeMax) {
-      return true;
+      return DependencyPinEvaluation.inclusiveMax;
     }
 
     final Version max = constraint.max;
 
-    // Builds and prereleases also block patch and minor bumps
-    if (max.build.isNotEmpty ||
-        // First preRelease here is okay because the upper bound is not inclusive
-        (max.isPreRelease && !max.isFirstPreRelease)) {
-      return true;
+    if (max.build.isNotEmpty || (max.isPreRelease && !max.isFirstPreRelease)) {
+      return DependencyPinEvaluation.buildOrPrerelease;
     }
 
-    // Check legal upper bound doesn't block minor bumps
-    if (max.major == 0) {
-      if (max.minor == 0) {
-        return true; // 0.0.x
+    if (max.major > 0) {
+      if (max.patch > 0) {
+        return DependencyPinEvaluation.blocksPatchReleases;
       }
-      return max.patch != 0; // 0.x.0
+
+      if (max.minor > 0) {
+        return DependencyPinEvaluation.blocksMinorBumps;
+      }
+    } else {
+      if (max.patch > 0) {
+        return DependencyPinEvaluation.blocksMinorBumps;
+      }
     }
-    return max.minor + max.patch > 0; // x.0.0
+
+    return DependencyPinEvaluation.notAPin;
   }
 
-  // Empty version constraints are pins
-  return true;
+  return DependencyPinEvaluation.emptyPin;
 }
