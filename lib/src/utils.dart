@@ -87,7 +87,7 @@ List<String> getDependenciesWithPins(Map dependencies) {
     final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
 
     if (evaluation.isPin) {
-      infractions.add('$packageName -- ${evaluation.message}');
+      infractions.add('$packageName: $version -- ${evaluation.message}');
     }
   }
 
