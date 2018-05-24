@@ -20,7 +20,7 @@ const String nameKey = 'name';
 /// String key in pubspec.yaml for the transformers map.
 const String transformersKey = 'transformers';
 
-/// Provides a set of reasons why versions are ppins and whether
+/// Provides a set of reasons why version strings might be pins.
 class DependencyPinEvaluation {
   /// The justification for why this is a pin.
   final String message;
@@ -28,37 +28,38 @@ class DependencyPinEvaluation {
   /// Whether this is a pin.
   final bool isPin;
 
-  DependencyPinEvaluation._(this.message, {this.isPin: true});
+  const DependencyPinEvaluation._(this.message, {this.isPin: true});
 
   @override
   String toString() => message;
 
   /// <1.2.0
-  static final DependencyPinEvaluation blocksMinorBumps = new DependencyPinEvaluation._('This pin blocks minor bumps.');
+  static const DependencyPinEvaluation blocksMinorBumps =
+      const DependencyPinEvaluation._('This pin blocks minor bumps.');
 
   /// <1.2.3
-  static final DependencyPinEvaluation blocksPatchReleases =
-      new DependencyPinEvaluation._('This pin blocks patch upgrades.');
+  static const DependencyPinEvaluation blocksPatchReleases =
+      const DependencyPinEvaluation._('This pin blocks patch upgrades.');
 
   /// <1.0.0+a or <1.0.0-a
   ///
   /// Note that <1.0.0-0 is legal because the exclusive bounds ignore the first
   /// possible prerelease.
-  static final DependencyPinEvaluation buildOrPrerelease =
-      new DependencyPinEvaluation._('Builds or preleases as max bounds block minor bumps and patches.');
+  static const DependencyPinEvaluation buildOrPrerelease =
+      const DependencyPinEvaluation._('Builds or preleases as max bounds block minor bumps and patches.');
 
   /// 1.2.3
-  static final DependencyPinEvaluation directPin = new DependencyPinEvaluation._('This is a direct pin.');
+  static const DependencyPinEvaluation directPin = const DependencyPinEvaluation._('This is a direct pin.');
 
   /// >1.2.3 <1.2.3
-  static final DependencyPinEvaluation emptyPin =
-      new DependencyPinEvaluation._('Empty dependency versions cannot be resolved.');
+  static const DependencyPinEvaluation emptyPin =
+      const DependencyPinEvaluation._('Empty dependency versions cannot be resolved.');
 
   /// <=1.2.3
-  static final DependencyPinEvaluation inclusiveMax =
-      new DependencyPinEvaluation._('Inclusive max bounds restrict minor bumps and patches.');
+  static const DependencyPinEvaluation inclusiveMax =
+      const DependencyPinEvaluation._('Inclusive max bounds restrict minor bumps and patches.');
 
   /// :)
-  static final DependencyPinEvaluation notAPin =
-      new DependencyPinEvaluation._('This dependency is good to go.', isPin: false);
+  static const DependencyPinEvaluation notAPin =
+      const DependencyPinEvaluation._('This dependency is good to go.', isPin: false);
 }

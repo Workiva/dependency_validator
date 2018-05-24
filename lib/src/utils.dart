@@ -71,15 +71,17 @@ List<String> getDependenciesWithPins(Map dependencies) {
     String version;
     final packageMeta = dependencies[packageName];
 
-    if (dependencies[packageName] is String) {
+    if (packageMeta is String) {
       version = packageMeta;
-    } else {
+    } else if (packageMeta is Map) {
       if (packageMeta.containsKey('version')) {
         version = packageMeta['version'];
       } else {
         // This feature only works for versions, not git refs or paths.
         continue;
       }
+    } else {
+      continue; // no version string set
     }
 
     final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
