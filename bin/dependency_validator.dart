@@ -97,6 +97,11 @@ final ArgParser argParser = new ArgParser()
         '- web/\n',
   );
 
+void showHelpAndExit() {
+  Logger.root.shout(argParser.usage);
+  exit(0);
+}
+
 void main(List<String> args) {
   Logger.root.onRecord
       .where((record) => record.level < Level.WARNING)
@@ -107,11 +112,15 @@ void main(List<String> args) {
       .map((record) => record.message)
       .listen(stderr.writeln);
 
-  final argResults = argParser.parse(args);
+  ArgResults argResults;
+  try {
+    argResults = argParser.parse(args);
+  } catch (e) {
+    showHelpAndExit();
+  }
 
   if (argResults.wasParsed(helpArg) && argResults[helpArg]) {
-    Logger.root.shout(argParser.usage);
-    exit(0);
+    showHelpAndExit();
   }
 
   if (argResults.wasParsed(verboseArg) && argResults[verboseArg]) {
