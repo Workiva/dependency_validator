@@ -16,17 +16,19 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
-import './src/utils.dart';
+import 'src/constants.dart';
+import 'src/utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
-  List<String> ignoredPackages = const [],
   List<String> excludedDirs = const [],
-  bool fatalUnderPromoted = true,
-  bool fatalOverPromoted = true,
-  bool fatalMissing = true,
   bool fatalDevMissing = true,
+  bool fatalMissing = true,
+  bool fatalOverPromoted = true,
+  bool fatalPins = true,
+  bool fatalUnderPromoted = true,
   bool fatalUnused = true,
+  List<String> ignoredPackages = const [],
 }) {
   // Read and parse the pubspec.yaml in the current working directory.
   final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync());
@@ -34,7 +36,9 @@ void run({
   // Extract the package name.
   final packageName = pubspecYaml[nameKey];
 
-  logger.info('Validating dependencies for $packageName');
+  logger.info('Validating dependencies for $packageName\n');
+
+  checkPubpspecYamlForPins(pubspecYaml, fatal: fatalPins);
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
@@ -55,7 +59,7 @@ void run({
       ? new Set<String>.from(transformerEntries.map<String>((value) {
           if (value is YamlMap) return value.keys.first;
           return value;
-        }).map((value) => value.replaceFirst(new RegExp(r'\/.*'), '')))
+        }).map((value) => value.replaceFirst(new RegExp(r'/.*'), '')))
       : new Set<String>();
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
@@ -238,5 +242,43 @@ void run({
 
   if (exitCode == 0) {
     logger.info('No fatal infractions found, $packageName is good to go!');
+  }
+}
+
+/// Checks for dependency pins.
+///
+/// A pin is any dependency which does not automatically consume the next
+/// patch or minor release.
+///
+/// Examples of dependencies that should cause a failure:
+///
+/// package: 1.2.3            # blocks minor/patch releases
+/// package: ">=0.0.1 <0.0.2" # blocks minor/patch releases
+/// package: ">=0.1.1 <0.1.2" # blocks minor/patch releases
+/// package: ">=1.2.2 <1.2.3" # blocks minor/patch releases
+/// package: ">=1.2.2 <1.3.0" # blocks minor releases
+/// package: ">=1.2.2 <=2.0.0 # blocks minor/patch releases
+///
+/// Example of something that should NOT cause a failure
+///
+/// package: ^1.2.3
+/// package: ">=1.2.3 <2.0.0"
+void checkPubpspecYamlForPins(YamlMap pubspecYaml, {bool fatal: true}) {
+  final List<String> infractions = [];
+  if (pubspecYaml.containsKey(dependenciesKey)) {
+    infractions.addAll(
+      getDependenciesWithPins(pubspecYaml[dependenciesKey]),
+    );
+  }
+
+  if (pubspecYaml.containsKey(devDependenciesKey)) {
+    infractions.addAll(
+      getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
+    );
+  }
+
+  if (infractions.isNotEmpty) {
+    logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
+    if (fatal) exitCode = 1;
   }
 }

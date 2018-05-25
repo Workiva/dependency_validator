@@ -16,6 +16,7 @@
 
 import 'package:test/test.dart';
 
+import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
@@ -126,6 +127,97 @@ void main() {
 
       expect(allMatches[0].group(1), 'foo');
       expect(allMatches[1].group(1), 'bar');
+    });
+  });
+
+  group('inspectVersionForPins classifies', () {
+    test('any', () {
+      expect(inspectVersionForPins('any'), DependencyPinEvaluation.notAPin);
+    });
+
+    test('empty', () {
+      expect(inspectVersionForPins('>0.0.0 <0.0.0'), DependencyPinEvaluation.emptyPin);
+    });
+
+    test('caret notation', () {
+      expect(inspectVersionForPins('^0.0.1'), DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins('^0.2.4'), DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins('^1.2.4'), DependencyPinEvaluation.notAPin);
+    });
+
+    test('1.2.3', () {
+      expect(inspectVersionForPins('1.23.456'), DependencyPinEvaluation.directPin);
+    });
+
+    test('explicit upper bound <=', () {
+      expect(inspectVersionForPins('>=1.2.3 <=4.0.0'), DependencyPinEvaluation.inclusiveMax);
+      expect(inspectVersionForPins('<=4.0.0'), DependencyPinEvaluation.inclusiveMax);
+    });
+
+    group('when upper bound blocks patch or minor updates', () {
+      test('when version starts with 0', () {
+        expect(inspectVersionForPins('>=0.2.3 <0.5.6'), DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins('<0.5.6'), DependencyPinEvaluation.blocksMinorBumps);
+      });
+
+      test('when version starts with nonzero', () {
+        expect(inspectVersionForPins('>=1.2.3 <4.5.0'), DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins('<4.5.0'), DependencyPinEvaluation.blocksMinorBumps);
+
+        expect(inspectVersionForPins('>=1.2.3 <4.0.6'), DependencyPinEvaluation.blocksPatchReleases);
+        expect(inspectVersionForPins('<4.0.6'), DependencyPinEvaluation.blocksPatchReleases);
+
+        expect(inspectVersionForPins('>=1.2.3 <1.2.4'), DependencyPinEvaluation.blocksPatchReleases);
+        expect(inspectVersionForPins('>=1.3.0 <1.4.0'), DependencyPinEvaluation.blocksMinorBumps);
+      });
+    });
+
+    test('when upper bound does not allow either patch or minor updates', () {
+      expect(inspectVersionForPins('>=1.2.3 <4.5.6'), DependencyPinEvaluation.blocksPatchReleases);
+      expect(inspectVersionForPins('<4.5.6'), DependencyPinEvaluation.blocksPatchReleases);
+    });
+
+    test('when the maximum version is 0.0.X', () {
+      expect(inspectVersionForPins('>=0.0.1 <0.0.2'), DependencyPinEvaluation.blocksMinorBumps);
+      expect(inspectVersionForPins('<0.0.2'), DependencyPinEvaluation.blocksMinorBumps);
+    });
+
+    test('when the maximum bound contains build', () {
+      expect(inspectVersionForPins('>=0.2.0 <0.3.0+1'), DependencyPinEvaluation.buildOrPrerelease);
+      expect(inspectVersionForPins('<0.2.0+1'), DependencyPinEvaluation.buildOrPrerelease);
+
+      expect(inspectVersionForPins('>=1.0.0 <2.0.0+1'), DependencyPinEvaluation.buildOrPrerelease);
+      expect(inspectVersionForPins('<2.0.0+1'), DependencyPinEvaluation.buildOrPrerelease);
+    });
+
+    group('when the maximum bound contains prerelease', () {
+      test('', () {
+        expect(inspectVersionForPins('>=0.2.0 <0.3.0-1'), DependencyPinEvaluation.buildOrPrerelease);
+        expect(inspectVersionForPins('<0.2.0-1'), DependencyPinEvaluation.buildOrPrerelease);
+
+        expect(inspectVersionForPins('>=1.0.0 <2.0.0-1'), DependencyPinEvaluation.buildOrPrerelease);
+        expect(inspectVersionForPins('<2.0.0-1'), DependencyPinEvaluation.buildOrPrerelease);
+      });
+
+      test('but determines not a pin for prerelease=0', () {
+        expect(inspectVersionForPins('>=0.2.0 <0.3.0-0'), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins('<0.2.0-0'), DependencyPinEvaluation.notAPin);
+
+        expect(inspectVersionForPins('>=1.0.0 <2.0.0-0'), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins('<2.0.0-0'), DependencyPinEvaluation.notAPin);
+      });
+    });
+
+    group('not a pin when maximum version is', () {
+      test('<X.0.0', () {
+        expect(inspectVersionForPins('>=1.0.0 <2.0.0'), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins('<2.0.0'), DependencyPinEvaluation.notAPin);
+      });
+
+      test('<0.X.0', () {
+        expect(inspectVersionForPins('>=0.2.0 <0.3.0'), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins('<0.2.0'), DependencyPinEvaluation.notAPin);
+      });
     });
   });
 }

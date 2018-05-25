@@ -22,6 +22,7 @@ final ArgParser argParser = new ArgParser()
   ..addFlag('verbose', defaultsTo: false)
   ..addOption('ignore', abbr: 'i', allowMultiple: true, splitCommas: true)
   ..addOption('exclude-dir', abbr: 'x', allowMultiple: true, splitCommas: true)
+  ..addFlag('fatal-pins', defaultsTo: true)
   ..addFlag('fatal-under-promoted', defaultsTo: true)
   ..addFlag('fatal-over-promoted', defaultsTo: true)
   ..addFlag('fatal-missing', defaultsTo: true)
@@ -40,6 +41,7 @@ void main(List<String> args) {
   final fatalMissing = argResults['fatal-missing'] ?? true;
   final fatalDevMissing = argResults['fatal-dev-missing'] ?? true;
   final fatalUnused = argResults['fatal-unused'] ?? true;
+  final fatalPins = argResults['fatal-pins'] ?? true;
 
   List<String> ignoredPackages;
 
@@ -67,12 +69,13 @@ void main(List<String> args) {
       .listen(stderr.writeln);
 
   run(
-    ignoredPackages: ignoredPackages,
     excludedDirs: excludedDirs,
-    fatalUnderPromoted: fatalUnderPromoted,
-    fatalOverPromoted: fatalOverPromoted,
-    fatalMissing: fatalMissing,
     fatalDevMissing: fatalDevMissing,
+    fatalMissing: fatalMissing,
+    fatalOverPromoted: fatalOverPromoted,
+    fatalPins: fatalPins,
     fatalUnused: fatalUnused,
+    fatalUnderPromoted: fatalUnderPromoted,
+    ignoredPackages: ignoredPackages,
   );
 }

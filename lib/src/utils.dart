@@ -14,30 +14,11 @@
 
 import 'dart:io';
 
+import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 
-/// Regex used to detect all Dart import and export directives.
-final RegExp importExportDartPackageRegex =
-    new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
-
-/// Regex used to detect all Sass import directives.
-final RegExp importScssPackageRegex = new RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
-
-/// String key in pubspec.yaml for the dependencies map.
-const String dependenciesKey = 'dependencies';
-
-/// Name of this package.
-const String dependencyValidatorPackageName = 'dependency_validator';
-
-/// String key in pubspec.yaml for the dev_dependencies map.
-const String devDependenciesKey = 'dev_dependencies';
-
-/// String key in pubspec.yaml for the package name.
-const String nameKey = 'name';
-
-/// String key in pubspec.yaml for the transformers map.
-const String transformersKey = 'transformers';
+import 'constants.dart';
 
 /// Logger instance to use within dependency_validator.
 final Logger logger = new Logger('dependency_validator');
@@ -81,4 +62,77 @@ Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDir
 void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
   logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
+}
+
+/// Lists the packages with infractions
+List<String> getDependenciesWithPins(Map dependencies) {
+  final List<String> infractions = [];
+  for (String packageName in dependencies.keys) {
+    String version;
+    final packageMeta = dependencies[packageName];
+
+    if (packageMeta is String) {
+      version = packageMeta;
+    } else if (packageMeta is Map) {
+      if (packageMeta.containsKey('version')) {
+        version = packageMeta['version'];
+      } else {
+        // This feature only works for versions, not git refs or paths.
+        continue;
+      }
+    } else {
+      continue; // no version string set
+    }
+
+    final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
+
+    if (evaluation.isPin) {
+      infractions.add('$packageName: $version -- ${evaluation.message}');
+    }
+  }
+
+  return infractions;
+}
+
+/// Returns the reason a version is a pin or null if it's not.
+DependencyPinEvaluation inspectVersionForPins(String version) {
+  final VersionConstraint constraint = new VersionConstraint.parse(version);
+
+  if (constraint.isAny) {
+    return DependencyPinEvaluation.notAPin;
+  }
+
+  if (constraint is Version) {
+    return DependencyPinEvaluation.directPin;
+  }
+
+  if (constraint is VersionRange) {
+    if (constraint.includeMax) {
+      return DependencyPinEvaluation.inclusiveMax;
+    }
+
+    final Version max = constraint.max;
+
+    if (max.build.isNotEmpty || (max.isPreRelease && !max.isFirstPreRelease)) {
+      return DependencyPinEvaluation.buildOrPrerelease;
+    }
+
+    if (max.major > 0) {
+      if (max.patch > 0) {
+        return DependencyPinEvaluation.blocksPatchReleases;
+      }
+
+      if (max.minor > 0) {
+        return DependencyPinEvaluation.blocksMinorBumps;
+      }
+    } else {
+      if (max.patch > 0) {
+        return DependencyPinEvaluation.blocksMinorBumps;
+      }
+    }
+
+    return DependencyPinEvaluation.notAPin;
+  }
+
+  return DependencyPinEvaluation.emptyPin;
 }
