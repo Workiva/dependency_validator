@@ -7,8 +7,6 @@ analyzer:
     # Type fixes or areas for explicit typing.
     implicit-casts: true
     implicit-dynamic: true
-  exclude:
-    - "test_fixtures/**"
 
 # ALL lint rules are included. Unused lints should be commented
 # out with a reason. An up to date list of all options is here
@@ -33,8 +31,8 @@ linter:
     # Separate the control structure expression from its statement.
     # http://dart-lang.github.io/linter/lints/always_put_control_body_on_new_line.html
     # recommendation: optional
-    # FIXME: 20 lint(s)
-    # - always_put_control_body_on_new_line
+    # 0 issues
+    - always_put_control_body_on_new_line
 
     # Put @required named parameters first.
     # http://dart-lang.github.io/linter/lints/always_put_required_named_parameters_first.html
@@ -51,8 +49,8 @@ linter:
     # Specify type annotations.
     # http://dart-lang.github.io/linter/lints/always_specify_types.html
     # recommendation: optional
-    # FIXME: 100 lint(s)
-    # - always_specify_types
+    # 0 issues
+    - always_specify_types
 
     # Annotate overridden members.
     # http://dart-lang.github.io/linter/lints/annotate_overrides.html
@@ -81,8 +79,8 @@ linter:
     # Avoid catches without on clauses.
     # http://dart-lang.github.io/linter/lints/avoid_catches_without_on_clauses.html
     # recommendation: optional
-    # FIXME: 1 lint(s)
-    # - avoid_catches_without_on_clauses
+    # 0 issues
+    - avoid_catches_without_on_clauses
 
     # Don't explicitly catch Error or types that implement it.
     # http://dart-lang.github.io/linter/lints/avoid_catching_errors.html
@@ -251,8 +249,8 @@ linter:
     # Only reference in scope identifiers in doc comments.
     # http://dart-lang.github.io/linter/lints/comment_references.html
     # recommendation: recommended
-    # FIXME: 1 lint(s)
-    # - comment_references
+    # 0 issues
+    - comment_references
 
     # Prefer using lowerCamelCase for constant names.
     # http://dart-lang.github.io/linter/lints/constant_identifier_names.html
@@ -269,8 +267,8 @@ linter:
     # Adhere to Effective Dart Guide directives sorting conventions.
     # http://dart-lang.github.io/linter/lints/directives_ordering.html
     # recommendation: recommended
-    # FIXME: 1 lint(s)
-    # - directives_ordering
+    # 0 issues
+    - directives_ordering
 
     # Avoid empty catch blocks.
     # http://dart-lang.github.io/linter/lints/empty_catches.html
@@ -366,8 +364,8 @@ linter:
     # http://dart-lang.github.io/linter/lints/omit_local_variable_types.html
     # recommendation: optional
     # reason: Conflicts with always_specify_types. Recommend commenting this one out.
-    # FIXME: 6 lint(s)
-    # - omit_local_variable_types
+    # 0 issues
+    - omit_local_variable_types
 
     # Avoid defining a one-member abstract class when a simple function will do.
     # http://dart-lang.github.io/linter/lints/one_member_abstracts.html
@@ -499,8 +497,8 @@ linter:
     # http://dart-lang.github.io/linter/lints/prefer_final_locals.html
     # recommendation: optional
     # reason: Generates a lot of lint since people use var a lot for local variables.
-    # FIXME: 1 lint(s)
-    # - prefer_final_locals
+    # 0 issues
+    - prefer_final_locals
 
     # Use `forEach` to only apply a function to all the elements.
     # http://dart-lang.github.io/linter/lints/prefer_foreach.html
@@ -567,8 +565,8 @@ linter:
     # http://dart-lang.github.io/linter/lints/public_member_api_docs.html
     # recommendation: optional
     # reason: Can get annoying for React component lifecycle methods, constructors.
-    # FIXME: 19 lint(s)
-    # - public_member_api_docs
+    # 0 issues
+    - public_member_api_docs
 
     # Property getter recursively returns itself.
     # http://dart-lang.github.io/linter/lints/recursive_getters.html
