@@ -54,7 +54,7 @@ Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDir
     if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
 
     return true;
-  });
+  }).cast<File>();
 }
 
 /// Logs a warning with the given [infraction] and lists all of the given
