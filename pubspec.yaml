@@ -19,7 +19,7 @@ dependencies:
 dev_dependencies:
   coverage: '>=0.9.3 <0.11.0'
   dartdoc: '>=0.14.1 <0.19.0'
-  dart_dev: ^1.8.0
+  dart_dev: ^2.0.0-alpha
   dart_style: ^1.0.8
   test: ^0.12.24+8
 
