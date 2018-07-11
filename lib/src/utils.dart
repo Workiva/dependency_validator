@@ -54,7 +54,9 @@ Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDir
     if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
 
     return true;
-  });
+    // support for both Dart1 and Dart2
+    // ignore: cast_to_non_type
+  }).map((e) => e as File);
 }
 
 /// Logs a warning with the given [infraction] and lists all of the given
