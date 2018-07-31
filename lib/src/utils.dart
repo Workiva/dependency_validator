@@ -47,14 +47,14 @@ Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
 Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDirs, String extension) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
 
-  return new Directory(dirPath).listSync(recursive: true).where((entity) {
+  return new List<File>.from(new Directory(dirPath).listSync(recursive: true).where((entity) {
     if (entity is! File) return false;
     if (p.split(entity.path).contains('packages')) return false;
     if (p.extension(entity.path) != ('.$extension')) return false;
     if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
 
     return true;
-  });
+  }));
 }
 
 /// Logs a warning with the given [infraction] and lists all of the given
