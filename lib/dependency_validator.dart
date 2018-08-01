@@ -38,7 +38,7 @@ void run({
 
   logger.info('Validating dependencies for $packageName\n');
 
-  checkPubpspecYamlForPins(pubspecYaml, fatal: fatalPins);
+  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages, fatal: fatalPins);
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
@@ -263,17 +263,21 @@ void run({
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
-void checkPubpspecYamlForPins(YamlMap pubspecYaml, {bool fatal: true}) {
+void checkPubspecYamlForPins(
+  YamlMap pubspecYaml, {
+  List<String> ignoredPackages: const [],
+  bool fatal: true,
+}) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[dependenciesKey]),
+      getDependenciesWithPins(pubspecYaml[dependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
 
   if (pubspecYaml.containsKey(devDependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
+      getDependenciesWithPins(pubspecYaml[devDependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
 

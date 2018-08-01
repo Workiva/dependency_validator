@@ -65,9 +65,13 @@ void logDependencyInfractions(String infraction, Iterable<String> dependencies) 
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map dependencies) {
+List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages: const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
+    if (ignoredPackages.contains(packageName)) {
+      continue;
+    }
+
     String version;
     final packageMeta = dependencies[packageName];
 
