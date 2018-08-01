@@ -271,17 +271,15 @@ void checkPubpspecYamlForPins(
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[dependenciesKey]),
+      getDependenciesWithPins(pubspecYaml[dependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
 
   if (pubspecYaml.containsKey(devDependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
+      getDependenciesWithPins(pubspecYaml[devDependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
-
-  infractions.removeWhere((infraction) => ignoredPackages.contains(infraction));
 
   if (infractions.isNotEmpty) {
     logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
