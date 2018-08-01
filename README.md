@@ -30,3 +30,5 @@ This package comes with a single executable: dependency_validator. To run this e
   ```bash
   dependency_validator --ignore coverage,dartdoc
   ```
+
+small check
