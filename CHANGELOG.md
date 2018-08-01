@@ -1,3 +1,10 @@
+# 1.2.2
+
+- **Bug Fix:** Ignoring a package via `--ignore` or `-i` will now also
+  work as expected for the "pinned dependency" failure. [#39][#39]
+
+[#39]: https://github.com/Workiva/dependency_validator/pull/39
+
 # 1.2.1
 
 - Dart 2 compatible. [#35][#35]
