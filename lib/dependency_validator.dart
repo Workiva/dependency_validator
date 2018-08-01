@@ -38,7 +38,7 @@ void run({
 
   logger.info('Validating dependencies for $packageName\n');
 
-  checkPubpspecYamlForPins(pubspecYaml, fatal: fatalPins);
+  checkPubpspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages, fatal: fatalPins);
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
@@ -263,7 +263,11 @@ void run({
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
-void checkPubpspecYamlForPins(YamlMap pubspecYaml, {bool fatal: true}) {
+void checkPubpspecYamlForPins(
+  YamlMap pubspecYaml, {
+  List<String> ignoredPackages: const [],
+  bool fatal: true,
+}) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
     infractions.addAll(
@@ -276,6 +280,8 @@ void checkPubpspecYamlForPins(YamlMap pubspecYaml, {bool fatal: true}) {
       getDependenciesWithPins(pubspecYaml[devDependenciesKey]),
     );
   }
+
+  infractions.removeWhere((infraction) => ignoredPackages.contains(infraction));
 
   if (infractions.isNotEmpty) {
     logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
