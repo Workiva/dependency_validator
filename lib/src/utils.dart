@@ -117,6 +117,10 @@ DependencyPinEvaluation inspectVersionForPins(String version) {
 
     final Version max = constraint.max;
 
+    if (max == null) {
+      return DependencyPinEvaluation.notAPin;
+    }
+
     if (max.build.isNotEmpty || (max.isPreRelease && !max.isFirstPreRelease)) {
       return DependencyPinEvaluation.buildOrPrerelease;
     }

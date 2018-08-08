@@ -218,6 +218,10 @@ void main() {
         expect(inspectVersionForPins('>=0.2.0 <0.3.0'), DependencyPinEvaluation.notAPin);
         expect(inspectVersionForPins('<0.2.0'), DependencyPinEvaluation.notAPin);
       });
+
+      test('unset', () {
+        expect(inspectVersionForPins('>=0.2.0'), DependencyPinEvaluation.notAPin);
+      });
     });
   });
 }
