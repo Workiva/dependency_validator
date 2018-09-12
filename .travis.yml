@@ -2,7 +2,6 @@ language: dart
 
 dart:
   - 1.24.3
-  - dev
 
 script:
   - dartanalyzer .
