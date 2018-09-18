@@ -5,7 +5,7 @@ dart:
   - 2.0.0
 
 script:
-  - dartanalyzer .
+  - dartanalyzer lib test
   - pub run dart_style:format -l 120 -n --set-exit-if-changed .
   - pub run dependency_validator -i build_runner,build_test,coverage,dartdoc,dart_style,_foo,foo,_bar,bar,foo1,foo_foo
   - ./tool/test.sh
