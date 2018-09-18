@@ -1,7 +1,8 @@
 name: dependency_pins
 version: 0.0.0
 private: true
-
+environment:
+  sdk: '>=1.24.2 <3.0.0'
 dev_dependencies:
   coverage: '>=0.9.3 <=0.13.0'
   dependency_validator:

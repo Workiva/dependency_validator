@@ -2,11 +2,11 @@ language: dart
 
 dart:
   - 1.24.3
-  - dev
+  - 2.0.0
 
 script:
   - dartanalyzer .
-  - pub run dart_style:format -l 120 -n .
+  - pub run dart_style:format -l 120 -n --set-exit-if-changed .
   - pub run dependency_validator -i build_runner,build_test,coverage,dartdoc,dart_style,_foo,foo,_bar,bar,foo1,foo_foo
   - ./tool/test.sh
 

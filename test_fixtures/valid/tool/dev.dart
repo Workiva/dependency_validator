@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'package:dart_dev/dart_dev.dart';
+import 'package:fake_project/fake.dart';
