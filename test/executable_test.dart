@@ -149,7 +149,7 @@ void main() {
       });
     });
 
-    test('warns when the analyzer pacakge is depended on but not used', () {
+    test('warns when the analyzer package is depended on but not used', () {
       final result = checkProject(projectWithAnalyzer, ignoredPackages: ['analyzer']);
 
       expect(result.exitCode, 0);
@@ -189,6 +189,17 @@ void main() {
 
         expect(result.exitCode, 1);
         expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * coverage'));
+      });
+
+      test('ignores infractions if the package is ignored', () {
+        final result = checkProject(
+          projectWithDependencyPins,
+          ignoredPackages: ['coverage'],
+          fatalUnused: false,
+        );
+
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No fatal infractions found, dependency_pins is good to go'));
       });
 
       test('warns if pins are ignored', () {
