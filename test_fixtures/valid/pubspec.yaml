@@ -1,12 +1,14 @@
 name: valid
 version: 0.0.0
 private: true
+environment:
+  sdk: '>=1.24.2 <3.0.0'
 dependencies:
   logging: any
   yaml: any
+  fake_project:
+    path: ../fake_project
 dev_dependencies:
-  dart_dev: any
-  dart_to_js_script_rewriter: any
   dependency_validator:
     path: ../..
   test: any

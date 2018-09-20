@@ -13,3 +13,4 @@
 // limitations under the License.
 
 import 'package:logging/logging.dart';
+import 'package:fake_project/fake.dart';

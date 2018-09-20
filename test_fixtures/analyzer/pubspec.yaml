@@ -1,10 +1,10 @@
 name: analyzer_dep
 version: 0.0.0
 private: true
-
+environment:
+  sdk: '>=1.24.2 <3.0.0'
 dependencies:
   analyzer: any
-
 dev_dependencies:
   dependency_validator:
     path: ../..

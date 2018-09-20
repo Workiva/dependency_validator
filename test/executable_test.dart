@@ -136,7 +136,7 @@ void main() {
         expect(result.exitCode, 1);
         expect(result.stderr,
             contains('These packages may be unused, or you may be using executables or assets from these packages:'));
-        expect(result.stderr, contains('dart_dev'));
+        expect(result.stderr, contains('fake_project'));
       });
 
       test('except when the --no-fatal-unused flag is passed in', () {
@@ -145,7 +145,7 @@ void main() {
         expect(result.exitCode, 0);
         expect(result.stderr,
             contains('These packages may be unused, or you may be using executables or assets from these packages:'));
-        expect(result.stderr, contains('dart_dev'));
+        expect(result.stderr, contains('fake_project'));
       });
     });
 
@@ -164,7 +164,7 @@ void main() {
     });
 
     test('passes when there are unused packages, but the unused packages are ignored', () {
-      final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['dart_dev']);
+      final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
