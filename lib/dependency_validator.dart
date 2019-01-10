@@ -180,10 +180,12 @@ void run({
   // dependencies when they should be dev_dependencies.
   final overPromotedDependencies =
       // Start with dependencies that are not used in lib/
-      deps
+      (deps
           .difference(packagesUsedInPublicFiles)
           // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsideLib);
+          .intersection(packagesUsedOutsideLib))
+        // Ignore known over-promoted packages.
+        ..removeAll(ignoredPackages);
 
   if (overPromotedDependencies.isNotEmpty) {
     logDependencyInfractions(

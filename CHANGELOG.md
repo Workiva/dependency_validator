@@ -1,3 +1,10 @@
+# 1.2.4
+
+- **Bug Fix:** Ignoring a package via `--ignore` or `-i` will now also work as
+  expected for the "over-promoted" failure. [#44][#44]
+
+[#44]: https://github.com/Workiva/dependency_validator/pull/44
+
 # 1.2.2
 
 - **Bug Fix:** Ignoring a package via `--ignore` or `-i` will now also
