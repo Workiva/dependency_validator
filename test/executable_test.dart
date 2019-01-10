@@ -83,6 +83,11 @@ void main() {
         expect(result.exitCode, equals(0));
         expect(result.stderr, isEmpty);
       });
+
+      test('except when they are ignored', () {
+        final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml', 'somescsspackage']);
+        expect(result.exitCode, 0);
+      });
     });
 
     group('fails when there are over promoted packages', () {
@@ -104,6 +109,11 @@ void main() {
             contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
         expect(result.stderr, contains('path'));
         expect(result.stderr, contains('yaml'));
+      });
+
+      test('except when they are ignored', () {
+        final result = checkProject(projectWithOverPromotedDeps, ignoredPackages: ['path', 'yaml']);
+        expect(result.exitCode, 0);
       });
     });
 
@@ -127,6 +137,11 @@ void main() {
         expect(result.stderr, contains('logging'));
         expect(result.stderr, contains('yaml'));
       });
+
+      test('except when they are ignored', () {
+        final result = checkProject(projectWithUnderPromotedDeps, ignoredPackages: ['logging', 'yaml']);
+        expect(result.exitCode, 0);
+      });
     });
 
     group('fails when there are unused packages', () {
@@ -146,6 +161,11 @@ void main() {
         expect(result.stderr,
             contains('These packages may be unused, or you may be using executables or assets from these packages:'));
         expect(result.stderr, contains('fake_project'));
+      });
+
+      test('except when they are ignored', () {
+        final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
+        expect(result.exitCode, 0);
       });
     });
 
