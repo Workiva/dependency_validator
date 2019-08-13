@@ -20,6 +20,15 @@ const String nameKey = 'name';
 /// String key in pubspec.yaml for the transformers map.
 const String transformersKey = 'transformers';
 
+/// Packages that are typically only used for their binaries.
+const List<String> commonBinaryPackages = const [
+  'build_runner',
+  'build_test',
+  'build_web_compilers',
+  'built_value_generator',
+  'dart_style',
+];
+
 /// Provides a set of reasons why version strings might be pins.
 class DependencyPinEvaluation {
   /// The justification for why this is a pin.

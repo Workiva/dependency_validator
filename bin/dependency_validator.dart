@@ -21,6 +21,7 @@ import 'package:dependency_validator/dependency_validator.dart';
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
 const String ignoreArg = 'ignore';
+const String ignoreCommonBinariesArg = 'ignore-common-binaries';
 
 const String excludeDirArg = 'exclude-dir';
 
@@ -53,6 +54,10 @@ final ArgParser argParser = new ArgParser()
     help: 'Comma-delimited list of packages to ignore from validation.',
     splitCommas: true,
   )
+  ..addFlag(ignoreCommonBinariesArg,
+      defaultsTo: true,
+      help: 'Whether to ignore the following packages that are typically used only for their binaries:\n'
+          '${commonBinaryPackages.map((packageName) => '- $packageName').join('\n')}')
   ..addOption(
     excludeDirArg,
     abbr: 'x',
@@ -139,7 +144,12 @@ void main(List<String> args) {
   if (argResults.wasParsed('ignore')) {
     ignoredPackages = argResults['ignore'];
   } else {
-    ignoredPackages = const <String>[];
+    ignoredPackages = <String>[];
+  }
+
+  final ignoreCommonBinaries = argResults[ignoreCommonBinariesArg] ?? true;
+  if (ignoreCommonBinaries) {
+    ignoredPackages.addAll(commonBinaryPackages);
   }
 
   List<String> excludedDirs;

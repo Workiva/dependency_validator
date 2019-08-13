@@ -16,6 +16,7 @@
 
 import 'dart:io';
 
+import 'package:dependency_validator/dependency_validator.dart';
 import 'package:test/test.dart';
 
 const String projectWithMissingDeps = 'test_fixtures/missing';
@@ -25,6 +26,7 @@ const String projectWithUnusedDeps = 'test_fixtures/unused';
 const String projectWithAnalyzer = 'test_fixtures/analyzer';
 const String projectWithNoProblems = 'test_fixtures/valid';
 const String projectWithDependencyPins = 'test_fixtures/dependency_pins';
+const String projectWithCommonBinaries = 'test_fixtures/common_binaries';
 
 ProcessResult checkProject(
   String projectPath, {
@@ -36,6 +38,7 @@ ProcessResult checkProject(
   bool fatalPins = true,
   bool fatalUnderPromoted = true,
   bool fatalUnused = true,
+  bool ignoreCommonBinaries = true,
 }) {
   Process.runSync('pub', ['get'], workingDirectory: projectPath);
 
@@ -49,6 +52,7 @@ ProcessResult checkProject(
   if (!fatalUnderPromoted) args.add('--no-fatal-under-promoted');
   if (!fatalUnused) args.add('--no-fatal-unused');
   if (!fatalPins) args.add('--no-fatal-pins');
+  if (!ignoreCommonBinaries) args.add('--no-ignore-common-binaries');
 
   // This makes it easier to print(result.stdout) for debugging tests
   args.add('--verbose');
@@ -188,6 +192,25 @@ void main() {
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
+    });
+
+    test('passes when there are unused known common binary packages', () {
+      final result = checkProject(projectWithCommonBinaries);
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
+    });
+
+    test('fails when there are unused known common binary packages and they are not ignored', () {
+      final result = checkProject(projectWithCommonBinaries, ignoreCommonBinaries: false);
+
+      expect(result.exitCode, 1);
+      expect(result.stderr,
+          contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+
+      for (var packageName in commonBinaryPackages) {
+        expect(result.stderr, contains(packageName));
+      }
     });
 
     test('passes when there are missing packages, but the missing packages are ignored', () {
