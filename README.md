@@ -30,3 +30,9 @@ This package comes with a single executable: dependency_validator. To run this e
   ```bash
   dependency_validator --ignore coverage,dartdoc
   ```
+- Common binary packages: By default, common packages used solely for their
+  binaries, such as `build_runner` and `dart_style`, are automatically ignored.
+  For the current set of whitelisted binary packages, refer to the help:
+  `dependency_validator -h`.
+  - Optionally do not ignore common binary packages using the
+    `--no-ignore-common-binaries` flag.
