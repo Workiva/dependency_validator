@@ -5,6 +5,7 @@ doc/api
 exports
 packages
 .packages
+.dart_tool
 
 *.dart.js
 *.js_

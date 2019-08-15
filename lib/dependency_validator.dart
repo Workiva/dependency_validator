@@ -19,6 +19,8 @@ import 'package:yaml/yaml.dart';
 import 'src/constants.dart';
 import 'src/utils.dart';
 
+export 'src/constants.dart' show commonBinaryPackages;
+
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
   List<String> excludedDirs = const [],
