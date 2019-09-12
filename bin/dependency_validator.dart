@@ -36,7 +36,7 @@ const String fatalOverPromotedArg = 'fatal-over-promoted';
 const String fatalUnusedArg = 'fatal-unused';
 
 /// Parses the command-line arguments
-final ArgParser argParser = new ArgParser()
+final ArgParser argParser = ArgParser()
   ..addFlag(
     helpArg,
     abbr: 'h',
@@ -47,10 +47,9 @@ final ArgParser argParser = new ArgParser()
     defaultsTo: false,
     help: 'Display extra information for debugging.',
   )
-  ..addOption(
+  ..addMultiOption(
     ignoreArg,
     abbr: 'i',
-    allowMultiple: true,
     help: 'Comma-delimited list of packages to ignore from validation.',
     splitCommas: true,
   )
@@ -58,10 +57,9 @@ final ArgParser argParser = new ArgParser()
       defaultsTo: true,
       help: 'Whether to ignore the following packages that are typically used only for their binaries:\n'
           '${commonBinaryPackages.map((packageName) => '- $packageName').join('\n')}')
-  ..addOption(
+  ..addMultiOption(
     excludeDirArg,
     abbr: 'x',
-    allowMultiple: true,
     help: 'Comma-delimited list of directories to exclude from validation.',
     splitCommas: true,
   )
@@ -120,7 +118,7 @@ void main(List<String> args) {
   ArgResults argResults;
   try {
     argResults = argParser.parse(args);
-  } catch (e) {
+  } on FormatException catch (_) {
     showHelpAndExit();
   }
 

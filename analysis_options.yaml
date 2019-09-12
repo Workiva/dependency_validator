@@ -342,11 +342,6 @@ linter:
     # 0 issues
     - prefer_asserts_in_initializer_lists
 
-    # Prefer using a boolean as the assert condition.
-    # recommendation: optional
-    # 0 issues
-    - prefer_bool_in_asserts
-
     # Use collection literals when possible.
     # recommendation: optional
     # 0 issues
@@ -473,11 +468,6 @@ linter:
     # recommendation: optional
     # 0 issues
     - sort_unnamed_constructors_first
-
-    # Place the `super` call last in a constructor initialization list.
-    # recommendation: optional
-    # 0 issues
-    - super_goes_last
 
     # Test type arguments in operator ==(Object other).
     # recommendation: required

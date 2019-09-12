@@ -33,7 +33,7 @@ void run({
   List<String> ignoredPackages = const [],
 }) {
   // Read and parse the pubspec.yaml in the current working directory.
-  final YamlMap pubspecYaml = loadYaml(new File('pubspec.yaml').readAsStringSync());
+  final YamlMap pubspecYaml = loadYaml(File('pubspec.yaml').readAsStringSync());
 
   // Extract the package name.
   final packageName = pubspecYaml[nameKey];
@@ -43,26 +43,24 @@ void run({
   checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages, fatal: fatalPins);
 
   // Extract the package names from the `dependencies` section.
-  final deps = pubspecYaml.containsKey(dependenciesKey)
-      ? new Set<String>.from(pubspecYaml[dependenciesKey].keys)
-      : new Set<String>();
+  final deps =
+      pubspecYaml.containsKey(dependenciesKey) ? Set<String>.from(pubspecYaml[dependenciesKey].keys) : <String>{};
   logger.fine('dependencies:\n${bulletItems(deps)}\n');
 
   // Extract the package names from the `dev_dependencies` section.
-  final devDeps = pubspecYaml.containsKey(devDependenciesKey)
-      ? new Set<String>.from(pubspecYaml[devDependenciesKey].keys)
-      : new Set<String>();
+  final devDeps =
+      pubspecYaml.containsKey(devDependenciesKey) ? Set<String>.from(pubspecYaml[devDependenciesKey].keys) : <String>{};
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
   // Extract the package names from the `transformers` section.
   final Iterable transformerEntries = pubspecYaml[transformersKey];
   final packagesUsedViaTransformers = pubspecYaml.containsKey(transformersKey)
-      ? new Set<String>.from(transformerEntries.map<String>((value) {
+      ? Set<String>.from(transformerEntries.map<String>((value) {
           if (value is YamlMap) return value.keys.first;
           return value;
-        }).map((value) => value.replaceFirst(new RegExp(r'/.*'), '')))
-      : new Set<String>();
+        }).map((value) => value.replaceFirst(RegExp(r'/.*'), '')))
+      : <String>{};
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
 
@@ -83,7 +81,7 @@ void run({
 
   // Read each file in lib/ and parse the package names from every import and
   // export directive.
-  final packagesUsedInPublicFiles = new Set<String>();
+  final packagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
@@ -120,7 +118,7 @@ void run({
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
-  final packagesUsedOutsideLib = new Set<String>();
+  final packagesUsedOutsideLib = <String>{};
   for (final file in nonLibDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
@@ -228,7 +226,7 @@ void run({
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
       'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
-          'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.',
+      'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.',
     );
   }
 
@@ -269,8 +267,8 @@ void run({
 /// package: ">=1.2.3 <2.0.0"
 void checkPubspecYamlForPins(
   YamlMap pubspecYaml, {
-  List<String> ignoredPackages: const [],
-  bool fatal: true,
+  List<String> ignoredPackages = const [],
+  bool fatal = true,
 }) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {

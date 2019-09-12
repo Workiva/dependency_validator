@@ -1,9 +1,9 @@
 /// Regex used to detect all Dart import and export directives.
 final RegExp importExportDartPackageRegex =
-    new RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
+    RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
 
 /// Regex used to detect all Sass import directives.
-final RegExp importScssPackageRegex = new RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
+final RegExp importScssPackageRegex = RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
 
 /// String key in pubspec.yaml for the dependencies map.
 const String dependenciesKey = 'dependencies';
@@ -21,7 +21,7 @@ const String nameKey = 'name';
 const String transformersKey = 'transformers';
 
 /// Packages that are typically only used for their binaries.
-const List<String> commonBinaryPackages = const [
+const List<String> commonBinaryPackages = [
   'build_runner',
   'build_test',
   'build_vm_compilers',
@@ -33,44 +33,43 @@ const List<String> commonBinaryPackages = const [
 
 /// Provides a set of reasons why version strings might be pins.
 class DependencyPinEvaluation {
+  const DependencyPinEvaluation._(this.message, {this.isPin = true});
+
   /// The justification for why this is a pin.
   final String message;
 
   /// Whether this is a pin.
   final bool isPin;
 
-  const DependencyPinEvaluation._(this.message, {this.isPin: true});
-
   @override
   String toString() => message;
 
   /// <1.2.0
-  static const DependencyPinEvaluation blocksMinorBumps =
-      const DependencyPinEvaluation._('This pin blocks minor bumps.');
+  static const DependencyPinEvaluation blocksMinorBumps = DependencyPinEvaluation._('This pin blocks minor bumps.');
 
   /// <1.2.3
   static const DependencyPinEvaluation blocksPatchReleases =
-      const DependencyPinEvaluation._('This pin blocks patch upgrades.');
+      DependencyPinEvaluation._('This pin blocks patch upgrades.');
 
   /// <1.0.0+a or <1.0.0-a
   ///
   /// Note that <1.0.0-0 is legal because the exclusive bounds ignore the first
   /// possible prerelease.
   static const DependencyPinEvaluation buildOrPrerelease =
-      const DependencyPinEvaluation._('Builds or preleases as max bounds block minor bumps and patches.');
+      DependencyPinEvaluation._('Builds or preleases as max bounds block minor bumps and patches.');
 
   /// 1.2.3
-  static const DependencyPinEvaluation directPin = const DependencyPinEvaluation._('This is a direct pin.');
+  static const DependencyPinEvaluation directPin = DependencyPinEvaluation._('This is a direct pin.');
 
   /// >1.2.3 <1.2.3
   static const DependencyPinEvaluation emptyPin =
-      const DependencyPinEvaluation._('Empty dependency versions cannot be resolved.');
+      DependencyPinEvaluation._('Empty dependency versions cannot be resolved.');
 
   /// <=1.2.3
   static const DependencyPinEvaluation inclusiveMax =
-      const DependencyPinEvaluation._('Inclusive max bounds restrict minor bumps and patches.');
+      DependencyPinEvaluation._('Inclusive max bounds restrict minor bumps and patches.');
 
   /// :)
   static const DependencyPinEvaluation notAPin =
-      const DependencyPinEvaluation._('This dependency is good to go.', isPin: false);
+      DependencyPinEvaluation._('This dependency is good to go.', isPin: false);
 }

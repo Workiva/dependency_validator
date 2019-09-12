@@ -118,7 +118,7 @@ void main() {
     });
 
     test('with multiple import\'s in the same line', () {
-      final input = '@import "package:foo/bar"; @import "package:bar/foo";';
+      const input = '@import "package:foo/bar"; @import "package:bar/foo";';
 
       expect(input, matches(importScssPackageRegex));
 

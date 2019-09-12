@@ -11,8 +11,7 @@ packages
 *.js_
 *.js.deps
 
-# Test fixtures have pubspec.lock committed
-/pubspec.lock
+pubspec.lock
 
 .idea
 session.json
