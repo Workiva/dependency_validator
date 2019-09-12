@@ -27,6 +27,7 @@ const List<String> commonBinaryPackages = const [
   'build_vm_compilers',
   'build_web_compilers',
   'built_value_generator',
+  'coverage',
   'dart_style',
 ];
 
