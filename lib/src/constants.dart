@@ -24,6 +24,7 @@ const String transformersKey = 'transformers';
 const List<String> commonBinaryPackages = const [
   'build_runner',
   'build_test',
+  'build_vm_compilers',
   'build_web_compilers',
   'built_value_generator',
   'dart_style',
