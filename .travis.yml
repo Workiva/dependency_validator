@@ -1,14 +1,14 @@
 language: dart
 
 dart:
-  - 1.24.3
-  - 2.0.0
+  - stable
+  - dev
 
 script:
-  - dartanalyzer lib test
-  - pub run dart_style:format -l 120 -n --set-exit-if-changed .
-  - pub run dependency_validator -i coverage,dartdoc,_foo,foo,_bar,bar,foo1,foo_foo
-  - ./tool/test.sh
+  - dartanalyzer .
+  - dartfmt -l 120 -n --set-exit-if-changed .
+  - pub run dependency_validator -i _foo,foo,_bar,bar,foo1,foo_foo
+  - pub run test
 
 cache:
  directories:

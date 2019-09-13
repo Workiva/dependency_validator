@@ -231,13 +231,13 @@ void main() {
         );
 
         expect(result.exitCode, 1);
-        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * coverage'));
+        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
       test('ignores infractions if the package is ignored', () {
         final result = checkProject(
           projectWithDependencyPins,
-          ignoredPackages: ['coverage'],
+          ignoredPackages: ['logging'],
           fatalUnused: false,
         );
 
@@ -253,7 +253,7 @@ void main() {
         );
 
         expect(result.exitCode, 0);
-        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * coverage'));
+        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
       });
     });
   });

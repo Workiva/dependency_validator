@@ -1,3 +1,21 @@
+# 1.4.0
+
+- **Improvement:** Add `coverage` and `build_vm_compilers` to the list of
+  commonly used binary packages that are ignored by default. [#50][#50]
+
+- Raised minimum Dart SDK version to 2.2.0 (no longer supports Dart 1). [#50][#50]
+
+[#50]: https://github.com/Workiva/dependency_validator/pull/50
+
+# 1.3.0
+
+- **Improvement:** Ignore commonly used binary packages by default. This can be
+  disabled via `--no-ignore-common-binaries`.
+  Run `pub run dependency_validator -h` to see which packages will be ignored by
+  this flag. [#47][#47]
+
+[#47]: https://github.com/Workiva/dependency_validator/pull/47
+
 # 1.2.4
 
 - **Bug Fix:** Ignoring a package via `--ignore` or `-i` will now also work as

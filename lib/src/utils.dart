@@ -21,7 +21,7 @@ import 'package:path/path.dart' as p;
 import 'constants.dart';
 
 /// Logger instance to use within dependency_validator.
-final Logger logger = new Logger('dependency_validator');
+final Logger logger = Logger('dependency_validator');
 
 /// Returns a multi-line string with all [items] in a bulleted list format.
 String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
@@ -40,14 +40,14 @@ Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) =>
 Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
     listFilesWithExtensionIn(dirPath, excludedDirs, 'scss');
 
-/// Returns an iterable of all files ending in .[type] in the given
+/// Returns an iterable of all files ending in .[extension] in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///
 /// This also excludes files that are in a `packages/` subdirectory.
 Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDirs, String extension) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
 
-  return new List<File>.from(new Directory(dirPath).listSync(recursive: true).where((entity) {
+  return List<File>.from(Directory(dirPath).listSync(recursive: true).where((entity) {
     if (entity is! File) return false;
     if (p.split(entity.path).contains('packages')) return false;
     if (p.extension(entity.path) != ('.$extension')) return false;
@@ -65,7 +65,7 @@ void logDependencyInfractions(String infraction, Iterable<String> dependencies) 
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages: const []}) {
+List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {
@@ -100,7 +100,7 @@ List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPack
 
 /// Returns the reason a version is a pin or null if it's not.
 DependencyPinEvaluation inspectVersionForPins(String version) {
-  final VersionConstraint constraint = new VersionConstraint.parse(version);
+  final VersionConstraint constraint = VersionConstraint.parse(version);
 
   if (constraint.isAny) {
     return DependencyPinEvaluation.notAPin;
