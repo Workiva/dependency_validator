@@ -28,8 +28,8 @@ const List<String> commonBinaryPackages = [
   'build_web_compilers',
   'built_value_generator',
   'coverage',
-  'dart_style',
   'dart_dev',
+  'dart_style',
 ];
 
 /// Provides a set of reasons why version strings might be pins.
