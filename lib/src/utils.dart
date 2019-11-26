@@ -17,6 +17,7 @@ import 'dart:io';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import 'constants.dart';
 
@@ -25,6 +26,21 @@ final Logger logger = Logger('dependency_validator');
 
 /// Returns a multi-line string with all [items] in a bulleted list format.
 String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
+
+/// Returns the name of the package referenced in the `include:` directive in an
+/// analysis_options.yaml file, or null if there is not one.
+String getAnalysisOptionsIncludePackage({String path}) {
+  final optionsFile = File(p.join(path ?? p.current, 'analysis_options.yaml'));
+  if (!optionsFile.existsSync()) return null;
+
+  final YamlMap analysisOptions = loadYaml(optionsFile.readAsStringSync());
+  if (analysisOptions == null) return null;
+
+  final String include = analysisOptions['include'];
+  if (include == null || !include.startsWith('package:')) return null;
+
+  return Uri.parse(include).pathSegments.first;
+}
 
 /// Returns an iterable of all Dart files (files ending in .dart) in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].

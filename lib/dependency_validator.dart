@@ -32,6 +32,9 @@ void run({
   bool fatalUnused = true,
   List<String> ignoredPackages = const [],
 }) {
+  // Read and parse the analysis_options.yaml in the current working directory.
+  final optionsIncludePackage = getAnalysisOptionsIncludePackage();
+
   // Read and parse the pubspec.yaml in the current working directory.
   final YamlMap pubspecYaml = loadYaml(File('pubspec.yaml').readAsStringSync());
 
@@ -118,7 +121,9 @@ void run({
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
-  final packagesUsedOutsideLib = <String>{};
+  final packagesUsedOutsideLib = <String>{
+    if (optionsIncludePackage != null) optionsIncludePackage,
+  };
   for (final file in nonLibDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
