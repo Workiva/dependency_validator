@@ -1,3 +1,11 @@
+# 1.4.2
+
+- Detect package usage in `analysis_options.yaml` files.
+
+# 1.4.1
+
+- Add `dart_dev` to common binaries list so that it is automatically ignored.
+
 # 1.4.0
 
 - **Improvement:** Add `coverage` and `build_vm_compilers` to the list of

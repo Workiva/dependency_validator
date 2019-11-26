@@ -15,11 +15,38 @@
 @TestOn('vm')
 
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
+  group('getAnalysisOptionsIncludePackage', () {
+    test('no analysis_options.yaml', () {
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
+    });
+
+    test('empty file', () async {
+      await d.file('analysis_options.yaml', '').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
+    });
+
+    test('no `include:`', () async {
+      await d.file('analysis_options.yaml', '''
+linter:
+  rules: []
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
+    });
+
+    test('returns package name from `include:`', () async {
+      await d.file('analysis_options.yaml', '''
+include: package:pedantic/analysis_options.1.8.0.yaml
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), 'pedantic');
+    });
+  });
+
   group('importExportDartPackageRegex matches correctly for', () {
     void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
       expect(input, matches(importExportDartPackageRegex));

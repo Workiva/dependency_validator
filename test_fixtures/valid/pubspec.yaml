@@ -11,6 +11,7 @@ dependencies:
 dev_dependencies:
   dependency_validator:
     path: ../..
+  pedantic: any
   test: any
 
 transformers:

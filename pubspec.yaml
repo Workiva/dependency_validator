@@ -7,7 +7,7 @@ authors:
   - Evan Weible <evan.weible@workiva.com>
 
 environment:
-  sdk: '>=2.2.0 <3.0.0'
+  sdk: '>=2.3.0 <3.0.0'
 
 dependencies:
   args: '>=0.13.7 <2.0.0'
@@ -17,7 +17,8 @@ dependencies:
   yaml: ^2.1.13
 
 dev_dependencies:
-  test: '>=0.12.30 <2.0.0'
+  test: ^1.9.4
+  test_descriptor: ^1.2.0
 
 executables:
   dependency_validator:

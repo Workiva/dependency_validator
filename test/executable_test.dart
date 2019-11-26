@@ -42,20 +42,34 @@ ProcessResult checkProject(
 }) {
   Process.runSync('pub', ['get'], workingDirectory: projectPath);
 
-  final args = ['run', 'dependency_validator'];
-
-  if (ignoredPackages.isNotEmpty) args..add('--ignore')..add(ignoredPackages.join(','));
-  if (excludeDirs.isNotEmpty) args..add('--exclude-dir')..add(excludeDirs.join(','));
-  if (!fatalDevMissing) args.add('--no-fatal-dev-mising');
-  if (!fatalMissing) args.add('--no-fatal-missing');
-  if (!fatalOverPromoted) args.add('--no-fatal-over-promoted');
-  if (!fatalUnderPromoted) args.add('--no-fatal-under-promoted');
-  if (!fatalUnused) args.add('--no-fatal-unused');
-  if (!fatalPins) args.add('--no-fatal-pins');
-  if (!ignoreCommonBinaries) args.add('--no-ignore-common-binaries');
-
-  // This makes it easier to print(result.stdout) for debugging tests
-  args.add('--verbose');
+  final args = [
+    'run',
+    'dependency_validator',
+    if (ignoredPackages.isNotEmpty) ...[
+      '--ignore',
+      ignoredPackages.join(','),
+    ],
+    if (excludeDirs.isNotEmpty) ...[
+      '--exclude-dir',
+      excludeDirs.join(','),
+    ],
+    if (!fatalDevMissing)
+      '--no-fatal-dev-mising',
+    if (!fatalMissing)
+      '--no-fatal-missing',
+    if (!fatalOverPromoted)
+      '--no-fatal-over-promoted',
+    if (!fatalUnderPromoted)
+      '--no-fatal-under-promoted',
+    if (!fatalUnused)
+      '--no-fatal-unused',
+    if (!fatalPins)
+      '--no-fatal-pins',
+    if (!ignoreCommonBinaries)
+      '--no-ignore-common-binaries',
+    // This makes it easier to print(result.stdout) for debugging tests
+    '--verbose',
+  ];
 
   return Process.runSync('pub', args, workingDirectory: projectPath);
 }
