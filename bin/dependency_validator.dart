@@ -15,8 +15,10 @@
 import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
+import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:dependency_validator/dependency_validator.dart';
+import 'package:path/path.dart' as p;
 
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
@@ -55,7 +57,8 @@ final ArgParser argParser = ArgParser()
   )
   ..addFlag(ignoreCommonBinariesArg,
       defaultsTo: true,
-      help: 'Whether to ignore the following packages that are typically used only for their binaries:\n'
+      help:
+          'Whether to ignore the following packages that are typically used only for their binaries:\n'
           '${commonBinaryPackages.map((packageName) => '- $packageName').join('\n')}')
   ..addMultiOption(
     excludeDirArg,
@@ -70,34 +73,33 @@ final ArgParser argParser = ArgParser()
   )
   ..addFlag(
     fatalUnderPromotedArg,
-    help: 'Whether to fail on dependencies that are in `dev_dependencies` that should be in `dependencies`.',
+    help:
+        'Whether to fail on dependencies that are in `dev_dependencies` that should be in `dependencies`.',
     defaultsTo: true,
   )
   ..addFlag(
     fatalOverPromotedArg,
     defaultsTo: true,
-    help: 'Whether to fail on dependencies that are in `dependencies` that should be in `dev_dependencies`.',
+    help:
+        'Whether to fail on dependencies that are in `dependencies` that should be in `dev_dependencies`.',
   )
   ..addFlag(
     fatalMissingArg,
     defaultsTo: true,
-    help: 'Whether to fail on dependencies that are missing from `dependencies`.',
+    help:
+        'Whether to fail on dependencies that are missing from `dependencies`.',
   )
   ..addFlag(
     fatalDevMissingArg,
     defaultsTo: true,
-    help: 'Whether to fail on dependencies that are missing from `dev_dependencies`.',
+    help:
+        'Whether to fail on dependencies that are missing from `dev_dependencies`.',
   )
   ..addFlag(
     fatalUnusedArg,
     defaultsTo: true,
-    help: 'Whether to fail on dependencies in the `pubspec.yaml` that are never used in any of:\n'
-        '- bin/\n'
-        '- lib/\n'
-        '- examples/\n'
-        '- test/\n'
-        '- tool/\n'
-        '- web/\n',
+    help:
+        'Whether to fail on dependencies in `pubspec.yaml` that are never used.',
   );
 
 void showHelpAndExit() {
@@ -150,16 +152,16 @@ void main(List<String> args) {
     ignoredPackages.addAll(commonBinaryPackages);
   }
 
-  List<String> excludedDirs;
-
+  final excludes = <Glob>[];
   if (argResults.wasParsed('exclude-dir')) {
-    excludedDirs = argResults['exclude-dir'];
-  } else {
-    excludedDirs = const <String>[];
+    for (final dir in argResults['exclude-dir'] as List<String>) {
+      excludes
+          .add(Glob(dir.endsWith(p.separator) ? dir : '$dir${p.separator}'));
+    }
   }
 
   run(
-    excludedDirs: excludedDirs,
+    excludes: excludes,
     fatalDevMissing: fatalDevMissing,
     fatalMissing: fatalMissing,
     fatalOverPromoted: fatalOverPromoted,

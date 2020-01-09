@@ -81,29 +81,38 @@ void main() {
         final result = checkProject(projectWithMissingDeps);
 
         expect(result.exitCode, equals(1));
-        expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are used in lib/ but are not dependencies:'));
         expect(result.stderr, contains('yaml'));
         expect(result.stderr, contains('somescsspackage'));
       });
 
       test('except when the --no-fatal-missing flag is passed in', () {
-        final result = checkProject(projectWithMissingDeps, fatalMissing: false);
+        final result =
+            checkProject(projectWithMissingDeps, fatalMissing: false);
 
         expect(result.exitCode, equals(0));
-        expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are used in lib/ but are not dependencies:'));
         expect(result.stderr, contains('yaml'));
         expect(result.stderr, contains('somescsspackage'));
       });
 
       test('except when the lib directory is excluded', () {
-        final result = checkProject(projectWithMissingDeps, excludeDirs: ['lib/']);
+        final result =
+            checkProject(projectWithMissingDeps, excludeDirs: ['lib/']);
 
         expect(result.exitCode, equals(0));
         expect(result.stderr, isEmpty);
       });
 
       test('except when they are ignored', () {
-        final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml', 'somescsspackage']);
+        final result = checkProject(projectWithMissingDeps,
+            ignoredPackages: ['yaml', 'somescsspackage']);
         expect(result.exitCode, 0);
       });
     });
@@ -113,24 +122,30 @@ void main() {
         final result = checkProject(projectWithOverPromotedDeps);
 
         expect(result.exitCode, 1);
-        expect(result.stderr,
-            contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
         expect(result.stderr, contains('path'));
         expect(result.stderr, contains('yaml'));
       });
 
       test('except when the --no-fatal-over-promoted flag is passed in', () {
-        final result = checkProject(projectWithOverPromotedDeps, fatalOverPromoted: false);
+        final result =
+            checkProject(projectWithOverPromotedDeps, fatalOverPromoted: false);
 
         expect(result.exitCode, 0);
-        expect(result.stderr,
-            contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
         expect(result.stderr, contains('path'));
         expect(result.stderr, contains('yaml'));
       });
 
       test('except when they are ignored', () {
-        final result = checkProject(projectWithOverPromotedDeps, ignoredPackages: ['path', 'yaml']);
+        final result = checkProject(projectWithOverPromotedDeps,
+            ignoredPackages: ['path', 'yaml']);
         expect(result.exitCode, 0);
       });
     });
@@ -141,23 +156,29 @@ void main() {
 
         expect(result.exitCode, 1);
         expect(
-            result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
+            result.stderr,
+            contains(
+                'These packages are used in lib/ and should be promoted to actual dependencies:'));
         expect(result.stderr, contains('logging'));
         expect(result.stderr, contains('yaml'));
       });
 
       test('except when the --no-fatal-under-promoted flag is passed in', () {
-        final result = checkProject(projectWithUnderPromotedDeps, fatalUnderPromoted: false);
+        final result = checkProject(projectWithUnderPromotedDeps,
+            fatalUnderPromoted: false);
 
         expect(result.exitCode, 0);
         expect(
-            result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
+            result.stderr,
+            contains(
+                'These packages are used in lib/ and should be promoted to actual dependencies:'));
         expect(result.stderr, contains('logging'));
         expect(result.stderr, contains('yaml'));
       });
 
       test('except when they are ignored', () {
-        final result = checkProject(projectWithUnderPromotedDeps, ignoredPackages: ['logging', 'yaml']);
+        final result = checkProject(projectWithUnderPromotedDeps,
+            ignoredPackages: ['logging', 'yaml']);
         expect(result.exitCode, 0);
       });
     });
@@ -167,8 +188,10 @@ void main() {
         final result = checkProject(projectWithUnusedDeps);
 
         expect(result.exitCode, 1);
-        expect(result.stderr,
-            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages may be unused, or you may be using executables or assets from these packages:'));
         expect(result.stderr, contains('fake_project'));
       });
 
@@ -176,65 +199,88 @@ void main() {
         final result = checkProject(projectWithUnusedDeps, fatalUnused: false);
 
         expect(result.exitCode, 0);
-        expect(result.stderr,
-            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages may be unused, or you may be using executables or assets from these packages:'));
         expect(result.stderr, contains('fake_project'));
       });
 
       test('except when they are ignored', () {
-        final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
+        final result = checkProject(projectWithUnusedDeps,
+            ignoredPackages: ['fake_project']);
         expect(result.exitCode, 0);
       });
     });
 
     test('warns when the analyzer package is depended on but not used', () {
-      final result = checkProject(projectWithAnalyzer, ignoredPackages: ['analyzer']);
+      final result =
+          checkProject(projectWithAnalyzer, ignoredPackages: ['analyzer']);
 
       expect(result.exitCode, 0);
-      expect(result.stderr, contains('You do not need to depend on `analyzer` to run the Dart analyzer.'));
+      expect(
+          result.stderr,
+          contains(
+              'You do not need to depend on `analyzer` to run the Dart analyzer.'));
     });
 
     test('passes when all dependencies are used and valid', () {
       final result = checkProject(projectWithNoProblems);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
+      expect(result.stdout,
+          contains('No fatal infractions found, valid is good to go!'));
     });
 
-    test('passes when there are unused packages, but the unused packages are ignored', () {
-      final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
+    test(
+        'passes when there are unused packages, but the unused packages are ignored',
+        () {
+      final result = checkProject(projectWithUnusedDeps,
+          ignoredPackages: ['fake_project']);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
+      expect(result.stdout,
+          contains('No fatal infractions found, unused is good to go!'));
     });
 
     test('passes when there are unused known common binary packages', () {
       final result = checkProject(projectWithCommonBinaries);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
+      expect(
+          result.stdout,
+          contains(
+              'No fatal infractions found, common_binaries is good to go!'));
     });
 
-    test('fails when there are unused known common binary packages and they are not ignored', () {
-      final result = checkProject(projectWithCommonBinaries, ignoreCommonBinaries: false);
+    test(
+        'fails when there are unused known common binary packages and they are not ignored',
+        () {
+      final result =
+          checkProject(projectWithCommonBinaries, ignoreCommonBinaries: false);
 
       expect(result.exitCode, 1);
-      expect(result.stderr,
-          contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+      expect(
+          result.stderr,
+          contains(
+              'These packages may be unused, or you may be using executables or assets from these packages:'));
 
       for (var packageName in commonBinaryPackages) {
         expect(result.stderr, contains(packageName));
       }
     });
 
-    test('passes when there are missing packages, but the missing packages are ignored', () {
+    test(
+        'passes when there are missing packages, but the missing packages are ignored',
+        () {
       final result = checkProject(projectWithMissingDeps, ignoredPackages: [
         'yaml',
         'somescsspackage',
       ]);
 
       expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, missing is good to go!'));
+      expect(result.stdout,
+          contains('No fatal infractions found, missing is good to go!'));
     });
 
     group('when a dependency is pinned', () {
@@ -245,7 +291,10 @@ void main() {
         );
 
         expect(result.exitCode, 1);
-        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
       test('ignores infractions if the package is ignored', () {
@@ -256,7 +305,10 @@ void main() {
         );
 
         expect(result.exitCode, 0);
-        expect(result.stdout, contains('No fatal infractions found, dependency_pins is good to go'));
+        expect(
+            result.stdout,
+            contains(
+                'No fatal infractions found, dependency_pins is good to go'));
       });
 
       test('warns if pins are ignored', () {
@@ -267,7 +319,10 @@ void main() {
         );
 
         expect(result.exitCode, 0);
-        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
+        expect(
+            result.stderr,
+            contains(
+                'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
     });
   });
