@@ -66,7 +66,7 @@ void run({
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
 
-  // Recursively list all Dart and Scss files in lib/
+  // Recursively list all Dart, Scss and Less files in lib/
   final publicDartFiles = <File>[]
     ..addAll(listDartFilesIn('lib/', excludedDirs))
     ..addAll(listDartFilesIn('bin/', excludedDirs));
@@ -75,11 +75,17 @@ void run({
     ..addAll(listScssFilesIn('lib/', excludedDirs))
     ..addAll(listScssFilesIn('bin/', excludedDirs));
 
+  final publicLessFiles = <File>[]
+    ..addAll(listLessFilesIn('lib/', excludedDirs))
+    ..addAll(listLessFilesIn('bin/', excludedDirs));
+
   logger
     ..fine('public facing dart files:\n'
         '${bulletItems(publicDartFiles.map((f) => f.path))}\n')
     ..fine('public facing scss files:\n'
-        '${bulletItems(publicScssFiles.map((f) => f.path))}\n');
+        '${bulletItems(publicScssFiles.map((f) => f.path))}\n')
+    ..fine('public facing less files:\n'
+        '${bulletItems(publicLessFiles.map((f) => f.path))}\n');
 
   // Read each file in lib/ and parse the package names from every import and
   // export directive.
@@ -92,6 +98,12 @@ void run({
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedInPublicFiles.add(match.group(1));
+    }
+  }
+  for (final file in publicLessFiles) {
+    final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedInPublicFiles.add(match.group(1));
     }
@@ -111,12 +123,19 @@ void run({
     ..addAll(listScssFilesIn('test/', excludedDirs))
     ..addAll(listScssFilesIn('tool/', excludedDirs))
     ..addAll(listScssFilesIn('web/', excludedDirs));
+  final nonLibLessFiles = <File>[]
+    ..addAll(listLessFilesIn('example/', excludedDirs))
+    ..addAll(listLessFilesIn('test/', excludedDirs))
+    ..addAll(listLessFilesIn('tool/', excludedDirs))
+    ..addAll(listLessFilesIn('web/', excludedDirs));
 
   logger
     ..fine('non-lib dart files:\n'
         '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n')
     ..fine('non-lib scss files:\n'
-        '${bulletItems(nonLibScssFiles.map((f) => f.path))}\n');
+        '${bulletItems(nonLibScssFiles.map((f) => f.path))}\n')
+    ..fine('non-lib less files:\n'
+        '${bulletItems(nonLibLessFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
@@ -131,6 +150,12 @@ void run({
   }
   for (final file in nonLibScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedOutsideLib.add(match.group(1));
+    }
+  }
+  for (final file in nonLibLessFiles) {
+    final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedOutsideLib.add(match.group(1));
     }
