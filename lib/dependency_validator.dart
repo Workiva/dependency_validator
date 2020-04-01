@@ -59,10 +59,9 @@ void run({
   // Extract the package names from the `transformers` section.
   final Iterable transformerEntries = pubspecYaml[transformersKey];
   final packagesUsedViaTransformers = pubspecYaml.containsKey(transformersKey)
-      ? Set<String>.from(transformerEntries.map<String>((value) {
-          if (value is YamlMap) return value.keys.first;
-          return value;
-        }).map((value) => value.replaceFirst(RegExp(r'/.*'), '')))
+      ? Set<String>.from(transformerEntries
+          .map<String>((value) => value is YamlMap ? value.keys.first : value)
+          .map((value) => value.replaceFirst(RegExp(r'/.*'), '')))
       : <String>{};
   logger.fine('transformers:\n'
       '${bulletItems(packagesUsedViaTransformers)}\n');
