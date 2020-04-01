@@ -5,6 +5,10 @@ final RegExp importExportDartPackageRegex =
 /// Regex used to detect all Sass import directives.
 final RegExp importScssPackageRegex = RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
 
+/// Regex used to detect all Less import directives.
+final RegExp importLessPackageRegex =
+    RegExp(r'@import[\t ]+(?:\(.*\)\s+)?"(?:packages\/|package:\/\/)([a-zA-Z1-9_-]+)\/');
+
 /// String key in pubspec.yaml for the dependencies map.
 const String dependenciesKey = 'dependencies';
 
