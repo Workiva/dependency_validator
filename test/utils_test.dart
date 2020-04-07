@@ -137,7 +137,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       sharedTest('   @import   "package://foo/bar"   ;   ', 'foo');
     });
 
-    test('with multiple import\'s in the same line', () {
+    test('with multiple imports in the same line', () {
       const input = '@import "packages/foo/bar"; @import "package://bar/foo";';
 
       expect(input, matches(importLessPackageRegex));
