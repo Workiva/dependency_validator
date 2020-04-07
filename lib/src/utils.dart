@@ -56,6 +56,13 @@ Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) =>
 Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
     listFilesWithExtensionIn(dirPath, excludedDirs, 'scss');
 
+/// Returns an iterable of all Less files (files ending in .less) in the given
+/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+///
+/// This also excludes Less files that are in a `packages/` subdirectory.
+Iterable<File> listLessFilesIn(String dirPath, List<String> excludedDirs) =>
+    listFilesWithExtensionIn(dirPath, excludedDirs, 'less');
+
 /// Returns an iterable of all files ending in .[extension] in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///

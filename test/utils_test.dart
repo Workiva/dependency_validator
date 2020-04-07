@@ -104,6 +104,52 @@ include: package:pedantic/analysis_options.1.8.0.yaml
     }
   });
 
+  group('importLessPackageRegex', () {
+    void sharedTest(String input, String expectedGroup) {
+      expect(input, matches(importLessPackageRegex));
+      expect(importLessPackageRegex.firstMatch(input).group(1), expectedGroup);
+    }
+
+    test('with double-quotes', () {
+      sharedTest('@import "packages/foo/bar";', 'foo');
+      sharedTest('@import "package://foo/bar";', 'foo');
+    });
+
+    group('with a package name that', () {
+      test('contains underscores', () {
+        sharedTest('@import "packages/foo_foo/bar";', 'foo_foo');
+        sharedTest('@import "package://foo_foo/bar";', 'foo_foo');
+      });
+
+      test('contains numbers', () {
+        sharedTest('@import "packages/foo1/bar";', 'foo1');
+        sharedTest('@import "package://foo1/bar";', 'foo1');
+      });
+
+      test('starts with an underscore', () {
+        sharedTest('@import "packages/_foo/bar";', '_foo');
+        sharedTest('@import "package://_foo/bar";', '_foo');
+      });
+    });
+
+    test('with extra whitespace in the line', () {
+      sharedTest('   @import   "packages/foo/bar"   ;   ', 'foo');
+      sharedTest('   @import   "package://foo/bar"   ;   ', 'foo');
+    });
+
+    test('with multiple imports in the same line', () {
+      const input = '@import "packages/foo/bar"; @import "package://bar/foo";';
+
+      expect(input, matches(importLessPackageRegex));
+
+      final allMatches = importLessPackageRegex.allMatches(input).toList();
+      expect(allMatches, hasLength(2));
+
+      expect(allMatches[0].group(1), 'foo');
+      expect(allMatches[1].group(1), 'bar');
+    });
+  });
+
   group('importScssPackageRegex', () {
     void sharedTest(String input, String expectedGroup) {
       expect(input, matches(importScssPackageRegex));
