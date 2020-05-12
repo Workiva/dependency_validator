@@ -156,7 +156,7 @@ void main(List<String> args) {
   if (argResults.wasParsed('exclude-dir')) {
     for (final dir in argResults['exclude-dir'] as List<String>) {
       excludes
-          .add(Glob(dir.endsWith(p.separator) ? dir : '$dir${p.separator}'));
+          .add(Glob('${dir.endsWith(p.separator) ? dir : '$dir${p.separator}'}**'));
     }
   }
 

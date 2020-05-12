@@ -12,9 +12,3 @@ dev_dependencies:
   dependency_validator:
     path: ../..
   pedantic: any
-  test: any
-
-transformers:
-  - dart_to_js_script_rewriter
-  - test/pub_serve:
-      $include: test/**_test{.*,}.dart
