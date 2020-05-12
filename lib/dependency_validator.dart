@@ -79,11 +79,17 @@ void run({
     for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
   ];
 
+  final publicLessFiles = <File>[]
+    ..addAll(listLessFilesIn('lib/', excludes))
+    ..addAll(listLessFilesIn('bin/', excludes));
+
   logger
     ..fine('public facing dart files:\n'
         '${bulletItems(publicDartFiles.map((f) => f.path))}\n')
     ..fine('public facing scss files:\n'
-        '${bulletItems(publicScssFiles.map((f) => f.path))}\n');
+        '${bulletItems(publicScssFiles.map((f) => f.path))}\n')
+    ..fine('public facing less files:\n'
+        '${bulletItems(publicLessFiles.map((f) => f.path))}\n');
 
   // Read each file in lib/ and parse the package names from every import and
   // export directive.
@@ -112,12 +118,18 @@ void run({
     ...excludes,
     for (final dir in publicDirs) Glob('$dir**'),
   ]);
+  final nonPublicLessFiles = listLessFilesIn('./', [
+    ...excludes,
+    for (final dir in publicDirs) Glob('$dir**'),
+  ]);
 
   logger
     ..fine('non-public dart files:\n'
         '${bulletItems(nonPublicDartFiles.map((f) => f.path))}\n')
     ..fine('non-public scss files:\n'
-        '${bulletItems(nonPublicScssFiles.map((f) => f.path))}\n');
+        '${bulletItems(nonPublicScssFiles.map((f) => f.path))}\n')
+    ..fine('non-public less files:\n'
+    '${bulletItems(nonPublicLessFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
@@ -133,6 +145,12 @@ void run({
   }
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedOutsidePublicDirs.add(match.group(1));
+    }
+  }
+  for (final file in nonPublicLessFiles) {
+    final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedOutsidePublicDirs.add(match.group(1));
     }

@@ -1,3 +1,7 @@
+# 1.5.0
+
+- Scan `.less` files for Dart package imports.
+
 # 1.4.2
 
 - Detect package usage in `analysis_options.yaml` files.
