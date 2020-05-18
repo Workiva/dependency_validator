@@ -26,12 +26,6 @@ export 'src/constants.dart' show commonBinaryPackages;
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run({
   List<Glob> excludes,
-  bool fatalDevMissing,
-  bool fatalMissing,
-  bool fatalOverPromoted,
-  bool fatalPins,
-  bool fatalUnderPromoted,
-  bool fatalUnused,
   List<String> ignoredPackages,
 }) {
   final config = PubspecDepValidatorConfig.fromYaml(
@@ -56,7 +50,7 @@ void run({
   logger.info('Validating dependencies for $packageName\n');
 
   checkPubspecYamlForPins(pubspecYaml,
-      ignoredPackages: ignoredPackages, fatal: fatalPins);
+      ignoredPackages: ignoredPackages);
 
   // Extract the package names from the `dependencies` section.
   final deps = pubspecYaml.containsKey(dependenciesKey)
@@ -78,10 +72,9 @@ void run({
   final publicScssFiles = [
     for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
   ];
-
-  final publicLessFiles = <File>[]
-    ..addAll(listLessFilesIn('lib/', excludes))
-    ..addAll(listLessFilesIn('bin/', excludes));
+  final publicLessFiles = [
+    for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+  ];
 
   logger
     ..fine('public facing dart files:\n'
@@ -134,6 +127,8 @@ void run({
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
   final packagesUsedOutsidePublicDirs = <String>{
+    // For more info on analysis options:
+    // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
@@ -176,7 +171,7 @@ void run({
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    if (fatalMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
@@ -197,7 +192,7 @@ void run({
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    if (fatalDevMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -216,7 +211,7 @@ void run({
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    if (fatalOverPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -231,7 +226,7 @@ void run({
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    if (fatalUnderPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -260,8 +255,7 @@ void run({
       'These packages may be unused, or you may be using executables or assets from these packages:',
       unusedDependencies,
     );
-
-    if (fatalUnused) exitCode = 1;
+    exitCode = 1;
   }
 
   if (exitCode == 0) {
@@ -290,7 +284,6 @@ void run({
 void checkPubspecYamlForPins(
   YamlMap pubspecYaml, {
   List<String> ignoredPackages = const [],
-  bool fatal = true,
 }) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
@@ -310,6 +303,6 @@ void checkPubspecYamlForPins(
   if (infractions.isNotEmpty) {
     logDependencyInfractions(
         'These packages are pinned in pubspec.yaml:', infractions);
-    if (fatal) exitCode = 1;
+    exitCode = 1;
   }
 }
