@@ -26,8 +26,7 @@ import 'constants.dart';
 final Logger logger = Logger('dependency_validator');
 
 /// Returns a multi-line string with all [items] in a bulleted list format.
-String bulletItems(Iterable<String> items) =>
-    items.map((l) => '  * $l').join('\n');
+String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
 
 /// Returns the name of the package referenced in the `include:` directive in an
 /// analysis_options.yaml file, or null if there is not one.
@@ -72,16 +71,14 @@ Iterable<File> listLessFilesIn(String dirPath, List<Glob> excludedDirs) =>
 ///
 /// This also excludes Dart files that are in a hidden directory, like
 /// `.dart_tool`.
-Iterable<File> listFilesWithExtensionIn(
-    String dirPath, List<Glob> excludes, String ext) {
+Iterable<File> listFilesWithExtensionIn(String dirPath, List<Glob> excludes, String ext) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return [];
 
   return Directory(dirPath)
       .listSync(recursive: true)
       .whereType<File>()
       // Skip files in hidden directories (e.g. `.dart_tool/`)
-      .where((file) =>
-          !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
+      .where((file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
       // Filter by the given file extension
       .where((file) => p.extension(file.path) == '.$ext')
       // Skip any files that match one of the given exclude globs
@@ -90,15 +87,13 @@ Iterable<File> listFilesWithExtensionIn(
 
 /// Logs a warning with the given [infraction] and lists all of the given
 /// [dependencies] under that infraction.
-void logDependencyInfractions(
-    String infraction, Iterable<String> dependencies) {
+void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
   logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map dependencies,
-    {List<String> ignoredPackages = const []}) {
+List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {

@@ -15,10 +15,9 @@
 import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
+import 'package:dependency_validator/dependency_validator.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
-import 'package:dependency_validator/dependency_validator.dart';
-import 'package:path/path.dart' as p;
 
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
@@ -78,14 +77,5 @@ void main(List<String> args) {
     Logger.root.level = Level.ALL;
   }
 
-  final ignoredPackages = <String>[];
-
-  ignoredPackages.addAll(commonBinaryPackages);
-
-  final excludes = <Glob>[];
-
-  run(
-    excludes: excludes,
-    ignoredPackages: ignoredPackages,
-  );
+  run();
 }

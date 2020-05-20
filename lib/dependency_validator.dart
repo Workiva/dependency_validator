@@ -24,18 +24,11 @@ import 'src/utils.dart';
 export 'src/constants.dart' show commonBinaryPackages;
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run({
-  List<Glob> excludes,
-  List<String> ignoredPackages,
-}) {
-  final config = PubspecDepValidatorConfig.fromYaml(
-          File('pubspec.yaml').readAsStringSync())
-      .dependencyValidator;
-  excludes ??= [];
-  excludes.addAll(config?.exclude?.map((s) => Glob(s)) ?? []);
+void run() {
+  final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
+  final excludes = config?.exclude?.map((s) => Glob(s)) ?? <Glob>[];
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
-  ignoredPackages ??= [];
-  ignoredPackages.addAll(config?.ignore ?? []);
+  final ignoredPackages = <String>[...commonBinaryPackages, ...config?.ignore ?? []];
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
@@ -49,19 +42,16 @@ void run({
 
   logger.info('Validating dependencies for $packageName\n');
 
-  checkPubspecYamlForPins(pubspecYaml,
-      ignoredPackages: ignoredPackages);
+  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages);
 
   // Extract the package names from the `dependencies` section.
-  final deps = pubspecYaml.containsKey(dependenciesKey)
-      ? Set<String>.from(pubspecYaml[dependenciesKey].keys)
-      : <String>{};
+  final deps =
+      pubspecYaml.containsKey(dependenciesKey) ? Set<String>.from(pubspecYaml[dependenciesKey].keys) : <String>{};
   logger.fine('dependencies:\n${bulletItems(deps)}\n');
 
   // Extract the package names from the `dev_dependencies` section.
-  final devDeps = pubspecYaml.containsKey(devDependenciesKey)
-      ? Set<String>.from(pubspecYaml[devDependenciesKey].keys)
-      : <String>{};
+  final devDeps =
+      pubspecYaml.containsKey(devDependenciesKey) ? Set<String>.from(pubspecYaml[devDependenciesKey].keys) : <String>{};
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
@@ -88,14 +78,19 @@ void run({
   // export directive.
   final packagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    final matches =
-        importExportDartPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedInPublicFiles.add(match.group(2));
     }
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedInPublicFiles.add(match.group(1));
+    }
+  }
+  for (final file in publicLessFiles) {
+    final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedInPublicFiles.add(match.group(1));
     }
@@ -122,18 +117,18 @@ void run({
     ..fine('non-public scss files:\n'
         '${bulletItems(nonPublicScssFiles.map((f) => f.path))}\n')
     ..fine('non-public less files:\n'
-    '${bulletItems(nonPublicLessFiles.map((f) => f.path))}\n');
+        '${bulletItems(nonPublicLessFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
-    if (optionsIncludePackage != null) optionsIncludePackage,
+    if (optionsIncludePackage != null)
+      optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
-    final matches =
-        importExportDartPackageRegex.allMatches(file.readAsStringSync());
+    final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
       packagesUsedOutsidePublicDirs.add(match.group(2));
     }
@@ -288,21 +283,18 @@ void checkPubspecYamlForPins(
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[dependenciesKey],
-          ignoredPackages: ignoredPackages),
+      getDependenciesWithPins(pubspecYaml[dependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
 
   if (pubspecYaml.containsKey(devDependenciesKey)) {
     infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[devDependenciesKey],
-          ignoredPackages: ignoredPackages),
+      getDependenciesWithPins(pubspecYaml[devDependenciesKey], ignoredPackages: ignoredPackages),
     );
   }
 
   if (infractions.isNotEmpty) {
-    logDependencyInfractions(
-        'These packages are pinned in pubspec.yaml:', infractions);
+    logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
     exitCode = 1;
   }
 }

@@ -379,7 +379,8 @@ void main() {
             '  ignore:\n'
             '    - logging\n';
 
-        File('$sandbox/dependency_pins/pubspec.yaml').writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+        File('$sandbox/dependency_pins/pubspec.yaml')
+            .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
         final result = checkProject('$sandbox/dependency_pins');
 
