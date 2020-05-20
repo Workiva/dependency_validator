@@ -26,7 +26,7 @@ export 'src/constants.dart' show commonBinaryPackages;
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run() {
   final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
-  final excludes = config?.exclude?.map((s) => Glob(s)) ?? <Glob>[];
+  final excludes = config?.exclude?.map((s) => Glob(s))?.toList() ?? <Glob>[];
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
   final ignoredPackages = <String>[...commonBinaryPackages, ...config?.ignore ?? []];
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
