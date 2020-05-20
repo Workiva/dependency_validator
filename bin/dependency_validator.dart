@@ -80,6 +80,8 @@ void main(List<String> args) {
 
   final ignoredPackages = <String>[];
 
+  ignoredPackages.addAll(commonBinaryPackages);
+
   final excludes = <Glob>[];
 
   run(
