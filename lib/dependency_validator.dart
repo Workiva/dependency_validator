@@ -14,17 +14,21 @@
 
 import 'dart:io';
 
-import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 
 import 'src/constants.dart';
+import 'src/pubspec_config.dart';
 import 'src/utils.dart';
 
 export 'src/constants.dart' show commonBinaryPackages;
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 void run() {
+  if (!File('pubspec.yaml').existsSync()) {
+    logger.shout('pubspec.yaml not found');
+    exit(1);
+  }
   final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
   final configExcludes = config?.exclude
       ?.map((s) {
@@ -109,18 +113,11 @@ void run() {
   logger.fine('packages used in public facing files:\n'
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
-  final nonPublicDartFiles = listDartFilesIn('./', [
-    ...excludes,
-    for (final dir in publicDirs) Glob('$dir**'),
-  ]);
-  final nonPublicScssFiles = listScssFilesIn('./', [
-    ...excludes,
-    for (final dir in publicDirs) Glob('$dir**'),
-  ]);
-  final nonPublicLessFiles = listLessFilesIn('./', [
-    ...excludes,
-    for (final dir in publicDirs) Glob('$dir**'),
-  ]);
+  final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
+
+  final nonPublicDartFiles = listDartFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicScssFiles = listScssFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicLessFiles = listLessFilesIn('./', [...excludes, ...publicDirGlobs]);
 
   logger
     ..fine('non-public dart files:\n'
