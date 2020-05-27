@@ -20,9 +20,6 @@ const String devDependenciesKey = 'dev_dependencies';
 /// String key in pubspec.yaml for the package name.
 const String nameKey = 'name';
 
-/// String key in pubspec.yaml for the transformers map.
-const String transformersKey = 'transformers';
-
 /// Packages that are typically only used for their binaries.
 const List<String> commonBinaryPackages = [
   'build_runner',

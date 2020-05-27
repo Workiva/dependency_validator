@@ -14,6 +14,7 @@
 
 import 'dart:io';
 
+import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -43,41 +44,45 @@ String getAnalysisOptionsIncludePackage({String path}) {
 }
 
 /// Returns an iterable of all Dart files (files ending in .dart) in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes Dart files that are in a `packages/` subdirectory.
-Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) =>
-    listFilesWithExtensionIn(dirPath, excludedDirs, 'dart');
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listDartFilesIn(String dirPath, List<Glob> excludes) =>
+    listFilesWithExtensionIn(dirPath, excludes, 'dart');
 
 /// Returns an iterable of all Scss files (files ending in .scss) in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes Scss files that are in a `packages/` subdirectory.
-Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
-    listFilesWithExtensionIn(dirPath, excludedDirs, 'scss');
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listScssFilesIn(String dirPath, List<Glob> excludes) =>
+    listFilesWithExtensionIn(dirPath, excludes, 'scss');
 
 /// Returns an iterable of all Less files (files ending in .less) in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///
 /// This also excludes Less files that are in a `packages/` subdirectory.
-Iterable<File> listLessFilesIn(String dirPath, List<String> excludedDirs) =>
+Iterable<File> listLessFilesIn(String dirPath, List<Glob> excludedDirs) =>
     listFilesWithExtensionIn(dirPath, excludedDirs, 'less');
 
 /// Returns an iterable of all files ending in .[extension] in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes files that are in a `packages/` subdirectory.
-Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDirs, String extension) {
-  if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listFilesWithExtensionIn(String dirPath, List<Glob> excludes, String ext) {
+  if (!FileSystemEntity.isDirectorySync(dirPath)) return [];
 
-  return List<File>.from(Directory(dirPath).listSync(recursive: true).where((entity) {
-    if (entity is! File) return false;
-    if (p.split(entity.path).contains('packages')) return false;
-    if (p.extension(entity.path) != ('.$extension')) return false;
-    if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
-
-    return true;
-  }));
+  return Directory(dirPath)
+      .listSync(recursive: true)
+      .whereType<File>()
+      // Skip files in hidden directories (e.g. `.dart_tool/`)
+      .where((file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
+      // Filter by the given file extension
+      .where((file) => p.extension(file.path) == '.$ext')
+      // Skip any files that match one of the given exclude globs
+      .where((file) => excludes.every((glob) => !glob.matches(file.path)));
 }
 
 /// Logs a warning with the given [infraction] and lists all of the given

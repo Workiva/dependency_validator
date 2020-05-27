@@ -1,14 +1,20 @@
 language: dart
 
-dart:
-  - stable
-  - dev
-
-script:
-  - dartanalyzer .
-  - dartfmt -l 120 -n --set-exit-if-changed .
-  - pub run dependency_validator -i _foo,foo,_bar,bar,foo1,foo_foo
-  - pub run test
+jobs:
+  include:
+    - dart: stable
+      name: "SDK: stable"
+      script:
+        - dartanalyzer .
+        - dartfmt -l 120 -n --set-exit-if-changed .
+        - pub run dependency_validator
+        - pub run test
+    - dart: dev
+      name: "SDK: dev"
+      script:
+        - dartanalyzer .
+        - pub run dependency_validator
+        - pub run test
 
 cache:
  directories:

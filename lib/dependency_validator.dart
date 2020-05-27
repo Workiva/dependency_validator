@@ -14,24 +14,38 @@
 
 import 'dart:io';
 
+import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
 
 import 'src/constants.dart';
+import 'src/pubspec_config.dart';
 import 'src/utils.dart';
 
 export 'src/constants.dart' show commonBinaryPackages;
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run({
-  List<String> excludedDirs = const [],
-  bool fatalDevMissing = true,
-  bool fatalMissing = true,
-  bool fatalOverPromoted = true,
-  bool fatalPins = true,
-  bool fatalUnderPromoted = true,
-  bool fatalUnused = true,
-  List<String> ignoredPackages = const [],
-}) {
+void run() {
+  if (!File('pubspec.yaml').existsSync()) {
+    logger.shout('pubspec.yaml not found');
+    exit(1);
+  }
+  final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
+  final configExcludes = config?.exclude
+      ?.map((s) {
+        try {
+          return Glob(s);
+        } catch (_, __) {
+          logger.shout('invalid glob syntax: "$s"');
+          return null;
+        }
+      })
+      ?.where((g) => g != null)
+      ?.toList();
+  final excludes = configExcludes ?? <Glob>[];
+  logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
+  final ignoredPackages = <String>[...commonBinaryPackages, ...config?.ignore ?? []];
+  logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
+
   // Read and parse the analysis_options.yaml in the current working directory.
   final optionsIncludePackage = getAnalysisOptionsIncludePackage();
 
@@ -43,7 +57,7 @@ void run({
 
   logger.info('Validating dependencies for $packageName\n');
 
-  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages, fatal: fatalPins);
+  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages);
 
   // Extract the package names from the `dependencies` section.
   final deps =
@@ -56,28 +70,16 @@ void run({
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
-  // Extract the package names from the `transformers` section.
-  final Iterable transformerEntries = pubspecYaml[transformersKey];
-  final packagesUsedViaTransformers = pubspecYaml.containsKey(transformersKey)
-      ? Set<String>.from(transformerEntries
-          .map<String>((value) => value is YamlMap ? value.keys.first : value)
-          .map((value) => value.replaceFirst(RegExp(r'/.*'), '')))
-      : <String>{};
-  logger.fine('transformers:\n'
-      '${bulletItems(packagesUsedViaTransformers)}\n');
-
-  // Recursively list all Dart, Scss and Less files in lib/
-  final publicDartFiles = <File>[]
-    ..addAll(listDartFilesIn('lib/', excludedDirs))
-    ..addAll(listDartFilesIn('bin/', excludedDirs));
-
-  final publicScssFiles = <File>[]
-    ..addAll(listScssFilesIn('lib/', excludedDirs))
-    ..addAll(listScssFilesIn('bin/', excludedDirs));
-
-  final publicLessFiles = <File>[]
-    ..addAll(listLessFilesIn('lib/', excludedDirs))
-    ..addAll(listLessFilesIn('bin/', excludedDirs));
+  final publicDirs = ['bin/', 'lib/'];
+  final publicDartFiles = [
+    for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
+  ];
+  final publicScssFiles = [
+    for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
+  ];
+  final publicLessFiles = [
+    for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+  ];
 
   logger
     ..fine('public facing dart files:\n'
@@ -108,61 +110,52 @@ void run({
       packagesUsedInPublicFiles.add(match.group(1));
     }
   }
-
   logger.fine('packages used in public facing files:\n'
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
-  // Recursively list all Dart files in known directories other than lib/
-  final nonLibDartFiles = <File>[]
-    ..addAll(listDartFilesIn('example/', excludedDirs))
-    ..addAll(listDartFilesIn('test/', excludedDirs))
-    ..addAll(listDartFilesIn('tool/', excludedDirs))
-    ..addAll(listDartFilesIn('web/', excludedDirs));
-  final nonLibScssFiles = <File>[]
-    ..addAll(listScssFilesIn('example/', excludedDirs))
-    ..addAll(listScssFilesIn('test/', excludedDirs))
-    ..addAll(listScssFilesIn('tool/', excludedDirs))
-    ..addAll(listScssFilesIn('web/', excludedDirs));
-  final nonLibLessFiles = <File>[]
-    ..addAll(listLessFilesIn('example/', excludedDirs))
-    ..addAll(listLessFilesIn('test/', excludedDirs))
-    ..addAll(listLessFilesIn('tool/', excludedDirs))
-    ..addAll(listLessFilesIn('web/', excludedDirs));
+  final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
+
+  final nonPublicDartFiles = listDartFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicScssFiles = listScssFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicLessFiles = listLessFilesIn('./', [...excludes, ...publicDirGlobs]);
 
   logger
-    ..fine('non-lib dart files:\n'
-        '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n')
-    ..fine('non-lib scss files:\n'
-        '${bulletItems(nonLibScssFiles.map((f) => f.path))}\n')
-    ..fine('non-lib less files:\n'
-        '${bulletItems(nonLibLessFiles.map((f) => f.path))}\n');
+    ..fine('non-public dart files:\n'
+        '${bulletItems(nonPublicDartFiles.map((f) => f.path))}\n')
+    ..fine('non-public scss files:\n'
+        '${bulletItems(nonPublicScssFiles.map((f) => f.path))}\n')
+    ..fine('non-public less files:\n'
+        '${bulletItems(nonPublicLessFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
-  final packagesUsedOutsideLib = <String>{
-    if (optionsIncludePackage != null) optionsIncludePackage,
+  final packagesUsedOutsidePublicDirs = <String>{
+    // For more info on analysis options:
+    // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
+    if (optionsIncludePackage != null)
+      optionsIncludePackage,
   };
-  for (final file in nonLibDartFiles) {
+  for (final file in nonPublicDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(2));
+      packagesUsedOutsidePublicDirs.add(match.group(2));
     }
   }
-  for (final file in nonLibScssFiles) {
+  for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(1));
+      packagesUsedOutsidePublicDirs.add(match.group(1));
     }
   }
-  for (final file in nonLibLessFiles) {
+  for (final file in nonPublicLessFiles) {
     final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(1));
+      packagesUsedOutsidePublicDirs.add(match.group(1));
     }
   }
 
-  logger.fine('packages used outside lib:\n'
-      '${bulletItems(packagesUsedOutsideLib)}\n');
+  logger.fine('packages used outside public dirs:\n'
+      '${bulletItems(packagesUsedOutsidePublicDirs)}\n');
 
   // Packages that are used in lib/ but are not dependencies.
   final missingDependencies =
@@ -181,13 +174,13 @@ void run({
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    if (fatalMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
   final missingDevDependencies =
       // Start with packages _only_ used outside lib/
-      packagesUsedOutsideLib
+      packagesUsedOutsidePublicDirs
           .difference(packagesUsedInPublicFiles)
           // Remove all explicitly declared dependencies
           .difference(devDeps)
@@ -202,7 +195,7 @@ void run({
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    if (fatalDevMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -212,7 +205,7 @@ void run({
       (deps
           .difference(packagesUsedInPublicFiles)
           // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsideLib))
+          .intersection(packagesUsedOutsidePublicDirs))
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
@@ -221,7 +214,7 @@ void run({
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    if (fatalOverPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -236,7 +229,7 @@ void run({
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    if (fatalUnderPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -246,9 +239,7 @@ void run({
           .union(devDeps)
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
-          .difference(packagesUsedOutsideLib)
-          // Remove all deps being used for their transformer(s)
-          .difference(packagesUsedViaTransformers)
+          .difference(packagesUsedOutsidePublicDirs)
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
 
@@ -267,8 +258,7 @@ void run({
       'These packages may be unused, or you may be using executables or assets from these packages:',
       unusedDependencies,
     );
-
-    if (fatalUnused) exitCode = 1;
+    exitCode = 1;
   }
 
   if (exitCode == 0) {
@@ -297,7 +287,6 @@ void run({
 void checkPubspecYamlForPins(
   YamlMap pubspecYaml, {
   List<String> ignoredPackages = const [],
-  bool fatal = true,
 }) {
   final List<String> infractions = [];
   if (pubspecYaml.containsKey(dependenciesKey)) {
@@ -314,6 +303,6 @@ void checkPubspecYamlForPins(
 
   if (infractions.isNotEmpty) {
     logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
-    if (fatal) exitCode = 1;
+    exitCode = 1;
   }
 }

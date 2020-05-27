@@ -13,60 +13,17 @@
 // limitations under the License.
 
 @TestOn('vm')
-
 import 'dart:io';
 
-import 'package:dependency_validator/dependency_validator.dart';
 import 'package:test/test.dart';
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
-const String projectWithMissingDeps = 'test_fixtures/missing';
-const String projectWithOverPromotedDeps = 'test_fixtures/over_promoted';
-const String projectWithUnderPromotedDeps = 'test_fixtures/under_promoted';
-const String projectWithUnusedDeps = 'test_fixtures/unused';
-const String projectWithAnalyzer = 'test_fixtures/analyzer';
-const String projectWithNoProblems = 'test_fixtures/valid';
-const String projectWithDependencyPins = 'test_fixtures/dependency_pins';
-const String projectWithCommonBinaries = 'test_fixtures/common_binaries';
-
-ProcessResult checkProject(
-  String projectPath, {
-  List<String> excludeDirs = const [],
-  List<String> ignoredPackages = const [],
-  bool fatalDevMissing = true,
-  bool fatalOverPromoted = true,
-  bool fatalMissing = true,
-  bool fatalPins = true,
-  bool fatalUnderPromoted = true,
-  bool fatalUnused = true,
-  bool ignoreCommonBinaries = true,
-}) {
+ProcessResult checkProject(String projectPath) {
   Process.runSync('pub', ['get'], workingDirectory: projectPath);
 
   final args = [
     'run',
     'dependency_validator',
-    if (ignoredPackages.isNotEmpty) ...[
-      '--ignore',
-      ignoredPackages.join(','),
-    ],
-    if (excludeDirs.isNotEmpty) ...[
-      '--exclude-dir',
-      excludeDirs.join(','),
-    ],
-    if (!fatalDevMissing)
-      '--no-fatal-dev-mising',
-    if (!fatalMissing)
-      '--no-fatal-missing',
-    if (!fatalOverPromoted)
-      '--no-fatal-over-promoted',
-    if (!fatalUnderPromoted)
-      '--no-fatal-under-promoted',
-    if (!fatalUnused)
-      '--no-fatal-unused',
-    if (!fatalPins)
-      '--no-fatal-pins',
-    if (!ignoreCommonBinaries)
-      '--no-ignore-common-binaries',
     // This makes it easier to print(result.stdout) for debugging tests
     '--verbose',
   ];
@@ -74,11 +31,60 @@ ProcessResult checkProject(
   return Process.runSync('pub', args, workingDirectory: projectPath);
 }
 
+/// Removes indentation from `'''` string blocks.
+String unindent(String multilineString) {
+  var indent = RegExp(r'^( *)').firstMatch(multilineString)[1];
+  assert(indent != null && indent.isNotEmpty);
+  return multilineString.replaceAll('$indent', '');
+}
+
 void main() {
   group('dependency_validator', () {
+    setUp(() async {
+      // Create fake project that any test may use
+      final fakeProjectPubspec = unindent('''
+          name: fake_project
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dev_dependencies:
+            dependency_validator:
+              path: ${Directory.current.path}
+          ''');
+
+      await d.dir('fake_project', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', fakeProjectPubspec),
+      ]).create();
+    });
+
     group('fails when there are packages missing from the pubspec', () {
+      setUp(() async {
+        final pubspec = unindent('''
+            name: missing
+            version: 0.0.0
+            private: true
+            environment:
+              sdk: '>=2.4.0 <3.0.0'
+            dev_dependencies:
+              dependency_validator:
+                path: ${Directory.current.path}
+            ''');
+
+        await d.dir('missing', [
+          d.dir('lib', [
+            d.file('missing.dart', 'import \'package:yaml/yaml.dart\';'),
+            d.file('missing.scss', '@import \'package:somescsspackage/foo\';'),
+          ]),
+          d.file('pubspec.yaml', pubspec),
+        ]).create();
+      });
+
       test('', () {
-        final result = checkProject(projectWithMissingDeps);
+        final result = checkProject('${d.sandbox}/missing');
 
         expect(result.exitCode, equals(1));
         expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
@@ -86,31 +92,64 @@ void main() {
         expect(result.stderr, contains('somescsspackage'));
       });
 
-      test('except when the --no-fatal-missing flag is passed in', () {
-        final result = checkProject(projectWithMissingDeps, fatalMissing: false);
-
-        expect(result.exitCode, equals(0));
-        expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
-        expect(result.stderr, contains('yaml'));
-        expect(result.stderr, contains('somescsspackage'));
-      });
-
       test('except when the lib directory is excluded', () {
-        final result = checkProject(projectWithMissingDeps, excludeDirs: ['lib/']);
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              exclude:
+                - 'lib/**'
+            ''');
+
+        File('${d.sandbox}/missing/pubspec.yaml')
+            .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append, flush: true);
+
+        final result = checkProject('${d.sandbox}/missing');
 
         expect(result.exitCode, equals(0));
         expect(result.stderr, isEmpty);
       });
 
       test('except when they are ignored', () {
-        final result = checkProject(projectWithMissingDeps, ignoredPackages: ['yaml', 'somescsspackage']);
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              ignore:
+                - yaml
+                - somescsspackage
+            ''');
+
+        File('${d.sandbox}/missing/pubspec.yaml').writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+
+        final result = checkProject('${d.sandbox}/missing');
         expect(result.exitCode, 0);
       });
     });
 
     group('fails when there are over promoted packages', () {
+      setUp(() async {
+        final pubspec = unindent('''
+            name: over_promoted
+            version: 0.0.0
+            private: true
+            environment:
+              sdk: '>=2.4.0 <3.0.0'
+            dependencies:
+              path: any
+              yaml: any
+            dev_dependencies:
+              dependency_validator:
+                path: ${Directory.current.path}
+            ''');
+
+        await d.dir('over_promoted', [
+          d.dir('web', [
+            d.file('main.dart', 'import \'package:path/path.dart\';'),
+            d.file('over_promoted.scss', '@import \'package:yaml/foo\';'),
+          ]),
+          d.file('pubspec.yaml', pubspec),
+        ]).create();
+      });
+
       test('', () {
-        final result = checkProject(projectWithOverPromotedDeps);
+        final result = checkProject('${d.sandbox}/over_promoted');
 
         expect(result.exitCode, 1);
         expect(result.stderr,
@@ -119,25 +158,48 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('except when the --no-fatal-over-promoted flag is passed in', () {
-        final result = checkProject(projectWithOverPromotedDeps, fatalOverPromoted: false);
-
-        expect(result.exitCode, 0);
-        expect(result.stderr,
-            contains('These packages are only used outside lib/ and should be downgraded to dev_dependencies:'));
-        expect(result.stderr, contains('path'));
-        expect(result.stderr, contains('yaml'));
-      });
-
       test('except when they are ignored', () {
-        final result = checkProject(projectWithOverPromotedDeps, ignoredPackages: ['path', 'yaml']);
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              ignore:
+                - path
+                - yaml
+            ''');
+
+        File('${d.sandbox}/over_promoted/pubspec.yaml')
+            .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+
+        final result = checkProject('${d.sandbox}/over_promoted');
         expect(result.exitCode, 0);
       });
     });
 
     group('fails when there are under promoted packages', () {
+      setUp(() async {
+        final pubspec = unindent('''
+            name: under_promoted
+            version: 0.0.0
+            private: true
+            environment:
+              sdk: '>=2.4.0 <3.0.0'
+            dev_dependencies:
+              logging: any
+              yaml: any
+              dependency_validator:
+                path: ${Directory.current.path}
+            ''');
+
+        await d.dir('under_promoted', [
+          d.dir('lib', [
+            d.file('under_promoted.dart', 'import \'package:logging/logging.dart\';'),
+            d.file('under_promoted.scss', '@import \'package:yaml/foo\';'),
+          ]),
+          d.file('pubspec.yaml', pubspec),
+        ]).create();
+      });
+
       test('', () {
-        final result = checkProject(projectWithUnderPromotedDeps);
+        final result = checkProject('${d.sandbox}/under_promoted');
 
         expect(result.exitCode, 1);
         expect(
@@ -146,25 +208,44 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('except when the --no-fatal-under-promoted flag is passed in', () {
-        final result = checkProject(projectWithUnderPromotedDeps, fatalUnderPromoted: false);
-
-        expect(result.exitCode, 0);
-        expect(
-            result.stderr, contains('These packages are used in lib/ and should be promoted to actual dependencies:'));
-        expect(result.stderr, contains('logging'));
-        expect(result.stderr, contains('yaml'));
-      });
-
       test('except when they are ignored', () {
-        final result = checkProject(projectWithUnderPromotedDeps, ignoredPackages: ['logging', 'yaml']);
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              ignore:
+                - logging
+                - yaml
+            ''');
+
+        File('${d.sandbox}/under_promoted/pubspec.yaml')
+            .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+
+        final result = checkProject('${d.sandbox}/under_promoted');
         expect(result.exitCode, 0);
       });
     });
 
     group('fails when there are unused packages', () {
+      setUp(() async {
+        final unusedPubspec = unindent('''
+            name: unused
+            version: 0.0.0
+            private: true
+            environment:
+              sdk: '>=2.4.0 <3.0.0'
+            dev_dependencies:
+              fake_project:
+                path: ${d.sandbox}/fake_project
+              dependency_validator:
+                path: ${Directory.current.path}
+            ''');
+
+        await d.dir('unused', [
+          d.file('pubspec.yaml', unusedPubspec),
+        ]).create();
+      });
+
       test('', () {
-        final result = checkProject(projectWithUnusedDeps);
+        final result = checkProject('${d.sandbox}/unused');
 
         expect(result.exitCode, 1);
         expect(result.stderr,
@@ -172,102 +253,162 @@ void main() {
         expect(result.stderr, contains('fake_project'));
       });
 
-      test('except when the --no-fatal-unused flag is passed in', () {
-        final result = checkProject(projectWithUnusedDeps, fatalUnused: false);
-
-        expect(result.exitCode, 0);
-        expect(result.stderr,
-            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
-        expect(result.stderr, contains('fake_project'));
-      });
-
       test('except when they are ignored', () {
-        final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              ignore:
+                - fake_project
+                - yaml
+            ''');
+
+        File('${d.sandbox}/unused/pubspec.yaml').writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+
+        final result = checkProject('${d.sandbox}/unused');
         expect(result.exitCode, 0);
+        expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
       });
     });
 
-    test('warns when the analyzer package is depended on but not used', () {
-      final result = checkProject(projectWithAnalyzer, ignoredPackages: ['analyzer']);
+    test('warns when the analyzer package is depended on but not used', () async {
+      final pubspec = unindent('''
+          name: analyzer_dep
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dependencies:
+            analyzer: any
+          dev_dependencies:
+            dependency_validator:
+              path: ${Directory.current.path}
+          dependency_validator:
+            ignore:
+              - analyzer
+          ''');
+
+      await d.dir('project', [
+        d.dir('lib', [
+          d.file('analyzer_dep.dart', ''),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      final result = checkProject('${d.sandbox}/project');
 
       expect(result.exitCode, 0);
       expect(result.stderr, contains('You do not need to depend on `analyzer` to run the Dart analyzer.'));
     });
 
-    test('passes when all dependencies are used and valid', () {
-      final result = checkProject(projectWithNoProblems);
+    test('passes when all dependencies are used and valid', () async {
+      final pubspec = unindent('''
+          name: valid
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dependencies:
+            logging: any
+            yaml: any
+            fake_project:
+              path: ${d.sandbox}/fake_project
+          dev_dependencies:
+            dependency_validator:
+              path: ${Directory.current.path}
+            pedantic: any\
+          ''');
+
+      final validDotDart = ''
+          'import \'package:logging/logging.dart\';'
+          'import \'package:fake_project/fake.dart\';';
+
+      await d.dir('valid', [
+        d.dir('lib', [
+          d.file('valid.dart', validDotDart),
+          d.file('valid.scss', '@import \'package:yaml/foo\';'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+        d.file('analysis_options.yaml', 'include: package:pedantic/analysis_options.1.8.0.yaml'),
+      ]).create();
+
+      final result = checkProject('${d.sandbox}/valid');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
     });
 
-    test('passes when there are unused packages, but the unused packages are ignored', () {
-      final result = checkProject(projectWithUnusedDeps, ignoredPackages: ['fake_project']);
+    test('passes when there are unused known common binary packages', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dev_dependencies:
+            build_runner: ^1.7.1
+            build_test: ^0.10.9
+            build_vm_compilers: ^1.0.3
+            build_web_compilers: ^2.5.1
+            built_value_generator: ^7.0.0
+            coverage: any
+            dart_dev: ^3.0.0
+            dart_style: ^1.3.3
+            dependency_validator:
+              path: ${Directory.current.path}
+          ''');
 
-      expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
-    });
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
 
-    test('passes when there are unused known common binary packages', () {
-      final result = checkProject(projectWithCommonBinaries);
+      final result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
     });
 
-    test('fails when there are unused known common binary packages and they are not ignored', () {
-      final result = checkProject(projectWithCommonBinaries, ignoreCommonBinaries: false);
-
-      expect(result.exitCode, 1);
-      expect(result.stderr,
-          contains('These packages may be unused, or you may be using executables or assets from these packages:'));
-
-      for (var packageName in commonBinaryPackages) {
-        expect(result.stderr, contains(packageName));
-      }
-    });
-
-    test('passes when there are missing packages, but the missing packages are ignored', () {
-      final result = checkProject(projectWithMissingDeps, ignoredPackages: [
-        'yaml',
-        'somescsspackage',
-      ]);
-
-      expect(result.exitCode, 0);
-      expect(result.stdout, contains('No fatal infractions found, missing is good to go!'));
-    });
-
     group('when a dependency is pinned', () {
+      setUp(() async {
+        final pubspec = unindent('''
+            name: dependency_pins
+            version: 0.0.0
+            private: true
+            environment:
+              sdk: '>=2.4.0 <3.0.0'
+            dev_dependencies:
+              logging: '>=0.9.3 <=0.13.0'
+              dependency_validator:
+                path: ${Directory.current.path}
+            ''');
+
+        await d.dir('dependency_pins', [
+          d.file('pubspec.yaml', pubspec),
+        ]).create();
+      });
+
       test('fails if pins are not ignored', () {
-        final result = checkProject(
-          projectWithDependencyPins,
-          fatalUnused: false,
-        );
+        final result = checkProject('${d.sandbox}/dependency_pins');
 
         expect(result.exitCode, 1);
         expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
       test('ignores infractions if the package is ignored', () {
-        final result = checkProject(
-          projectWithDependencyPins,
-          ignoredPackages: ['logging'],
-          fatalUnused: false,
-        );
+        final dependencyValidatorSection = unindent('''
+            dependency_validator:
+              ignore:
+                - logging
+            ''');
+
+        File('${d.sandbox}/dependency_pins/pubspec.yaml')
+            .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
+
+        final result = checkProject('${d.sandbox}/dependency_pins');
 
         expect(result.exitCode, 0);
         expect(result.stdout, contains('No fatal infractions found, dependency_pins is good to go'));
-      });
-
-      test('warns if pins are ignored', () {
-        final result = checkProject(
-          projectWithDependencyPins,
-          fatalPins: false,
-          fatalUnused: false,
-        );
-
-        expect(result.exitCode, 0);
-        expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
       });
     });
   });
