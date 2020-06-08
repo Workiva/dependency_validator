@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import 'dart:io';
-import 'dart:convert';
 
 import 'package:glob/glob.dart';
 import 'package:package_config/package_config.dart';
@@ -267,7 +266,7 @@ Future<Null> run() async {
       // Start with all explicitly declared dependencies
       deps
           .union(devDeps)
-          // Remove all deps that provide and executable
+          // Remove all deps that provide an executable
           .difference(packagesWithExecutables)
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
