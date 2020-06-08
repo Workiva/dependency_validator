@@ -92,6 +92,13 @@ void logDependencyInfractions(String infraction, Iterable<String> dependencies) 
   logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
 }
 
+/// Logs a info with the given [info] and lists all of the given
+/// [dependencies] under that.
+void logDependencyInfo(String info, Iterable<String> dependencies) {
+  final sortedDependencies = dependencies.toList()..sort();
+  logger.info([info, bulletItems(sortedDependencies), ''].join('\n'));
+}
+
 /// Lists the packages with infractions
 List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];

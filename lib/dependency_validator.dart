@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:glob/glob.dart';
 import 'package:yaml/yaml.dart';
@@ -29,6 +30,32 @@ void run() {
     logger.shout('pubspec.yaml not found');
     exit(1);
   }
+  if (!File('.dart_tool/package_config.json').existsSync()) {
+    logger.shout('.dart_tool/package_config.json not found');
+    exit(1);
+  }
+
+  // TODO: maybe we can get the actual deserialization code for this file from the builder package
+  final packageConfig = jsonDecode(File('.dart_tool/package_config.json').readAsStringSync());
+
+  // TODO: document why we are doing this
+  final rootDir = Directory.current;
+  final dir = Directory('${rootDir.path}/.dart_tool');
+  Directory.current = dir;
+
+  final packagesWithExecutables = Set<String>();
+  for (final thing in packageConfig['packages']) {
+    final uri = thing['rootUri'] as String;
+    final path = uri.replaceFirst('file://', '');
+    if (Directory('$path/bin').existsSync()) {
+      packagesWithExecutables.add(thing['name']);
+    }
+  }
+
+  // TODO: explain.
+  // TODO: Maybe there is a directory stack already around in dart?
+  Directory.current = rootDir;
+
   final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
   final configExcludes = config?.exclude
       ?.map((s) {
@@ -56,6 +83,9 @@ void run() {
   final packageName = pubspecYaml[nameKey];
 
   logger.info('Validating dependencies for $packageName\n');
+
+  logDependencyInfo(
+      'the following packages contain executables, they are assumed to be used:', packagesWithExecutables);
 
   checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages);
 
@@ -237,6 +267,8 @@ void run() {
       // Start with all explicitly declared dependencies
       deps
           .union(devDeps)
+          // Remove all deps that provide and executable
+          .difference(packagesWithExecutables)
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
@@ -255,7 +287,7 @@ void run() {
 
   if (unusedDependencies.isNotEmpty) {
     logDependencyInfractions(
-      'These packages may be unused, or you may be using executables or assets from these packages:',
+      'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
     exitCode = 1;
