@@ -16,6 +16,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:glob/glob.dart';
+import 'package:package_config/package_config.dart';
 import 'package:yaml/yaml.dart';
 
 import 'src/constants.dart';
@@ -25,7 +26,7 @@ import 'src/utils.dart';
 export 'src/constants.dart' show commonBinaryPackages;
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run() {
+Future<Null> run() async {
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout('pubspec.yaml not found');
     exit(1);
@@ -34,27 +35,6 @@ void run() {
     logger.shout('.dart_tool/package_config.json not found');
     exit(1);
   }
-
-  // TODO: maybe we can get the actual deserialization code for this file from the builder package
-  final packageConfig = jsonDecode(File('.dart_tool/package_config.json').readAsStringSync());
-
-  // TODO: document why we are doing this
-  final rootDir = Directory.current;
-  final dir = Directory('${rootDir.path}/.dart_tool');
-  Directory.current = dir;
-
-  final packagesWithExecutables = Set<String>();
-  for (final thing in packageConfig['packages']) {
-    final uri = thing['rootUri'] as String;
-    final path = uri.replaceFirst('file://', '');
-    if (Directory('$path/bin').existsSync()) {
-      packagesWithExecutables.add(thing['name']);
-    }
-  }
-
-  // TODO: explain.
-  // TODO: Maybe there is a directory stack already around in dart?
-  Directory.current = rootDir;
 
   final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
   final configExcludes = config?.exclude
@@ -83,6 +63,26 @@ void run() {
   final packageName = pubspecYaml[nameKey];
 
   logger.info('Validating dependencies for $packageName\n');
+
+  // `loadPackageConfig` (used below) relies on having a file built from an absolute URI.
+  final packageConfig = File.fromUri(Uri.file('${Directory.current.path}/.dart_tool/package_config.json'));
+
+  // URIs in packageConfig may be relative to its directory. Change the working directory to account for this.
+  final rootDir = Directory.current;
+  final dir = Directory('${rootDir.path}/.dart_tool');
+  Directory.current = dir;
+
+  // Find packages that provide executables.
+  final packagesWithExecutables = Set<String>();
+  for (final package in (await loadPackageConfig(packageConfig)).packages) {
+    final path = package.root.path;
+    if (Directory('$path${path.endsWith('/') ? '' : '/'}bin').existsSync()) {
+      packagesWithExecutables.add(package.name);
+    }
+  }
+
+  // Set working directory back.
+  Directory.current = rootDir;
 
   logDependencyInfo(
       'the following packages contain executables, they are assumed to be used:', packagesWithExecutables);

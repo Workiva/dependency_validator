@@ -52,7 +52,7 @@ void showHelpAndExit() {
   exit(0);
 }
 
-void main(List<String> args) {
+void main(List<String> args) async {
   Logger.root.onRecord
       .where((record) => record.level < Level.WARNING)
       .map((record) => record.message)
@@ -77,5 +77,5 @@ void main(List<String> args) {
     Logger.root.level = Level.ALL;
   }
 
-  run();
+  await run();
 }

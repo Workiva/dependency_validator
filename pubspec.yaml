@@ -15,6 +15,7 @@ dependencies:
   glob: ^1.2.0
   json_annotation: ^3.0.0
   logging: ^0.11.3+1
+  package_config: ^1.9.3
   path: ^1.4.2
   pub_semver: ^1.4.1
   yaml: ^2.1.13
