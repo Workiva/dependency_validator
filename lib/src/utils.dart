@@ -85,18 +85,10 @@ Iterable<File> listFilesWithExtensionIn(String dirPath, List<Glob> excludes, Str
       .where((file) => excludes.every((glob) => !glob.matches(file.path)));
 }
 
-/// Logs a warning with the given [infraction] and lists all of the given
-/// [dependencies] under that infraction.
-void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
+/// Logs the given [message] at [level] and lists all of the given [dependencies].
+void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
-  logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
-}
-
-/// Logs a info with the given [info] and lists all of the given
-/// [dependencies] under that.
-void logDependencyInfo(String info, Iterable<String> dependencies) {
-  final sortedDependencies = dependencies.toList()..sort();
-  logger.info([info, bulletItems(sortedDependencies), ''].join('\n'));
+  logger.log(level, [message, bulletItems(sortedDependencies), ''].join('\n'));
 }
 
 /// Lists the packages with infractions
