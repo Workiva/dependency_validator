@@ -256,7 +256,7 @@ Future<Null> run() async {
   }
 
   // Packages that are not used anywhere but are dependencies.
-  var unusedDependencies =
+  final unusedDependencies =
       // Start with all explicitly declared dependencies
       deps
           .union(devDeps)
@@ -273,7 +273,7 @@ Future<Null> run() async {
   }
 
   // Remove deps that provide an executable, assume that the executable is used
-  unusedDependencies = unusedDependencies.difference(packagesWithExecutables);
+  unusedDependencies.removeAll(packagesWithExecutables);
 
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
