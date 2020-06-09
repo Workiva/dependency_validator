@@ -18,7 +18,7 @@ import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'src/constants.dart';
 import 'src/pubspec_config.dart';
@@ -58,10 +58,10 @@ Future<Null> run() async {
   final optionsIncludePackage = getAnalysisOptionsIncludePackage();
 
   // Read and parse the pubspec.yaml in the current working directory.
-  final YamlMap pubspecYaml = loadYaml(File('pubspec.yaml').readAsStringSync());
+  final pubspec = Pubspec.parse(File('pubspec.yaml').readAsStringSync());
 
   // Extract the package name.
-  final packageName = pubspecYaml[nameKey];
+  final packageName = pubspec.name;
 
   logger.info('Validating dependencies for $packageName\n');
 
@@ -76,16 +76,14 @@ Future<Null> run() async {
     }
   }
 
-  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages);
+  checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
 
   // Extract the package names from the `dependencies` section.
-  final deps =
-      pubspecYaml.containsKey(dependenciesKey) ? Set<String>.from(pubspecYaml[dependenciesKey].keys) : <String>{};
+  final deps = Set<String>.from(pubspec.dependencies.keys);
   logger.fine('dependencies:\n${bulletItems(deps)}\n');
 
   // Extract the package names from the `dev_dependencies` section.
-  final devDeps =
-      pubspecYaml.containsKey(devDependenciesKey) ? Set<String>.from(pubspecYaml[devDependenciesKey].keys) : <String>{};
+  final devDeps = Set<String>.from(pubspec.devDependencies.keys);
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
@@ -317,22 +315,14 @@ Future<Null> run() async {
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
-void checkPubspecYamlForPins(
-  YamlMap pubspecYaml, {
+void checkPubspecForPins(
+  Pubspec pubspec, {
   List<String> ignoredPackages = const [],
 }) {
   final List<String> infractions = [];
-  if (pubspecYaml.containsKey(dependenciesKey)) {
-    infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[dependenciesKey], ignoredPackages: ignoredPackages),
-    );
-  }
+  infractions.addAll(getDependenciesWithPins(pubspec.dependencies, ignoredPackages: ignoredPackages));
 
-  if (pubspecYaml.containsKey(devDependenciesKey)) {
-    infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[devDependenciesKey], ignoredPackages: ignoredPackages),
-    );
-  }
+  infractions.addAll(getDependenciesWithPins(pubspec.devDependencies, ignoredPackages: ignoredPackages));
 
   if (infractions.isNotEmpty) {
     log(Level.WARNING, 'These packages are pinned in pubspec.yaml:', infractions);

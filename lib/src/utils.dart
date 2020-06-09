@@ -18,6 +18,7 @@ import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 
 import 'constants.dart';
@@ -92,7 +93,7 @@ void log(Level level, String message, Iterable<String> dependencies) {
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages = const []}) {
+List<String> getDependenciesWithPins(Map<String, Dependency> dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {
@@ -102,23 +103,15 @@ List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPack
     String version;
     final packageMeta = dependencies[packageName];
 
-    if (packageMeta is String) {
-      version = packageMeta;
-    } else if (packageMeta is Map) {
-      if (packageMeta.containsKey('version')) {
-        version = packageMeta['version'];
-      } else {
-        // This feature only works for versions, not git refs or paths.
-        continue;
+    if (packageMeta is HostedDependency) {
+      final DependencyPinEvaluation evaluation = inspectVersionForPins(packageMeta.version);
+
+      if (evaluation.isPin) {
+        infractions.add('$packageName: $version -- ${evaluation.message}');
       }
     } else {
-      continue; // no version string set
-    }
-
-    final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
-
-    if (evaluation.isPin) {
-      infractions.add('$packageName: $version -- ${evaluation.message}');
+      // This feature only works for versions, not git refs or paths.
+      continue;
     }
   }
 
@@ -126,9 +119,7 @@ List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPack
 }
 
 /// Returns the reason a version is a pin or null if it's not.
-DependencyPinEvaluation inspectVersionForPins(String version) {
-  final VersionConstraint constraint = VersionConstraint.parse(version);
-
+DependencyPinEvaluation inspectVersionForPins(VersionConstraint constraint) {
   if (constraint.isAny) {
     return DependencyPinEvaluation.notAPin;
   }
