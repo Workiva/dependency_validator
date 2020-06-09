@@ -69,7 +69,9 @@ Future<Null> run() async {
   final packagesWithExecutables = Set<String>();
   final packageConfig = await findPackageConfig(Directory.current);
   for (final package in packageConfig.packages) {
-    if (Directory(p.join(package.root.path, 'bin')).existsSync()) {
+    final binDir = Directory(p.join(package.root.path, 'bin'));
+    hasDartFiles() => binDir.listSync().where((entity) => entity.path.endsWith('.dart')).isNotEmpty;
+    if (binDir.existsSync() && hasDartFiles()) {
       packagesWithExecutables.add(package.name);
     }
   }
