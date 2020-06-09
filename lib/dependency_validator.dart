@@ -268,7 +268,9 @@ Future<Null> run() async {
 
   // Find unused packages that provide an executable. We assume those executables are used, but warn the user in case they are not.
   final consideredUsed = unusedDependencies.intersection(packagesWithExecutables);
-  log(Level.INFO, 'the following packages contain executables, they are assumed to be used:', consideredUsed);
+  if (consideredUsed.isNotEmpty) {
+    log(Level.INFO, 'the following packages contain executables, they are assumed to be used:', consideredUsed);
+  }
 
   // Remove deps that provide an executable, assume that the executable is used
   unusedDependencies = unusedDependencies.difference(packagesWithExecutables);
