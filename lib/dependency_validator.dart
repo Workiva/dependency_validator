@@ -33,7 +33,7 @@ Future<Null> run() async {
     exit(1);
   }
   if (!File('.dart_tool/package_config.json').existsSync()) {
-    logger.shout('.dart_tool/package_config.json not found');
+    logger.shout('No .dart_tool/package_config.json file found, please run "pub get" first.');
     exit(1);
   }
 
