@@ -15,6 +15,9 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import 'src/constants.dart';
@@ -24,11 +27,16 @@ import 'src/utils.dart';
 export 'src/constants.dart' show commonBinaryPackages;
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run() {
+Future<Null> run() async {
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout('pubspec.yaml not found');
     exit(1);
   }
+  if (!File('.dart_tool/package_config.json').existsSync()) {
+    logger.shout('No .dart_tool/package_config.json file found, please run "pub get" first.');
+    exit(1);
+  }
+
   final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
   final configExcludes = config?.exclude
       ?.map((s) {
@@ -56,6 +64,17 @@ void run() {
   final packageName = pubspecYaml[nameKey];
 
   logger.info('Validating dependencies for $packageName\n');
+
+  // Find packages that provide executables.
+  final packagesWithExecutables = Set<String>();
+  final packageConfig = await findPackageConfig(Directory.current);
+  for (final package in packageConfig.packages) {
+    final binDir = Directory(p.join(package.root.path, 'bin'));
+    hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
+    if (binDir.existsSync() && hasDartFiles()) {
+      packagesWithExecutables.add(package.name);
+    }
+  }
 
   checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages);
 
@@ -170,7 +189,8 @@ void run() {
             ..removeAll(ignoredPackages);
 
   if (missingDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
@@ -191,7 +211,8 @@ void run() {
             ..removeAll(ignoredPackages);
 
   if (missingDevDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
@@ -210,7 +231,8 @@ void run() {
         ..removeAll(ignoredPackages);
 
   if (overPromotedDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
@@ -225,7 +247,8 @@ void run() {
         ..removeAll(ignoredPackages);
 
   if (underPromotedDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
@@ -243,6 +266,15 @@ void run() {
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
 
+  // Find unused packages that provide an executable. We assume those executables are used, but warn the user in case they are not.
+  final consideredUsed = unusedDependencies.intersection(packagesWithExecutables);
+  if (consideredUsed.isNotEmpty) {
+    log(Level.INFO, 'the following packages contain executables, they are assumed to be used:', consideredUsed);
+  }
+
+  // Remove deps that provide an executable, assume that the executable is used
+  unusedDependencies.removeAll(packagesWithExecutables);
+
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
       'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
@@ -254,8 +286,9 @@ void run() {
   unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
-    logDependencyInfractions(
-      'These packages may be unused, or you may be using executables or assets from these packages:',
+    log(
+      Level.WARNING,
+      'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
     exitCode = 1;
@@ -302,7 +335,7 @@ void checkPubspecYamlForPins(
   }
 
   if (infractions.isNotEmpty) {
-    logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
+    log(Level.WARNING, 'These packages are pinned in pubspec.yaml:', infractions);
     exitCode = 1;
   }
 }

@@ -248,8 +248,8 @@ void main() {
         final result = checkProject('${d.sandbox}/unused');
 
         expect(result.exitCode, 1);
-        expect(result.stderr,
-            contains('These packages may be unused, or you may be using executables or assets from these packages:'));
+        expect(
+            result.stderr, contains('These packages may be unused, or you may be using assets from these packages:'));
         expect(result.stderr, contains('fake_project'));
       });
 

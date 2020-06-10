@@ -22,14 +22,10 @@ const String nameKey = 'name';
 
 /// Packages that are typically only used for their binaries.
 const List<String> commonBinaryPackages = [
-  'build_runner',
   'build_test',
   'build_vm_compilers',
   'build_web_compilers',
   'built_value_generator',
-  'coverage',
-  'dart_dev',
-  'dart_style',
 ];
 
 /// Provides a set of reasons why version strings might be pins.
