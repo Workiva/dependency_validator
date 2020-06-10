@@ -52,7 +52,7 @@ Future<Null> run() async {
       ?.toList();
   final excludes = configExcludes ?? <Glob>[];
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
-  final ignoredPackages = config?.ignore ?? [];
+  final ignoredPackages = config?.ignore ?? <String>[];
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
@@ -273,26 +273,14 @@ Future<Null> run() async {
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
 
-  {
-    // Find unused packages that provide an executable. We assume those executables are used,
-    // but warn the user in case they are not.
-    final consideredUsed = unusedDependencies.intersection(packagesWithExecutables);
-    if (consideredUsed.isNotEmpty) {
-      log(Level.INFO, 'The following packages contain executables, they are assumed to be used:', consideredUsed);
-    }
-  }
-  // Remove deps that provide an executable, assume that the executable is used
+  // Remove deps that provide executables, those are assumed to be used
+  logIntersection(Level.INFO, 'The following packages contain executables, they are assumed to be used:',
+      unusedDependencies, packagesWithExecutables);
   unusedDependencies.removeAll(packagesWithExecutables);
 
-  {
-    // Find unused packages that provide a builder. We assume those builders are used,
-    // but warn the user in case they are not.
-    final consideredUsed = unusedDependencies.intersection(packagesWithBuilders);
-    if (consideredUsed.isNotEmpty) {
-      log(Level.INFO, 'The following packages contain builders, they are assumed to be used:', consideredUsed);
-    }
-  }
-  // Remove deps that provide a builder, assume that the builder is used
+  // Remove deps that provide builders, those are assumed to be used
+  logIntersection(Level.INFO, 'The following packages contain builders, they are assumed to be used:',
+      unusedDependencies, packagesWithBuilders);
   unusedDependencies.removeAll(packagesWithBuilders);
 
   if (unusedDependencies.contains('analyzer')) {

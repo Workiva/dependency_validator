@@ -92,6 +92,15 @@ void log(Level level, String message, Iterable<String> dependencies) {
   logger.log(level, [message, bulletItems(sortedDependencies), ''].join('\n'));
 }
 
+/// Logs the given [message] at [level] and lists the intersection of [dependenciesA]
+/// and [dependenciesB] if there is one.
+void logIntersection(Level level, String message, Set<String> dependenciesA, Set<String> dependenciesB) {
+  final intersection = dependenciesA.intersection(dependenciesB);
+  if (intersection.isNotEmpty) {
+    log(level, message, intersection);
+  }
+}
+
 /// Lists the packages with infractions
 List<String> getDependenciesWithPins(Map<String, Dependency> dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
