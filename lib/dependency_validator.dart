@@ -14,6 +14,7 @@
 
 import 'dart:io';
 
+import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -51,7 +52,7 @@ Future<Null> run() async {
       ?.toList();
   final excludes = configExcludes ?? <Glob>[];
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
-  final ignoredPackages = <String>[...commonBinaryPackages, ...config?.ignore ?? []];
+  final ignoredPackages = config?.ignore ?? [];
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
@@ -67,8 +68,16 @@ Future<Null> run() async {
 
   // Find packages that provide executables.
   final packagesWithExecutables = Set<String>();
+  final packagesWithBuilders = Set<String>();
   final packageConfig = await findPackageConfig(Directory.current);
   for (final package in packageConfig.packages) {
+    // Search for builders
+    final buildConfig = await BuildConfig.fromBuildConfigDir(packageName, pubspec.dependencies.keys, package.root.path);
+    if (buildConfig.builderDefinitions.isNotEmpty) {
+      packagesWithBuilders.add(package.name);
+    }
+
+    // Search for executables
     final binDir = Directory(p.join(package.root.path, 'bin'));
     hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
     if (binDir.existsSync() && hasDartFiles()) {
@@ -264,14 +273,27 @@ Future<Null> run() async {
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
 
-  // Find unused packages that provide an executable. We assume those executables are used, but warn the user in case they are not.
-  final consideredUsed = unusedDependencies.intersection(packagesWithExecutables);
-  if (consideredUsed.isNotEmpty) {
-    log(Level.INFO, 'the following packages contain executables, they are assumed to be used:', consideredUsed);
+  {
+    // Find unused packages that provide an executable. We assume those executables are used,
+    // but warn the user in case they are not.
+    final consideredUsed = unusedDependencies.intersection(packagesWithExecutables);
+    if (consideredUsed.isNotEmpty) {
+      log(Level.INFO, 'The following packages contain executables, they are assumed to be used:', consideredUsed);
+    }
   }
-
   // Remove deps that provide an executable, assume that the executable is used
   unusedDependencies.removeAll(packagesWithExecutables);
+
+  {
+    // Find unused packages that provide a builder. We assume those builders are used,
+    // but warn the user in case they are not.
+    final consideredUsed = unusedDependencies.intersection(packagesWithBuilders);
+    if (consideredUsed.isNotEmpty) {
+      log(Level.INFO, 'The following packages contain builders, they are assumed to be used:', consideredUsed);
+    }
+  }
+  // Remove deps that provide a builder, assume that the builder is used
+  unusedDependencies.removeAll(packagesWithBuilders);
 
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
