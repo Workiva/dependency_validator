@@ -250,6 +250,7 @@ Future<Null> run() async {
             ..remove(dependencyValidatorPackageName);
 
   // Remove deps that provide builders that will be applied
+  final packageConfig = await findPackageConfig(Directory.current);
   final rootBuildConfig = await BuildConfig.fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, '.');
   bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
         ...rootBuildConfig.globalOptions.keys,
@@ -273,8 +274,6 @@ Future<Null> run() async {
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
-  final packageConfig = await findPackageConfig(Directory.current);
-
   final packagesWithExecutables = Set<String>();
   for (final package in unusedDependencies.map((name) => packageConfig[name])) {
     // Search for executables, if found we assume they are used
