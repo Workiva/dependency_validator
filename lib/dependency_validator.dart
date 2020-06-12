@@ -25,8 +25,6 @@ import 'src/constants.dart';
 import 'src/pubspec_config.dart';
 import 'src/utils.dart';
 
-export 'src/constants.dart' show commonBinaryPackages;
-
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 Future<Null> run() async {
   if (!File('pubspec.yaml').existsSync()) {
@@ -59,31 +57,9 @@ Future<Null> run() async {
   final optionsIncludePackage = getAnalysisOptionsIncludePackage();
 
   // Read and parse the pubspec.yaml in the current working directory.
-  final pubspec = Pubspec.parse(File('pubspec.yaml').readAsStringSync());
+  final pubspec = Pubspec.parse(File('pubspec.yaml').readAsStringSync(), sourceUrl: 'pubspec.yaml');
 
-  // Extract the package name.
-  final packageName = pubspec.name;
-
-  logger.info('Validating dependencies for $packageName\n');
-
-  // Find packages that provide executables.
-  final packagesWithExecutables = Set<String>();
-  final packagesWithBuilders = Set<String>();
-  final packageConfig = await findPackageConfig(Directory.current);
-  for (final package in packageConfig.packages) {
-    // Search for builders
-    final buildConfig = await BuildConfig.fromBuildConfigDir(packageName, pubspec.dependencies.keys, package.root.path);
-    if (buildConfig.builderDefinitions.isNotEmpty) {
-      packagesWithBuilders.add(package.name);
-    }
-
-    // Search for executables
-    final binDir = Directory(p.join(package.root.path, 'bin'));
-    hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
-    if (binDir.existsSync() && hasDartFiles()) {
-      packagesWithExecutables.add(package.name);
-    }
-  }
+  logger.info('Validating dependencies for ${pubspec.name}\n');
 
   checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
 
@@ -191,7 +167,7 @@ Future<Null> run() async {
           .difference(deps)
           .difference(devDeps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName)
+            ..remove(pubspec.name)
             // Ignore known missing packages.
             ..removeAll(ignoredPackages);
 
@@ -213,7 +189,7 @@ Future<Null> run() async {
           .difference(devDeps)
           .difference(deps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName)
+            ..remove(pubspec.name)
             // Ignore known missing packages.
             ..removeAll(ignoredPackages);
 
@@ -273,15 +249,45 @@ Future<Null> run() async {
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
 
+  // Remove deps that provide builders that will be applied
+  final rootBuildConfig = await BuildConfig.fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, '.');
+  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
+        ...rootBuildConfig.globalOptions.keys,
+        for (final target in rootBuildConfig.buildTargets.values) ...target.builders.keys,
+      ].map((key) => normalizeBuilderKeyUsage(key, pubspec.name)).any((key) => key.startsWith('$dependencyName:'));
+
+  final packagesWithConsumedBuilders = Set<String>();
+  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
+    // Check if a builder is used from this package
+    if (rootPackageReferencesDependencyInBuildYaml(package.name) ||
+        await dependencyDefinesAutoAppliedBuilder(package.root.path)) {
+      packagesWithConsumedBuilders.add(package.name);
+    }
+  }
+
+  logIntersection(
+      Level.FINE,
+      'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
+      unusedDependencies,
+      packagesWithConsumedBuilders);
+  unusedDependencies.removeAll(packagesWithConsumedBuilders);
+
   // Remove deps that provide executables, those are assumed to be used
+  final packageConfig = await findPackageConfig(Directory.current);
+
+  final packagesWithExecutables = Set<String>();
+  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
+    // Search for executables, if found we assume they are used
+    final binDir = Directory(p.join(package.root.path, 'bin'));
+    hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
+    if (binDir.existsSync() && hasDartFiles()) {
+      packagesWithExecutables.add(package.name);
+    }
+  }
+
   logIntersection(Level.INFO, 'The following packages contain executables, they are assumed to be used:',
       unusedDependencies, packagesWithExecutables);
   unusedDependencies.removeAll(packagesWithExecutables);
-
-  // Remove deps that provide builders, those are assumed to be used
-  logIntersection(Level.INFO, 'The following packages contain builders, they are assumed to be used:',
-      unusedDependencies, packagesWithBuilders);
-  unusedDependencies.removeAll(packagesWithBuilders);
 
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
@@ -303,9 +309,13 @@ Future<Null> run() async {
   }
 
   if (exitCode == 0) {
-    logger.info('No fatal infractions found, $packageName is good to go!');
+    logger.info('No fatal infractions found, ${pubspec.name} is good to go!');
   }
 }
+
+/// Whether a dependency at [path] defines an auto applied builder.
+Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
+    (await BuildConfig.fromPackageDir(path)).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///
