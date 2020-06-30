@@ -348,7 +348,7 @@ void main() {
       expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
     });
 
-    test('passes when dependencies not used in lib provide executables', () async {
+    test('passes when dependencies not used provide executables', () async {
       final pubspec = unindent('''
           name: common_binaries
           version: 0.0.0
@@ -377,7 +377,7 @@ void main() {
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
     });
 
-    test('passes when dependencies not used in lib provide auto applied builders', () async {
+    test('passes when dependencies are not imported but provide auto applied builders', () async {
       final pubspec = unindent('''
           name: common_binaries
           version: 0.0.0
@@ -406,7 +406,7 @@ void main() {
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
     });
 
-    test('passes when dependencies not used in lib provide used builders', () async {
+    test('passes when dependencies are not imported but provide used builders', () async {
       final pubspec = unindent('''
           name: common_binaries
           version: 0.0.0
