@@ -20,14 +20,6 @@ const String devDependenciesKey = 'dev_dependencies';
 /// String key in pubspec.yaml for the package name.
 const String nameKey = 'name';
 
-/// Packages that are typically only used for their binaries.
-const List<String> commonBinaryPackages = [
-  'build_test',
-  'build_vm_compilers',
-  'build_web_compilers',
-  'built_value_generator',
-];
-
 /// Provides a set of reasons why version strings might be pins.
 class DependencyPinEvaluation {
   const DependencyPinEvaluation._(this.message, {this.isPin = true});

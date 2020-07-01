@@ -11,6 +11,7 @@ environment:
 
 dependencies:
   args: ^1.5.0
+  build_config: ^0.4.2
   checked_yaml: ^1.0.0
   glob: ^1.2.0
   json_annotation: ^3.0.0
@@ -18,6 +19,7 @@ dependencies:
   package_config: ^1.9.3
   path: ^1.4.2
   pub_semver: ^1.4.1
+  pubspec_parse: ^0.1.5
   yaml: ^2.1.13
 
 dev_dependencies:

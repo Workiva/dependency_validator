@@ -53,11 +53,23 @@ void main() {
               path: ${Directory.current.path}
           ''');
 
+      final fakeProjectBuild = unindent('''
+          builders:
+            someBuilder:
+              import: "package:fake_project/builder.dart"
+              builder_factories: ["someBuilder"]
+              build_extensions: {".dart" : [".woot.g.dart"]}
+              auto_apply: none
+              build_to: cache
+          ''');
+
       await d.dir('fake_project', [
         d.dir('lib', [
           d.file('fake.dart', 'bool fake = true;'),
+          d.file('builder.dart', 'bool fake = true;'),
         ]),
         d.file('pubspec.yaml', fakeProjectPubspec),
+        d.file('build.yaml', fakeProjectBuild),
       ]).create();
     });
 
@@ -336,7 +348,7 @@ void main() {
       expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
     });
 
-    test('passes when there are unused known common binary packages', () async {
+    test('passes when dependencies not used provide executables', () async {
       final pubspec = unindent('''
           name: common_binaries
           version: 0.0.0
@@ -345,10 +357,6 @@ void main() {
             sdk: '>=2.4.0 <3.0.0'
           dev_dependencies:
             build_runner: ^1.7.1
-            build_test: ^0.10.9
-            build_vm_compilers: ^1.0.3
-            build_web_compilers: ^2.5.1
-            built_value_generator: ^7.0.0
             coverage: any
             dart_dev: ^3.0.0
             dart_style: ^1.3.3
@@ -361,6 +369,70 @@ void main() {
           d.file('fake.dart', 'bool fake = true;'),
         ]),
         d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      final result = checkProject('${d.sandbox}/common_binaries');
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
+    });
+
+    test('passes when dependencies are not imported but provide auto applied builders', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dev_dependencies:
+            build_test: ^0.10.9
+            build_vm_compilers: ^1.0.3
+            build_web_compilers: ^2.5.1
+            built_value_generator: ^7.0.0
+            dependency_validator:
+              path: ${Directory.current.path}
+          ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      final result = checkProject('${d.sandbox}/common_binaries');
+
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
+    });
+
+    test('passes when dependencies are not imported but provide used builders', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dev_dependencies:
+            fake_project:
+              path: ${d.sandbox}/fake_project
+            dependency_validator:
+              path: ${Directory.current.path}
+          ''');
+
+      final build = unindent(r'''
+            targets:
+              $default:
+                builders:
+                  fake_project|someBuilder:
+            ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('nope.dart', 'bool nope = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+        d.file('build.yaml', build),
       ]).create();
 
       final result = checkProject('${d.sandbox}/common_binaries');

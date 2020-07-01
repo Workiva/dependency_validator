@@ -16,7 +16,6 @@ import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
 import 'package:dependency_validator/dependency_validator.dart';
-import 'package:glob/glob.dart';
 import 'package:logging/logging.dart';
 
 const String helpArg = 'help';
