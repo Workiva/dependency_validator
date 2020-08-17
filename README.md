@@ -37,7 +37,7 @@ things in your project's `pubspec.yaml`:
 
 ```yaml
 # pubsec.yaml
-dependencyValidator:
+dependency_validator:
   # Exclude one or more paths from being scanned. Supports glob syntax.
   exclude:
     - "app/**"
