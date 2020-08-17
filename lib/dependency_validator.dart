@@ -134,8 +134,7 @@ Future<Null> run() async {
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
-    if (optionsIncludePackage != null)
-      optionsIncludePackage,
+    if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());

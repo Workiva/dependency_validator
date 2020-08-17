@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'pubspec_config.g.dart';
 
-@JsonSerializable(anyMap: true, checked: true, fieldRename: FieldRename.snake)
+@JsonSerializable(anyMap: true, checked: true, createToJson: false, fieldRename: FieldRename.snake)
 class PubspecDepValidatorConfig {
   final DepValidatorConfig dependencyValidator;
 
@@ -15,7 +15,7 @@ class PubspecDepValidatorConfig {
       checkedYamlDecode(yamlContent, (m) => PubspecDepValidatorConfig.fromJson(m), sourceUrl: sourceUrl);
 }
 
-@JsonSerializable(anyMap: true, checked: true, fieldRename: FieldRename.snake)
+@JsonSerializable(anyMap: true, checked: true, createToJson: false, fieldRename: FieldRename.snake)
 class DepValidatorConfig {
   final List<String> exclude;
 
