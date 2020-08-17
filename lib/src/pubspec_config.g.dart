@@ -16,10 +16,6 @@ PubspecDepValidatorConfig _$PubspecDepValidatorConfigFromJson(Map json) {
   }, fieldKeyMap: const {'dependencyValidator': 'dependency_validator'});
 }
 
-Map<String, dynamic> _$PubspecDepValidatorConfigToJson(PubspecDepValidatorConfig instance) => <String, dynamic>{
-      'dependency_validator': instance.dependencyValidator,
-    };
-
 DepValidatorConfig _$DepValidatorConfigFromJson(Map json) {
   return $checkedNew('DepValidatorConfig', json, () {
     final val = DepValidatorConfig(
@@ -29,8 +25,3 @@ DepValidatorConfig _$DepValidatorConfigFromJson(Map json) {
     return val;
   });
 }
-
-Map<String, dynamic> _$DepValidatorConfigToJson(DepValidatorConfig instance) => <String, dynamic>{
-      'exclude': instance.exclude,
-      'ignore': instance.ignore,
-    };
