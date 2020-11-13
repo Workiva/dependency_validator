@@ -1,4 +1,4 @@
-# 2.0.0-beta
+# 2.0.0
 
 - **Breaking Change:** Excluded paths and ignored packages must now be
 configured statically in your project's `pubspec.yaml` instead of via
