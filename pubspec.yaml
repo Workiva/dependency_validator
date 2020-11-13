@@ -30,8 +30,6 @@ executables:
   dependency_validator:
 
 dependency_validator:
-  exclude:
-    - 'test_fixtures/**'
   ignore:
     - json_serializable
     - _foo
