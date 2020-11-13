@@ -14,70 +14,74 @@
 
 import 'dart:io';
 
-import 'package:yaml/yaml.dart';
+import 'package:build_config/build_config.dart';
+import 'package:glob/glob.dart';
+import 'package:logging/logging.dart';
+import 'package:package_config/package_config.dart';
+import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'src/constants.dart';
+import 'src/pubspec_config.dart';
 import 'src/utils.dart';
 
-export 'src/constants.dart' show commonBinaryPackages;
-
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-void run({
-  List<String> excludedDirs = const [],
-  bool fatalDevMissing = true,
-  bool fatalMissing = true,
-  bool fatalOverPromoted = true,
-  bool fatalPins = true,
-  bool fatalUnderPromoted = true,
-  bool fatalUnused = true,
-  List<String> ignoredPackages = const [],
-}) {
+Future<Null> run() async {
+  if (!File('pubspec.yaml').existsSync()) {
+    logger.shout('pubspec.yaml not found');
+    exit(1);
+  }
+  if (!File('.dart_tool/package_config.json').existsSync()) {
+    logger.shout('No .dart_tool/package_config.json file found, please run "pub get" first.');
+    exit(1);
+  }
+
+  final config = PubspecDepValidatorConfig.fromYaml(File('pubspec.yaml').readAsStringSync()).dependencyValidator;
+  final configExcludes = config?.exclude
+      ?.map((s) {
+        try {
+          return Glob(s);
+        } catch (_, __) {
+          logger.shout('invalid glob syntax: "$s"');
+          return null;
+        }
+      })
+      ?.where((g) => g != null)
+      ?.toList();
+  final excludes = configExcludes ?? <Glob>[];
+  logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
+  final ignoredPackages = config?.ignore ?? <String>[];
+  logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
+
   // Read and parse the analysis_options.yaml in the current working directory.
   final optionsIncludePackage = getAnalysisOptionsIncludePackage();
 
   // Read and parse the pubspec.yaml in the current working directory.
-  final YamlMap pubspecYaml = loadYaml(File('pubspec.yaml').readAsStringSync());
+  final pubspec = Pubspec.parse(File('pubspec.yaml').readAsStringSync(), sourceUrl: 'pubspec.yaml');
 
-  // Extract the package name.
-  final packageName = pubspecYaml[nameKey];
+  logger.info('Validating dependencies for ${pubspec.name}\n');
 
-  logger.info('Validating dependencies for $packageName\n');
-
-  checkPubspecYamlForPins(pubspecYaml, ignoredPackages: ignoredPackages, fatal: fatalPins);
+  checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
 
   // Extract the package names from the `dependencies` section.
-  final deps =
-      pubspecYaml.containsKey(dependenciesKey) ? Set<String>.from(pubspecYaml[dependenciesKey].keys) : <String>{};
+  final deps = Set<String>.from(pubspec.dependencies.keys);
   logger.fine('dependencies:\n${bulletItems(deps)}\n');
 
   // Extract the package names from the `dev_dependencies` section.
-  final devDeps =
-      pubspecYaml.containsKey(devDependenciesKey) ? Set<String>.from(pubspecYaml[devDependenciesKey].keys) : <String>{};
+  final devDeps = Set<String>.from(pubspec.devDependencies.keys);
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
-  // Extract the package names from the `transformers` section.
-  final Iterable transformerEntries = pubspecYaml[transformersKey];
-  final packagesUsedViaTransformers = pubspecYaml.containsKey(transformersKey)
-      ? Set<String>.from(transformerEntries
-          .map<String>((value) => value is YamlMap ? value.keys.first : value)
-          .map((value) => value.replaceFirst(RegExp(r'/.*'), '')))
-      : <String>{};
-  logger.fine('transformers:\n'
-      '${bulletItems(packagesUsedViaTransformers)}\n');
-
-  // Recursively list all Dart, Scss and Less files in lib/
-  final publicDartFiles = <File>[]
-    ..addAll(listDartFilesIn('lib/', excludedDirs))
-    ..addAll(listDartFilesIn('bin/', excludedDirs));
-
-  final publicScssFiles = <File>[]
-    ..addAll(listScssFilesIn('lib/', excludedDirs))
-    ..addAll(listScssFilesIn('bin/', excludedDirs));
-
-  final publicLessFiles = <File>[]
-    ..addAll(listLessFilesIn('lib/', excludedDirs))
-    ..addAll(listLessFilesIn('bin/', excludedDirs));
+  final publicDirs = ['bin/', 'lib/'];
+  final publicDartFiles = [
+    for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
+  ];
+  final publicScssFiles = [
+    for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
+  ];
+  final publicLessFiles = [
+    for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+  ];
 
   logger
     ..fine('public facing dart files:\n'
@@ -108,61 +112,51 @@ void run({
       packagesUsedInPublicFiles.add(match.group(1));
     }
   }
-
   logger.fine('packages used in public facing files:\n'
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
-  // Recursively list all Dart files in known directories other than lib/
-  final nonLibDartFiles = <File>[]
-    ..addAll(listDartFilesIn('example/', excludedDirs))
-    ..addAll(listDartFilesIn('test/', excludedDirs))
-    ..addAll(listDartFilesIn('tool/', excludedDirs))
-    ..addAll(listDartFilesIn('web/', excludedDirs));
-  final nonLibScssFiles = <File>[]
-    ..addAll(listScssFilesIn('example/', excludedDirs))
-    ..addAll(listScssFilesIn('test/', excludedDirs))
-    ..addAll(listScssFilesIn('tool/', excludedDirs))
-    ..addAll(listScssFilesIn('web/', excludedDirs));
-  final nonLibLessFiles = <File>[]
-    ..addAll(listLessFilesIn('example/', excludedDirs))
-    ..addAll(listLessFilesIn('test/', excludedDirs))
-    ..addAll(listLessFilesIn('tool/', excludedDirs))
-    ..addAll(listLessFilesIn('web/', excludedDirs));
+  final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
+
+  final nonPublicDartFiles = listDartFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicScssFiles = listScssFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicLessFiles = listLessFilesIn('./', [...excludes, ...publicDirGlobs]);
 
   logger
-    ..fine('non-lib dart files:\n'
-        '${bulletItems(nonLibDartFiles.map((f) => f.path))}\n')
-    ..fine('non-lib scss files:\n'
-        '${bulletItems(nonLibScssFiles.map((f) => f.path))}\n')
-    ..fine('non-lib less files:\n'
-        '${bulletItems(nonLibLessFiles.map((f) => f.path))}\n');
+    ..fine('non-public dart files:\n'
+        '${bulletItems(nonPublicDartFiles.map((f) => f.path))}\n')
+    ..fine('non-public scss files:\n'
+        '${bulletItems(nonPublicScssFiles.map((f) => f.path))}\n')
+    ..fine('non-public less files:\n'
+        '${bulletItems(nonPublicLessFiles.map((f) => f.path))}\n');
 
   // Read each file outside lib/ and parse the package names from every
   // import and export directive.
-  final packagesUsedOutsideLib = <String>{
+  final packagesUsedOutsidePublicDirs = <String>{
+    // For more info on analysis options:
+    // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
-  for (final file in nonLibDartFiles) {
+  for (final file in nonPublicDartFiles) {
     final matches = importExportDartPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(2));
+      packagesUsedOutsidePublicDirs.add(match.group(2));
     }
   }
-  for (final file in nonLibScssFiles) {
+  for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(1));
+      packagesUsedOutsidePublicDirs.add(match.group(1));
     }
   }
-  for (final file in nonLibLessFiles) {
+  for (final file in nonPublicLessFiles) {
     final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
-      packagesUsedOutsideLib.add(match.group(1));
+      packagesUsedOutsidePublicDirs.add(match.group(1));
     }
   }
 
-  logger.fine('packages used outside lib:\n'
-      '${bulletItems(packagesUsedOutsideLib)}\n');
+  logger.fine('packages used outside public dirs:\n'
+      '${bulletItems(packagesUsedOutsidePublicDirs)}\n');
 
   // Packages that are used in lib/ but are not dependencies.
   final missingDependencies =
@@ -172,37 +166,39 @@ void run({
           .difference(deps)
           .difference(devDeps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName)
+            ..remove(pubspec.name)
             // Ignore known missing packages.
             ..removeAll(ignoredPackages);
 
   if (missingDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    if (fatalMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
   final missingDevDependencies =
       // Start with packages _only_ used outside lib/
-      packagesUsedOutsideLib
+      packagesUsedOutsidePublicDirs
           .difference(packagesUsedInPublicFiles)
           // Remove all explicitly declared dependencies
           .difference(devDeps)
           .difference(deps)
             // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(packageName)
+            ..remove(pubspec.name)
             // Ignore known missing packages.
             ..removeAll(ignoredPackages);
 
   if (missingDevDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    if (fatalDevMissing) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -212,16 +208,17 @@ void run({
       (deps
           .difference(packagesUsedInPublicFiles)
           // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsideLib))
+          .intersection(packagesUsedOutsidePublicDirs))
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
   if (overPromotedDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    if (fatalOverPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -232,11 +229,12 @@ void run({
         ..removeAll(ignoredPackages);
 
   if (underPromotedDependencies.isNotEmpty) {
-    logDependencyInfractions(
+    log(
+      Level.WARNING,
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    if (fatalUnderPromoted) exitCode = 1;
+    exitCode = 1;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -246,11 +244,48 @@ void run({
           .union(devDeps)
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
-          .difference(packagesUsedOutsideLib)
-          // Remove all deps being used for their transformer(s)
-          .difference(packagesUsedViaTransformers)
+          .difference(packagesUsedOutsidePublicDirs)
             // Remove this package, since we know they're using our executable
             ..remove(dependencyValidatorPackageName);
+
+  // Remove deps that provide builders that will be applied
+  final packageConfig = await findPackageConfig(Directory.current);
+  final rootBuildConfig = await BuildConfig.fromBuildConfigDir(pubspec.name, pubspec.dependencies.keys, '.');
+  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
+        ...rootBuildConfig.globalOptions.keys,
+        for (final target in rootBuildConfig.buildTargets.values) ...target.builders.keys,
+      ].map((key) => normalizeBuilderKeyUsage(key, pubspec.name)).any((key) => key.startsWith('$dependencyName:'));
+
+  final packagesWithConsumedBuilders = Set<String>();
+  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
+    // Check if a builder is used from this package
+    if (rootPackageReferencesDependencyInBuildYaml(package.name) ||
+        await dependencyDefinesAutoAppliedBuilder(package.root.path)) {
+      packagesWithConsumedBuilders.add(package.name);
+    }
+  }
+
+  logIntersection(
+      Level.FINE,
+      'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
+      unusedDependencies,
+      packagesWithConsumedBuilders);
+  unusedDependencies.removeAll(packagesWithConsumedBuilders);
+
+  // Remove deps that provide executables, those are assumed to be used
+  final packagesWithExecutables = Set<String>();
+  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
+    // Search for executables, if found we assume they are used
+    final binDir = Directory(p.join(package.root.path, 'bin'));
+    hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
+    if (binDir.existsSync() && hasDartFiles()) {
+      packagesWithExecutables.add(package.name);
+    }
+  }
+
+  logIntersection(Level.INFO, 'The following packages contain executables, they are assumed to be used:',
+      unusedDependencies, packagesWithExecutables);
+  unusedDependencies.removeAll(packagesWithExecutables);
 
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
@@ -263,18 +298,22 @@ void run({
   unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
-    logDependencyInfractions(
-      'These packages may be unused, or you may be using executables or assets from these packages:',
+    log(
+      Level.WARNING,
+      'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
-
-    if (fatalUnused) exitCode = 1;
+    exitCode = 1;
   }
 
   if (exitCode == 0) {
-    logger.info('No fatal infractions found, $packageName is good to go!');
+    logger.info('No fatal infractions found, ${pubspec.name} is good to go!');
   }
 }
+
+/// Whether a dependency at [path] defines an auto applied builder.
+Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
+    (await BuildConfig.fromPackageDir(path)).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///
@@ -294,26 +333,17 @@ void run({
 ///
 /// package: ^1.2.3
 /// package: ">=1.2.3 <2.0.0"
-void checkPubspecYamlForPins(
-  YamlMap pubspecYaml, {
+void checkPubspecForPins(
+  Pubspec pubspec, {
   List<String> ignoredPackages = const [],
-  bool fatal = true,
 }) {
   final List<String> infractions = [];
-  if (pubspecYaml.containsKey(dependenciesKey)) {
-    infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[dependenciesKey], ignoredPackages: ignoredPackages),
-    );
-  }
+  infractions.addAll(getDependenciesWithPins(pubspec.dependencies, ignoredPackages: ignoredPackages));
 
-  if (pubspecYaml.containsKey(devDependenciesKey)) {
-    infractions.addAll(
-      getDependenciesWithPins(pubspecYaml[devDependenciesKey], ignoredPackages: ignoredPackages),
-    );
-  }
+  infractions.addAll(getDependenciesWithPins(pubspec.devDependencies, ignoredPackages: ignoredPackages));
 
   if (infractions.isNotEmpty) {
-    logDependencyInfractions('These packages are pinned in pubspec.yaml:', infractions);
-    if (fatal) exitCode = 1;
+    log(Level.WARNING, 'These packages are pinned in pubspec.yaml:', infractions);
+    exitCode = 1;
   }
 }

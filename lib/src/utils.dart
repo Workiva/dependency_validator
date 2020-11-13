@@ -14,9 +14,11 @@
 
 import 'dart:io';
 
+import 'package:glob/glob.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:yaml/yaml.dart';
 
 import 'constants.dart';
@@ -43,52 +45,64 @@ String getAnalysisOptionsIncludePackage({String path}) {
 }
 
 /// Returns an iterable of all Dart files (files ending in .dart) in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes Dart files that are in a `packages/` subdirectory.
-Iterable<File> listDartFilesIn(String dirPath, List<String> excludedDirs) =>
-    listFilesWithExtensionIn(dirPath, excludedDirs, 'dart');
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listDartFilesIn(String dirPath, List<Glob> excludes) =>
+    listFilesWithExtensionIn(dirPath, excludes, 'dart');
 
 /// Returns an iterable of all Scss files (files ending in .scss) in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes Scss files that are in a `packages/` subdirectory.
-Iterable<File> listScssFilesIn(String dirPath, List<String> excludedDirs) =>
-    listFilesWithExtensionIn(dirPath, excludedDirs, 'scss');
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listScssFilesIn(String dirPath, List<Glob> excludes) =>
+    listFilesWithExtensionIn(dirPath, excludes, 'scss');
 
 /// Returns an iterable of all Less files (files ending in .less) in the given
 /// [dirPath] excluding any sub-directories specified in [excludedDirs].
 ///
 /// This also excludes Less files that are in a `packages/` subdirectory.
-Iterable<File> listLessFilesIn(String dirPath, List<String> excludedDirs) =>
+Iterable<File> listLessFilesIn(String dirPath, List<Glob> excludedDirs) =>
     listFilesWithExtensionIn(dirPath, excludedDirs, 'less');
 
 /// Returns an iterable of all files ending in .[extension] in the given
-/// [dirPath] excluding any sub-directories specified in [excludedDirs].
+/// [dirPath] excluding any files matched by any glob in [excludes].
 ///
-/// This also excludes files that are in a `packages/` subdirectory.
-Iterable<File> listFilesWithExtensionIn(String dirPath, List<String> excludedDirs, String extension) {
-  if (!FileSystemEntity.isDirectorySync(dirPath)) return const [];
+/// This also excludes Dart files that are in a hidden directory, like
+/// `.dart_tool`.
+Iterable<File> listFilesWithExtensionIn(String dirPath, List<Glob> excludes, String ext) {
+  if (!FileSystemEntity.isDirectorySync(dirPath)) return [];
 
-  return List<File>.from(Directory(dirPath).listSync(recursive: true).where((entity) {
-    if (entity is! File) return false;
-    if (p.split(entity.path).contains('packages')) return false;
-    if (p.extension(entity.path) != ('.$extension')) return false;
-    if (excludedDirs.any((dir) => p.isWithin(dir, entity.path))) return false;
-
-    return true;
-  }));
+  return Directory(dirPath)
+      .listSync(recursive: true)
+      .whereType<File>()
+      // Skip files in hidden directories (e.g. `.dart_tool/`)
+      .where((file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
+      // Filter by the given file extension
+      .where((file) => p.extension(file.path) == '.$ext')
+      // Skip any files that match one of the given exclude globs
+      .where((file) => excludes.every((glob) => !glob.matches(file.path)));
 }
 
-/// Logs a warning with the given [infraction] and lists all of the given
-/// [dependencies] under that infraction.
-void logDependencyInfractions(String infraction, Iterable<String> dependencies) {
+/// Logs the given [message] at [level] and lists all of the given [dependencies].
+void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
-  logger.warning([infraction, bulletItems(sortedDependencies), ''].join('\n'));
+  logger.log(level, [message, bulletItems(sortedDependencies), ''].join('\n'));
+}
+
+/// Logs the given [message] at [level] and lists the intersection of [dependenciesA]
+/// and [dependenciesB] if there is one.
+void logIntersection(Level level, String message, Set<String> dependenciesA, Set<String> dependenciesB) {
+  final intersection = dependenciesA.intersection(dependenciesB);
+  if (intersection.isNotEmpty) {
+    log(level, message, intersection);
+  }
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPackages = const []}) {
+List<String> getDependenciesWithPins(Map<String, Dependency> dependencies, {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {
@@ -98,23 +112,15 @@ List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPack
     String version;
     final packageMeta = dependencies[packageName];
 
-    if (packageMeta is String) {
-      version = packageMeta;
-    } else if (packageMeta is Map) {
-      if (packageMeta.containsKey('version')) {
-        version = packageMeta['version'];
-      } else {
-        // This feature only works for versions, not git refs or paths.
-        continue;
+    if (packageMeta is HostedDependency) {
+      final DependencyPinEvaluation evaluation = inspectVersionForPins(packageMeta.version);
+
+      if (evaluation.isPin) {
+        infractions.add('$packageName: $version -- ${evaluation.message}');
       }
     } else {
-      continue; // no version string set
-    }
-
-    final DependencyPinEvaluation evaluation = inspectVersionForPins(version);
-
-    if (evaluation.isPin) {
-      infractions.add('$packageName: $version -- ${evaluation.message}');
+      // This feature only works for versions, not git refs or paths.
+      continue;
     }
   }
 
@@ -122,9 +128,7 @@ List<String> getDependenciesWithPins(Map dependencies, {List<String> ignoredPack
 }
 
 /// Returns the reason a version is a pin or null if it's not.
-DependencyPinEvaluation inspectVersionForPins(String version) {
-  final VersionConstraint constraint = VersionConstraint.parse(version);
-
+DependencyPinEvaluation inspectVersionForPins(VersionConstraint constraint) {
   if (constraint.isAny) {
     return DependencyPinEvaluation.notAPin;
   }

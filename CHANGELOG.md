@@ -1,3 +1,20 @@
+# 2.0.0
+
+- **Breaking Change:** Excluded paths and ignored packages must now be
+configured statically in your project's `pubspec.yaml` instead of via
+command-line arguments. See the README for more information.
+
+- Detect packages with one or more executables and consider them to be used.
+In other words, you no longer need to ignore packages that are only used for
+their executable(s).
+
+- Detect packages that provide one or more builders that are configured to be
+auto-applied by the [dart build system][dart-build] and consider them to be
+used. In other words, you no longer need to ignore packages that are only used
+for their builder(s).
+
+[dart-build]: https://github.com/dart-lang/build
+
 # 1.5.0
 
 - Scan `.less` files for Dart package imports.
@@ -54,7 +71,7 @@
   from being consumed) now causes validator to fail. You can opt-out of this
   feature with `--no-fatal-pins`. [#27][#27]
 
-- **Feature:** Added a `--help` flag that outputs usage information. [#28][#28] 
+- **Feature:** Added a `--help` flag that outputs usage information. [#28][#28]
 
 - **Improvement:** Package imports in `.scss` files are now detected.
   [#26][#26]

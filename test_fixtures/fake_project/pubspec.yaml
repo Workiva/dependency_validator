@@ -1,8 +1,0 @@
-name: fake_project
-version: 0.0.0
-private: true
-environment:
-  sdk: '>=2.4.0 <3.0.0'
-dev_dependencies:
-  dependency_validator:
-    path: ../..

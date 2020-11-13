@@ -2,37 +2,46 @@
 
 > A tool to help you find missing, under-promoted, over-promoted, and unused dependencies.
 
-## Getting Started
-
-### Install dependency_validator
+## Installation
 
 Add the following to your pubspec.yaml:
 
 ```yaml
 dev_dependencies:
-  dependency_validator: ^1.0.0
+  dependency_validator: ^2.0.0
 ```
 
 ## Usage
 
-This package comes with a single executable: dependency_validator. To run this executable: `pub run dependency_validator`. This usage will run the tool and report any missing, under-promoted, over-promoted, and unused dependencies.
+```bash
+pub run dependency_validator
+```
+
+This will report any missing, under-promoted, over-promoted, and unused
+dependencies. Any package that either provides an executable or a builder that
+will be auto-applied via the [dart build system][dart-build] will be considered
+used even if it isn't imported.
+
+[dart-build]: https://github.com/dart-lang/build
 
 - Missing: When a dependency is used in the package but not declared in the `pubspec.yaml`
-  - Optionaly do not fail by using the `--no-fatal-missing` flag.
 - Under-promoted: When a dependency is used within `lib/` but only declared as a dev_dependency.
-  - Optionaly do not fail by using the `--no-fatal-under-promoted` flag.
 - Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency.
-  - Optionaly do not fail by using the `--no-fatal-over-promoted` flag.
 - Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
-  - Optionaly do not fail by using the `--no-fatal-unused` flag.
-  - Some packages are not imported by any dart files but are used for their executables. If that is the case they can be white-listed by using the `--ignore` option.
 
-  ```bash
-  dependency_validator --ignore coverage,dartdoc
-  ```
-- Common binary packages: By default, common packages used solely for their
-  binaries, such as `build_runner` and `dart_style`, are automatically ignored.
-  For the current set of whitelisted binary packages, refer to the help:
-  `dependency_validator -h`.
-  - Optionally do not ignore common binary packages using the
-    `--no-ignore-common-binaries` flag.
+## Configuration
+
+There may be packages that are intentionally depended on but not used, or there
+may be directories that need to be ignored. You can statically configure these
+things in your project's `pubspec.yaml`:
+
+```yaml
+# pubsec.yaml
+dependency_validator:
+  # Exclude one or more paths from being scanned. Supports glob syntax.
+  exclude:
+    - "app/**"
+  # Ignore one or more packages.
+  ignore:
+    - analyzer
+```
