@@ -1,3 +1,7 @@
+# 2.0.1
+
+- Fix a path issue on Windows.
+
 # 2.0.0
 
 - **Breaking Change:** Excluded paths and ignored packages must now be

@@ -260,7 +260,7 @@ Future<Null> run() async {
   for (final package in unusedDependencies.map((name) => packageConfig[name])) {
     // Check if a builder is used from this package
     if (rootPackageReferencesDependencyInBuildYaml(package.name) ||
-        await dependencyDefinesAutoAppliedBuilder(package.root.path)) {
+        await dependencyDefinesAutoAppliedBuilder(p.fromUri(package.root))) {
       packagesWithConsumedBuilders.add(package.name);
     }
   }
