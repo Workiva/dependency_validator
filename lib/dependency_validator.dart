@@ -260,7 +260,7 @@ Future<Null> run() async {
   for (final package in unusedDependencies.map((name) => packageConfig[name])) {
     // Check if a builder is used from this package
     if (rootPackageReferencesDependencyInBuildYaml(package.name) ||
-        await dependencyDefinesAutoAppliedBuilder(package.root.path)) {
+        await dependencyDefinesAutoAppliedBuilder(p.fromUri(package.root))) {
       packagesWithConsumedBuilders.add(package.name);
     }
   }
@@ -276,7 +276,7 @@ Future<Null> run() async {
   final packagesWithExecutables = Set<String>();
   for (final package in unusedDependencies.map((name) => packageConfig[name])) {
     // Search for executables, if found we assume they are used
-    final binDir = Directory(p.join(package.root.path, 'bin'));
+    final binDir = Directory(p.join(p.fromUri(package.root), 'bin'));
     hasDartFiles() => binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
     if (binDir.existsSync() && hasDartFiles()) {
       packagesWithExecutables.add(package.name);
