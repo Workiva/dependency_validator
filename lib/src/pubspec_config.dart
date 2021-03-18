@@ -1,3 +1,4 @@
+// @dart = 2.7
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:json_annotation/json_annotation.dart';
 

@@ -1,3 +1,5 @@
+// @dart = 2.7
+
 /// Regex used to detect all Dart import and export directives.
 final RegExp importExportDartPackageRegex =
     RegExp(r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''', multiLine: true);
