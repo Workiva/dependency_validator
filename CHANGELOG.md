@@ -1,3 +1,10 @@
+# 3.0.0
+
+- **Breaking:** removed the public `package:dependency_validator/dependency_validator.dart`
+entrypoint. It was only intended for this package to provide an executable and
+the Dart APIs don't need to be public.
+- Null safety.
+
 # 2.0.1
 
 - Fix a path issue on Windows.

@@ -19,8 +19,8 @@ PubspecDepValidatorConfig _$PubspecDepValidatorConfigFromJson(Map json) {
 DepValidatorConfig _$DepValidatorConfigFromJson(Map json) {
   return $checkedNew('DepValidatorConfig', json, () {
     final val = DepValidatorConfig(
-      exclude: $checkedConvert(json, 'exclude', (v) => (v as List)?.map((e) => e as String)?.toList()),
-      ignore: $checkedConvert(json, 'ignore', (v) => (v as List)?.map((e) => e as String)?.toList()),
+      exclude: $checkedConvert(json, 'exclude', (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()) ?? [],
+      ignore: $checkedConvert(json, 'ignore', (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()) ?? [],
     );
     return val;
   });

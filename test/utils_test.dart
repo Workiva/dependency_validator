@@ -51,7 +51,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
   group('importExportDartPackageRegex matches correctly for', () {
     void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
       expect(input, matches(importExportDartPackageRegex));
-      expect(importExportDartPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
+      expect(importExportDartPackageRegex.firstMatch(input)!.groups([1, 2]), [expectedGroup1, expectedGroup2]);
     }
 
     for (var importOrExport in ['import', 'export']) {
@@ -108,7 +108,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
   group('importLessPackageRegex', () {
     void sharedTest(String input, String expectedGroup) {
       expect(input, matches(importLessPackageRegex));
-      expect(importLessPackageRegex.firstMatch(input).group(1), expectedGroup);
+      expect(importLessPackageRegex.firstMatch(input)!.group(1), expectedGroup);
     }
 
     test('with double-quotes', () {
@@ -154,7 +154,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
   group('importScssPackageRegex', () {
     void sharedTest(String input, String expectedGroup) {
       expect(input, matches(importScssPackageRegex));
-      expect(importScssPackageRegex.firstMatch(input).group(1), expectedGroup);
+      expect(importScssPackageRegex.firstMatch(input)!.group(1), expectedGroup);
     }
 
     test('with double-quotes', () {

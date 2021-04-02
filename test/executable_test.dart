@@ -19,7 +19,10 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 ProcessResult checkProject(String projectPath) {
-  Process.runSync('pub', ['get'], workingDirectory: projectPath);
+  final pubGetResult = Process.runSync('dart', ['pub', 'get'], workingDirectory: projectPath);
+  if (pubGetResult.exitCode != 0) {
+    return pubGetResult;
+  }
 
   final args = [
     'run',
@@ -28,18 +31,20 @@ ProcessResult checkProject(String projectPath) {
     '--verbose',
   ];
 
-  return Process.runSync('pub', args, workingDirectory: projectPath);
+  return Process.runSync('dart', args, workingDirectory: projectPath);
 }
 
 /// Removes indentation from `'''` string blocks.
 String unindent(String multilineString) {
-  var indent = RegExp(r'^( *)').firstMatch(multilineString)[1];
+  var indent = RegExp(r'^( *)').firstMatch(multilineString)![1];
   assert(indent != null && indent.isNotEmpty);
   return multilineString.replaceAll('$indent', '');
 }
 
 void main() {
   group('dependency_validator', () {
+    late ProcessResult result;
+
     setUp(() async {
       // Create fake project that any test may use
       final fakeProjectPubspec = unindent('''
@@ -51,6 +56,12 @@ void main() {
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       final fakeProjectBuild = unindent('''
@@ -73,6 +84,11 @@ void main() {
       ]).create();
     });
 
+    tearDown(() {
+      printOnFailure(result.stdout);
+      printOnFailure(result.stderr);
+    });
+
     group('fails when there are packages missing from the pubspec', () {
       setUp(() async {
         final pubspec = unindent('''
@@ -84,6 +100,12 @@ void main() {
             dev_dependencies:
               dependency_validator:
                 path: ${Directory.current.path}
+            dependency_overrides:
+              build_config:
+                git:
+                  url: git@github.com:dart-lang/build.git
+                  path: build_config
+                  ref: master
             ''');
 
         await d.dir('missing', [
@@ -96,7 +118,7 @@ void main() {
       });
 
       test('', () {
-        final result = checkProject('${d.sandbox}/missing');
+        result = checkProject('${d.sandbox}/missing');
 
         expect(result.exitCode, equals(1));
         expect(result.stderr, contains('These packages are used in lib/ but are not dependencies:'));
@@ -114,7 +136,7 @@ void main() {
         File('${d.sandbox}/missing/pubspec.yaml')
             .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append, flush: true);
 
-        final result = checkProject('${d.sandbox}/missing');
+        result = checkProject('${d.sandbox}/missing');
 
         expect(result.exitCode, equals(0));
         expect(result.stderr, isEmpty);
@@ -130,7 +152,7 @@ void main() {
 
         File('${d.sandbox}/missing/pubspec.yaml').writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
-        final result = checkProject('${d.sandbox}/missing');
+        result = checkProject('${d.sandbox}/missing');
         expect(result.exitCode, 0);
       });
     });
@@ -149,6 +171,12 @@ void main() {
             dev_dependencies:
               dependency_validator:
                 path: ${Directory.current.path}
+            dependency_overrides:
+              build_config:
+                git:
+                  url: git@github.com:dart-lang/build.git
+                  path: build_config
+                  ref: master
             ''');
 
         await d.dir('over_promoted', [
@@ -161,7 +189,7 @@ void main() {
       });
 
       test('', () {
-        final result = checkProject('${d.sandbox}/over_promoted');
+        result = checkProject('${d.sandbox}/over_promoted');
 
         expect(result.exitCode, 1);
         expect(result.stderr,
@@ -181,7 +209,7 @@ void main() {
         File('${d.sandbox}/over_promoted/pubspec.yaml')
             .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
-        final result = checkProject('${d.sandbox}/over_promoted');
+        result = checkProject('${d.sandbox}/over_promoted');
         expect(result.exitCode, 0);
       });
     });
@@ -199,6 +227,12 @@ void main() {
               yaml: any
               dependency_validator:
                 path: ${Directory.current.path}
+            dependency_overrides:
+              build_config:
+                git:
+                  url: git@github.com:dart-lang/build.git
+                  path: build_config
+                  ref: master
             ''');
 
         await d.dir('under_promoted', [
@@ -211,7 +245,7 @@ void main() {
       });
 
       test('', () {
-        final result = checkProject('${d.sandbox}/under_promoted');
+        result = checkProject('${d.sandbox}/under_promoted');
 
         expect(result.exitCode, 1);
         expect(
@@ -231,7 +265,7 @@ void main() {
         File('${d.sandbox}/under_promoted/pubspec.yaml')
             .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
-        final result = checkProject('${d.sandbox}/under_promoted');
+        result = checkProject('${d.sandbox}/under_promoted');
         expect(result.exitCode, 0);
       });
     });
@@ -249,6 +283,12 @@ void main() {
                 path: ${d.sandbox}/fake_project
               dependency_validator:
                 path: ${Directory.current.path}
+            dependency_overrides:
+              build_config:
+                git:
+                  url: git@github.com:dart-lang/build.git
+                  path: build_config
+                  ref: master
             ''');
 
         await d.dir('unused', [
@@ -257,7 +297,7 @@ void main() {
       });
 
       test('', () {
-        final result = checkProject('${d.sandbox}/unused');
+        result = checkProject('${d.sandbox}/unused');
 
         expect(result.exitCode, 1);
         expect(
@@ -275,7 +315,7 @@ void main() {
 
         File('${d.sandbox}/unused/pubspec.yaml').writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
-        final result = checkProject('${d.sandbox}/unused');
+        result = checkProject('${d.sandbox}/unused');
         expect(result.exitCode, 0);
         expect(result.stdout, contains('No fatal infractions found, unused is good to go!'));
       });
@@ -296,6 +336,12 @@ void main() {
           dependency_validator:
             ignore:
               - analyzer
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       await d.dir('project', [
@@ -305,7 +351,7 @@ void main() {
         d.file('pubspec.yaml', pubspec),
       ]).create();
 
-      final result = checkProject('${d.sandbox}/project');
+      result = checkProject('${d.sandbox}/project');
 
       expect(result.exitCode, 0);
       expect(result.stderr, contains('You do not need to depend on `analyzer` to run the Dart analyzer.'));
@@ -326,7 +372,13 @@ void main() {
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
-            pedantic: any\
+            pedantic: any
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       final validDotDart = ''
@@ -342,7 +394,7 @@ void main() {
         d.file('analysis_options.yaml', 'include: package:pedantic/analysis_options.1.8.0.yaml'),
       ]).create();
 
-      final result = checkProject('${d.sandbox}/valid');
+      result = checkProject('${d.sandbox}/valid');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, valid is good to go!'));
@@ -358,10 +410,15 @@ void main() {
           dev_dependencies:
             build_runner: ^1.7.1
             coverage: any
-            dart_dev: ^3.0.0
             dart_style: ^1.3.3
             dependency_validator:
               path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       await d.dir('common_binaries', [
@@ -371,7 +428,7 @@ void main() {
         d.file('pubspec.yaml', pubspec),
       ]).create();
 
-      final result = checkProject('${d.sandbox}/common_binaries');
+      result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
@@ -385,12 +442,17 @@ void main() {
           environment:
             sdk: '>=2.4.0 <3.0.0'
           dev_dependencies:
-            build_test: ^0.10.9
+            build_test: ^1.0.0
             build_vm_compilers: ^1.0.3
             build_web_compilers: ^2.5.1
-            built_value_generator: ^7.0.0
             dependency_validator:
               path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       await d.dir('common_binaries', [
@@ -400,7 +462,7 @@ void main() {
         d.file('pubspec.yaml', pubspec),
       ]).create();
 
-      final result = checkProject('${d.sandbox}/common_binaries');
+      result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
@@ -418,6 +480,12 @@ void main() {
               path: ${d.sandbox}/fake_project
             dependency_validator:
               path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: git@github.com:dart-lang/build.git
+                path: build_config
+                ref: master
           ''');
 
       final build = unindent(r'''
@@ -425,6 +493,7 @@ void main() {
               $default:
                 builders:
                   fake_project|someBuilder:
+                    options: {}
             ''');
 
       await d.dir('common_binaries', [
@@ -435,7 +504,7 @@ void main() {
         d.file('build.yaml', build),
       ]).create();
 
-      final result = checkProject('${d.sandbox}/common_binaries');
+      result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No fatal infractions found, common_binaries is good to go!'));
@@ -450,9 +519,15 @@ void main() {
             environment:
               sdk: '>=2.4.0 <3.0.0'
             dev_dependencies:
-              logging: '>=0.9.3 <=0.13.0'
+              logging: '>=1.0.0 <=2.0.0'
               dependency_validator:
                 path: ${Directory.current.path}
+            dependency_overrides:
+              build_config:
+                git:
+                  url: git@github.com:dart-lang/build.git
+                  path: build_config
+                  ref: master
             ''');
 
         await d.dir('dependency_pins', [
@@ -461,7 +536,7 @@ void main() {
       });
 
       test('fails if pins are not ignored', () {
-        final result = checkProject('${d.sandbox}/dependency_pins');
+        result = checkProject('${d.sandbox}/dependency_pins');
 
         expect(result.exitCode, 1);
         expect(result.stderr, contains('These packages are pinned in pubspec.yaml:\n  * logging'));
@@ -477,7 +552,7 @@ void main() {
         File('${d.sandbox}/dependency_pins/pubspec.yaml')
             .writeAsStringSync(dependencyValidatorSection, mode: FileMode.append);
 
-        final result = checkProject('${d.sandbox}/dependency_pins');
+        result = checkProject('${d.sandbox}/dependency_pins');
 
         expect(result.exitCode, 0);
         expect(result.stdout, contains('No fatal infractions found, dependency_pins is good to go'));

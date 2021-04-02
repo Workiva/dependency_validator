@@ -15,7 +15,7 @@
 import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
-import 'package:dependency_validator/dependency_validator.dart';
+import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:logging/logging.dart';
 
 const String helpArg = 'help';
@@ -61,7 +61,7 @@ void main(List<String> args) async {
       .map((record) => record.message)
       .listen(stderr.writeln);
 
-  ArgResults argResults;
+  late ArgResults argResults;
   try {
     argResults = argParser.parse(args);
   } on FormatException catch (_) {
