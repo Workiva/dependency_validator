@@ -60,7 +60,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -104,7 +104,7 @@ void main() {
             dependency_overrides:
               build_config:
                 git:
-                  url: git@github.com:dart-lang/build.git
+                  url: https://github.com/dart-lang/build.git
                   path: build_config
                   ref: master
             ''');
@@ -182,7 +182,7 @@ void main() {
             dependency_overrides:
               build_config:
                 git:
-                  url: git@github.com:dart-lang/build.git
+                  url: https://github.com/dart-lang/build.git
                   path: build_config
                   ref: master
             ''');
@@ -241,7 +241,7 @@ void main() {
             dependency_overrides:
               build_config:
                 git:
-                  url: git@github.com:dart-lang/build.git
+                  url: https://github.com/dart-lang/build.git
                   path: build_config
                   ref: master
             ''');
@@ -301,7 +301,7 @@ void main() {
             dependency_overrides:
               build_config:
                 git:
-                  url: git@github.com:dart-lang/build.git
+                  url: https://github.com/dart-lang/build.git
                   path: build_config
                   ref: master
             ''');
@@ -360,7 +360,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -400,7 +400,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -442,7 +442,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -481,7 +481,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -518,7 +518,7 @@ void main() {
           dependency_overrides:
             build_config:
               git:
-                url: git@github.com:dart-lang/build.git
+                url: https://github.com/dart-lang/build.git
                 path: build_config
                 ref: master
           ''');
@@ -563,7 +563,7 @@ void main() {
             dependency_overrides:
               build_config:
                 git:
-                  url: git@github.com:dart-lang/build.git
+                  url: https://github.com/dart-lang/build.git
                   path: build_config
                   ref: master
             ''');
