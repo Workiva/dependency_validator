@@ -20,7 +20,8 @@ import 'package:logging/logging.dart';
 
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
-const String helpMessage = '''Dependency Validator 2.0 is configured statically via the pubspec.yaml
+const String helpMessage =
+    '''Dependency Validator 2.0 is configured statically via the pubspec.yaml
 example:
     # in pubspec.yaml
     dependency_validator:

@@ -3,21 +3,31 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'pubspec_config.g.dart';
 
-@JsonSerializable(anyMap: true, checked: true, createToJson: false, fieldRename: FieldRename.snake)
+@JsonSerializable(
+    anyMap: true,
+    checked: true,
+    createToJson: false,
+    fieldRename: FieldRename.snake)
 class PubspecDepValidatorConfig {
   final DepValidatorConfig dependencyValidator;
 
   PubspecDepValidatorConfig({DepValidatorConfig? dependencyValidator})
       : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
-  factory PubspecDepValidatorConfig.fromJson(Map json) => _$PubspecDepValidatorConfigFromJson(json);
+  factory PubspecDepValidatorConfig.fromJson(Map json) =>
+      _$PubspecDepValidatorConfigFromJson(json);
 
   factory PubspecDepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
-      checkedYamlDecode(yamlContent, (m) => PubspecDepValidatorConfig.fromJson(m ?? {}),
+      checkedYamlDecode(
+          yamlContent, (m) => PubspecDepValidatorConfig.fromJson(m ?? {}),
           allowNull: true, sourceUrl: sourceUrl);
 }
 
-@JsonSerializable(anyMap: true, checked: true, createToJson: false, fieldRename: FieldRename.snake)
+@JsonSerializable(
+    anyMap: true,
+    checked: true,
+    createToJson: false,
+    fieldRename: FieldRename.snake)
 class DepValidatorConfig {
   @JsonKey(defaultValue: [])
   final List<String> exclude;
@@ -27,5 +37,6 @@ class DepValidatorConfig {
 
   const DepValidatorConfig({this.exclude = const [], this.ignore = const []});
 
-  factory DepValidatorConfig.fromJson(Map json) => _$DepValidatorConfigFromJson(json);
+  factory DepValidatorConfig.fromJson(Map json) =>
+      _$DepValidatorConfigFromJson(json);
 }
