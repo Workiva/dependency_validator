@@ -27,18 +27,19 @@ import 'constants.dart';
 final Logger logger = Logger('dependency_validator');
 
 /// Returns a multi-line string with all [items] in a bulleted list format.
-String bulletItems(Iterable<String> items) => items.map((l) => '  * $l').join('\n');
+String bulletItems(Iterable<String> items) =>
+    items.map((l) => '  * $l').join('\n');
 
 /// Returns the name of the package referenced in the `include:` directive in an
 /// analysis_options.yaml file, or null if there is not one.
-String getAnalysisOptionsIncludePackage({String path}) {
+String? getAnalysisOptionsIncludePackage({String? path}) {
   final optionsFile = File(p.join(path ?? p.current, 'analysis_options.yaml'));
   if (!optionsFile.existsSync()) return null;
 
-  final YamlMap analysisOptions = loadYaml(optionsFile.readAsStringSync());
+  final YamlMap? analysisOptions = loadYaml(optionsFile.readAsStringSync());
   if (analysisOptions == null) return null;
 
-  final String include = analysisOptions['include'];
+  final String? include = analysisOptions['include'];
   if (include == null || !include.startsWith('package:')) return null;
 
   return Uri.parse(include).pathSegments.first;
@@ -72,14 +73,16 @@ Iterable<File> listLessFilesIn(String dirPath, List<Glob> excludedDirs) =>
 ///
 /// This also excludes Dart files that are in a hidden directory, like
 /// `.dart_tool`.
-Iterable<File> listFilesWithExtensionIn(String dirPath, List<Glob> excludes, String ext) {
+Iterable<File> listFilesWithExtensionIn(
+    String dirPath, List<Glob> excludes, String ext) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return [];
 
   return Directory(dirPath)
       .listSync(recursive: true)
       .whereType<File>()
       // Skip files in hidden directories (e.g. `.dart_tool/`)
-      .where((file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
+      .where((file) =>
+          !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
       // Filter by the given file extension
       .where((file) => p.extension(file.path) == '.$ext')
       // Skip any files that match one of the given exclude globs
@@ -94,7 +97,8 @@ void log(Level level, String message, Iterable<String> dependencies) {
 
 /// Logs the given [message] at [level] and lists the intersection of [dependenciesA]
 /// and [dependenciesB] if there is one.
-void logIntersection(Level level, String message, Set<String> dependenciesA, Set<String> dependenciesB) {
+void logIntersection(Level level, String message, Set<String> dependenciesA,
+    Set<String> dependenciesB) {
   final intersection = dependenciesA.intersection(dependenciesB);
   if (intersection.isNotEmpty) {
     log(level, message, intersection);
@@ -102,21 +106,22 @@ void logIntersection(Level level, String message, Set<String> dependenciesA, Set
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map<String, Dependency> dependencies, {List<String> ignoredPackages = const []}) {
+List<String> getDependenciesWithPins(Map<String, Dependency> dependencies,
+    {List<String> ignoredPackages = const []}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {
       continue;
     }
 
-    String version;
     final packageMeta = dependencies[packageName];
 
     if (packageMeta is HostedDependency) {
-      final DependencyPinEvaluation evaluation = inspectVersionForPins(packageMeta.version);
+      final evaluation = inspectVersionForPins(packageMeta.version);
 
       if (evaluation.isPin) {
-        infractions.add('$packageName: $version -- ${evaluation.message}');
+        infractions.add(
+            '$packageName: ${packageMeta.version} -- ${evaluation.message}');
       }
     } else {
       // This feature only works for versions, not git refs or paths.
@@ -142,7 +147,7 @@ DependencyPinEvaluation inspectVersionForPins(VersionConstraint constraint) {
       return DependencyPinEvaluation.inclusiveMax;
     }
 
-    final Version max = constraint.max;
+    final Version? max = constraint.max;
 
     if (max == null) {
       return DependencyPinEvaluation.notAPin;
