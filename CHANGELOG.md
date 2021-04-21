@@ -1,3 +1,9 @@
+# 3.1.0
+
+- Deprecate static configuration in `pubspec.yaml` (because `pub publish` warns
+about unrecognized keys) and instead read it from a
+`dart_dependency_validator.yaml` file when possible.
+
 # 3.0.0
 
 - **Breaking:** removed the public `package:dependency_validator/dependency_validator.dart`

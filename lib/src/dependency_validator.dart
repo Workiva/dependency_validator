@@ -16,6 +16,7 @@ import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:glob/glob.dart';
+import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
@@ -28,24 +29,35 @@ import 'utils.dart';
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 Future<void> run() async {
   if (!File('pubspec.yaml').existsSync()) {
-    logger.shout('pubspec.yaml not found');
+    logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
   }
   if (!File('.dart_tool/package_config.json').existsSync()) {
-    logger.shout(
-        'No .dart_tool/package_config.json file found, please run "pub get" first.');
+    logger.shout(red.wrap(
+        'No .dart_tool/package_config.json file found, please run "pub get" first.'));
     exit(1);
   }
 
-  final config = PubspecDepValidatorConfig.fromYaml(
-          File('pubspec.yaml').readAsStringSync())
-      .dependencyValidator;
+  DepValidatorConfig config;
+  final configFile = File('dart_dependency_validator.yaml');
+  if (configFile.existsSync()) {
+    config = DepValidatorConfig.fromYaml(configFile.readAsStringSync());
+  } else {
+    final pubspecConfig = PubspecDepValidatorConfig.fromYaml(
+        File('pubspec.yaml').readAsStringSync());
+    if (pubspecConfig.isNotEmpty) {
+      logger.warning(yellow.wrap(
+          'Configuring dependency_validator in pubspec.yaml is deprecated.\n'
+          'Use dart_dependency_validator.yaml instead.'));
+    }
+    config = pubspecConfig.dependencyValidator;
+  }
   final excludes = config.exclude
       .map((s) {
         try {
           return Glob(s);
         } catch (_, __) {
-          logger.shout('invalid glob syntax: "$s"');
+          logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
         }
       })
@@ -64,7 +76,7 @@ Future<void> run() async {
   final pubspec =
       Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
 
-  logger.info('Validating dependencies for ${pubspec.name}\n');
+  logger.info('Validating dependencies for ${pubspec.name}...');
 
   checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
 
@@ -260,8 +272,8 @@ Future<void> run() async {
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
-    logger.severe(
-        'Could not find package config. Make sure you run `dart pub get` first.');
+    logger.severe(red.wrap(
+        'Could not find package config. Make sure you run `dart pub get` first.'));
     exitCode = 1;
     return;
   }
@@ -314,8 +326,9 @@ Future<void> run() async {
 
   if (unusedDependencies.contains('analyzer')) {
     logger.warning(
-      'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
-      'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.',
+      yellow.wrap(
+          'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
+          'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.'),
     );
   }
 
@@ -332,7 +345,7 @@ Future<void> run() async {
   }
 
   if (exitCode == 0) {
-    logger.info('No fatal infractions found, ${pubspec.name} is good to go!');
+    logger.info(green.wrap('✓ No dependency issues found!'));
   }
 }
 
