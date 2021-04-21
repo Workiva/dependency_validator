@@ -11,6 +11,10 @@ part 'pubspec_config.g.dart';
 class PubspecDepValidatorConfig {
   final DepValidatorConfig dependencyValidator;
 
+  bool get isNotEmpty =>
+      dependencyValidator.exclude.isNotEmpty ||
+      dependencyValidator.ignore.isNotEmpty;
+
   PubspecDepValidatorConfig({DepValidatorConfig? dependencyValidator})
       : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
@@ -39,4 +43,9 @@ class DepValidatorConfig {
 
   factory DepValidatorConfig.fromJson(Map json) =>
       _$DepValidatorConfigFromJson(json);
+
+  factory DepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
+      checkedYamlDecode(
+          yamlContent, (m) => DepValidatorConfig.fromJson(m ?? {}),
+          allowNull: true, sourceUrl: sourceUrl);
 }

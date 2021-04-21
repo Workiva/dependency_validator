@@ -11,6 +11,7 @@ dependencies:
   build_config: '>=0.4.2 <2.0.0'
   checked_yaml: ^2.0.1
   glob: ^2.0.1
+  io: ^1.0.0
   json_annotation: ^4.0.1
   logging: ^1.0.1
   package_config: ^2.0.0
@@ -28,13 +29,3 @@ dev_dependencies:
 
 executables:
   dependency_validator:
-
-dependency_validator:
-  ignore:
-    - json_serializable
-    - _foo
-    - foo
-    - _bar
-    - bar
-    - foo1
-    - foo_foo

@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:io/ansi.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
@@ -92,7 +93,13 @@ Iterable<File> listFilesWithExtensionIn(
 /// Logs the given [message] at [level] and lists all of the given [dependencies].
 void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
-  logger.log(level, [message, bulletItems(sortedDependencies), ''].join('\n'));
+  var combined = [message, bulletItems(sortedDependencies), ''].join('\n');
+  if (level >= Level.SEVERE) {
+    combined = red.wrap(combined)!;
+  } else if (level >= Level.WARNING) {
+    combined = yellow.wrap(combined)!;
+  }
+  logger.log(level, combined);
 }
 
 /// Logs the given [message] at [level] and lists the intersection of [dependenciesA]

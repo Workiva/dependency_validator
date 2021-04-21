@@ -8,7 +8,7 @@ Add the following to your pubspec.yaml:
 
 ```yaml
 dev_dependencies:
-  dependency_validator: ^2.0.0
+  dependency_validator: ^3.0.0
 ```
 
 ## Usage
@@ -33,15 +33,19 @@ used even if it isn't imported.
 
 There may be packages that are intentionally depended on but not used, or there
 may be directories that need to be ignored. You can statically configure these
-things in your project's `pubspec.yaml`:
+things in a `dart_dependency_validator.yaml` file in the root of your package:
+
 
 ```yaml
-# pubsec.yaml
-dependency_validator:
-  # Exclude one or more paths from being scanned. Supports glob syntax.
-  exclude:
-    - "app/**"
-  # Ignore one or more packages.
-  ignore:
-    - analyzer
+# dart_dependency_validator.yaml
+
+# Exclude one or more paths from being scanned. Supports glob syntax.
+exclude:
+  - "app/**"
+# Ignore one or more packages.
+ignore:
+  - analyzer
 ```
+
+> Note: Previously this configuration lived in the `pubspec.yaml`, but that
+> option was deprecated because `pub publish` warns about unrecognized keys.

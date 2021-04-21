@@ -130,7 +130,21 @@ void main() {
         expect(result.stderr, contains('somescsspackage'));
       });
 
-      test('except when the lib directory is excluded', () {
+      test('except when the lib directory is excluded', () async {
+        await d.dir('missing', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            exclude:
+              - 'lib/**'
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/missing');
+        expect(result.exitCode, equals(0));
+        expect(result.stderr, isEmpty);
+      });
+
+      test(
+          'except when the lib directory is excluded (deprecated pubspec method)',
+          () {
         final dependencyValidatorSection = unindent('''
             dependency_validator:
               exclude:
@@ -145,10 +159,25 @@ void main() {
         result = checkProject('${d.sandbox}/missing');
 
         expect(result.exitCode, equals(0));
-        expect(result.stderr, isEmpty);
+        expect(
+            result.stderr,
+            contains(
+                'Configuring dependency_validator in pubspec.yaml is deprecated'));
       });
 
-      test('except when they are ignored', () {
+      test('except when they are ignored', () async {
+        await d.dir('missing', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignore:
+              - yaml
+              - somescsspackage
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/missing');
+        expect(result.exitCode, 0);
+      });
+
+      test('except when they are ignored (deprecated pubspec method)', () {
         final dependencyValidatorSection = unindent('''
             dependency_validator:
               ignore:
@@ -208,7 +237,19 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('except when they are ignored', () {
+      test('except when they are ignored', () async {
+        await d.dir('over_promoted', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignore:
+              - path
+              - yaml
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/over_promoted');
+        expect(result.exitCode, 0);
+      });
+
+      test('except when they are ignored (deprecated pubspec method)', () {
         final dependencyValidatorSection = unindent('''
             dependency_validator:
               ignore:
@@ -268,7 +309,19 @@ void main() {
         expect(result.stderr, contains('yaml'));
       });
 
-      test('except when they are ignored', () {
+      test('except when they are ignored', () async {
+        await d.dir('under_promoted', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignore:
+              - logging
+              - yaml
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/under_promoted');
+        expect(result.exitCode, 0);
+      });
+
+      test('except when they are ignored (deprecated pubspec method)', () {
         final dependencyValidatorSection = unindent('''
             dependency_validator:
               ignore:
@@ -322,7 +375,20 @@ void main() {
         expect(result.stderr, contains('fake_project'));
       });
 
-      test('except when they are ignored', () {
+      test('except when they are ignored', () async {
+        await d.dir('unused', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignore:
+              - fake_project
+              - yaml
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/unused');
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      });
+
+      test('except when they are ignored (deprecated pubspec method)', () {
         final dependencyValidatorSection = unindent('''
             dependency_validator:
               ignore:
@@ -336,8 +402,7 @@ void main() {
 
         result = checkProject('${d.sandbox}/unused');
         expect(result.exitCode, 0);
-        expect(result.stdout,
-            contains('No fatal infractions found, unused is good to go!'));
+        expect(result.stdout, contains('No dependency issues found!'));
       });
     });
 
@@ -354,9 +419,6 @@ void main() {
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
-          dependency_validator:
-            ignore:
-              - analyzer
           dependency_overrides:
             build_config:
               git:
@@ -369,6 +431,10 @@ void main() {
         d.dir('lib', [
           d.file('analyzer_dep.dart', ''),
         ]),
+        d.file('dart_dependency_validator.yaml', unindent('''
+          ignore:
+            - analyzer
+          ''')),
         d.file('pubspec.yaml', pubspec),
       ]).create();
 
@@ -422,8 +488,7 @@ void main() {
       result = checkProject('${d.sandbox}/valid');
 
       expect(result.exitCode, 0);
-      expect(result.stdout,
-          contains('No fatal infractions found, valid is good to go!'));
+      expect(result.stdout, contains('No dependency issues found!'));
     });
 
     test('passes when dependencies not used provide executables', () async {
@@ -457,10 +522,7 @@ void main() {
       result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
-      expect(
-          result.stdout,
-          contains(
-              'No fatal infractions found, common_binaries is good to go!'));
+      expect(result.stdout, contains('No dependency issues found!'));
     });
 
     test(
@@ -496,10 +558,7 @@ void main() {
       result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
-      expect(
-          result.stdout,
-          contains(
-              'No fatal infractions found, common_binaries is good to go!'));
+      expect(result.stdout, contains('No dependency issues found!'));
     });
 
     test('passes when dependencies are not imported but provide used builders',
@@ -542,10 +601,7 @@ void main() {
       result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 0);
-      expect(
-          result.stdout,
-          contains(
-              'No fatal infractions found, common_binaries is good to go!'));
+      expect(result.stdout, contains('No dependency issues found!'));
     });
 
     group('when a dependency is pinned', () {
@@ -583,24 +639,16 @@ void main() {
                 'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
-      test('ignores infractions if the package is ignored', () {
-        final dependencyValidatorSection = unindent('''
-            dependency_validator:
-              ignore:
-                - logging
-            ''');
-
-        File('${d.sandbox}/dependency_pins/pubspec.yaml').writeAsStringSync(
-            dependencyValidatorSection,
-            mode: FileMode.append);
-
+      test('ignores infractions if the package is ignored', () async {
+        await d.dir('dependency_pins', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignore:
+              - logging
+            '''))
+        ]).create();
         result = checkProject('${d.sandbox}/dependency_pins');
-
         expect(result.exitCode, 0);
-        expect(
-            result.stdout,
-            contains(
-                'No fatal infractions found, dependency_pins is good to go'));
+        expect(result.stdout, contains('No dependency issues found!'));
       });
     });
   });

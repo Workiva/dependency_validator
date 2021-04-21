@@ -1,0 +1,8 @@
+ignore:
+  - json_serializable
+  - _foo
+  - foo
+  - _bar
+  - bar
+  - foo1
+  - foo_foo
