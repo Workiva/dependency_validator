@@ -1,4 +1,4 @@
-# 3.1.1
+# 3.1.2
 
 - Return non-zero exit code from executable when incorrect args are used
 
