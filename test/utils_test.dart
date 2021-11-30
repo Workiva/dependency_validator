@@ -49,53 +49,65 @@ include: package:pedantic/analysis_options.1.8.0.yaml
   });
 
   group('importExportDartPackageRegex matches correctly for', () {
-    void sharedTest(String input, String expectedGroup1, String expectedGroup2) {
+    void sharedTest(
+        String input, String expectedGroup1, String expectedGroup2) {
       expect(input, matches(importExportDartPackageRegex));
-      expect(importExportDartPackageRegex.firstMatch(input).groups([1, 2]), [expectedGroup1, expectedGroup2]);
+      expect(importExportDartPackageRegex.firstMatch(input).groups([1, 2]),
+          [expectedGroup1, expectedGroup2]);
     }
 
     for (var importOrExport in ['import', 'export']) {
       group('an $importOrExport line', () {
         test('with double-quotes', () {
-          sharedTest('$importOrExport "package:foo/bar.dart";', importOrExport, 'foo');
+          sharedTest(
+              '$importOrExport "package:foo/bar.dart";', importOrExport, 'foo');
         });
 
         test('with single-quotes', () {
-          sharedTest('$importOrExport \'package:foo/bar.dart\';', importOrExport, 'foo');
+          sharedTest('$importOrExport \'package:foo/bar.dart\';',
+              importOrExport, 'foo');
         });
 
         test('with triple double-quotes', () {
-          sharedTest('$importOrExport """package:foo/bar.dart""";', importOrExport, 'foo');
+          sharedTest('$importOrExport """package:foo/bar.dart""";',
+              importOrExport, 'foo');
         });
 
         test('with triple single-quotes', () {
-          sharedTest('$importOrExport \'\'\'package:foo/bar.dart\'\'\';', importOrExport, 'foo');
+          sharedTest('$importOrExport \'\'\'package:foo/bar.dart\'\'\';',
+              importOrExport, 'foo');
         });
 
         group('with a package name that', () {
           test('contains underscores', () {
-            sharedTest('$importOrExport "package:foo_foo/bar.dart";', importOrExport, 'foo_foo');
+            sharedTest('$importOrExport "package:foo_foo/bar.dart";',
+                importOrExport, 'foo_foo');
           });
 
           test('contains numbers', () {
-            sharedTest('$importOrExport "package:foo1/bar.dart";', importOrExport, 'foo1');
+            sharedTest('$importOrExport "package:foo1/bar.dart";',
+                importOrExport, 'foo1');
           });
 
           test('starts with an underscore', () {
-            sharedTest('$importOrExport "package:_foo/bar.dart";', importOrExport, '_foo');
+            sharedTest('$importOrExport "package:_foo/bar.dart";',
+                importOrExport, '_foo');
           });
         });
 
         test('with extra whitespace in the line', () {
-          sharedTest('   $importOrExport   "package:foo/bar.dart"   ;   ', importOrExport, 'foo');
+          sharedTest('   $importOrExport   "package:foo/bar.dart"   ;   ',
+              importOrExport, 'foo');
         });
 
         test('with multiple ${importOrExport}s in the same line', () {
-          final input = '$importOrExport "package:foo/bar.dart"; $importOrExport "package:bar/foo.dart";';
+          final input =
+              '$importOrExport "package:foo/bar.dart"; $importOrExport "package:bar/foo.dart";';
 
           expect(input, matches(importExportDartPackageRegex));
 
-          final allMatches = importExportDartPackageRegex.allMatches(input).toList();
+          final allMatches =
+              importExportDartPackageRegex.allMatches(input).toList();
           expect(allMatches, hasLength(2));
 
           expect(allMatches[0].groups([1, 2]), [importOrExport, 'foo']);
@@ -206,106 +218,136 @@ include: package:pedantic/analysis_options.1.8.0.yaml
 
   group('inspectVersionForPins classifies', () {
     test('any', () {
-      expect(inspectVersionForPins(VersionConstraint.parse('any')), DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('any')),
+          DependencyPinEvaluation.notAPin);
     });
 
     test('empty', () {
-      expect(inspectVersionForPins(VersionConstraint.parse('>0.0.0 <0.0.0')), DependencyPinEvaluation.emptyPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('>0.0.0 <0.0.0')),
+          DependencyPinEvaluation.emptyPin);
     });
 
     test('caret notation', () {
-      expect(inspectVersionForPins(VersionConstraint.parse('^0.0.1')), DependencyPinEvaluation.notAPin);
-      expect(inspectVersionForPins(VersionConstraint.parse('^0.2.4')), DependencyPinEvaluation.notAPin);
-      expect(inspectVersionForPins(VersionConstraint.parse('^1.2.4')), DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('^0.0.1')),
+          DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('^0.2.4')),
+          DependencyPinEvaluation.notAPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('^1.2.4')),
+          DependencyPinEvaluation.notAPin);
     });
 
     test('1.2.3', () {
-      expect(inspectVersionForPins(VersionConstraint.parse('1.23.456')), DependencyPinEvaluation.directPin);
+      expect(inspectVersionForPins(VersionConstraint.parse('1.23.456')),
+          DependencyPinEvaluation.directPin);
     });
 
     test('explicit upper bound <=', () {
-      expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <=4.0.0')), DependencyPinEvaluation.inclusiveMax);
-      expect(inspectVersionForPins(VersionConstraint.parse('<=4.0.0')), DependencyPinEvaluation.inclusiveMax);
+      expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <=4.0.0')),
+          DependencyPinEvaluation.inclusiveMax);
+      expect(inspectVersionForPins(VersionConstraint.parse('<=4.0.0')),
+          DependencyPinEvaluation.inclusiveMax);
     });
 
     group('when upper bound blocks patch or minor updates', () {
       test('when version starts with 0', () {
-        expect(
-            inspectVersionForPins(VersionConstraint.parse('>=0.2.3 <0.5.6')), DependencyPinEvaluation.blocksMinorBumps);
-        expect(inspectVersionForPins(VersionConstraint.parse('<0.5.6')), DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.3 <0.5.6')),
+            DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins(VersionConstraint.parse('<0.5.6')),
+            DependencyPinEvaluation.blocksMinorBumps);
       });
 
       test('when version starts with nonzero', () {
-        expect(
-            inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <4.5.0')), DependencyPinEvaluation.blocksMinorBumps);
-        expect(inspectVersionForPins(VersionConstraint.parse('<4.5.0')), DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <4.5.0')),
+            DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins(VersionConstraint.parse('<4.5.0')),
+            DependencyPinEvaluation.blocksMinorBumps);
 
         expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <4.0.6')),
             DependencyPinEvaluation.blocksPatchReleases);
-        expect(inspectVersionForPins(VersionConstraint.parse('<4.0.6')), DependencyPinEvaluation.blocksPatchReleases);
+        expect(inspectVersionForPins(VersionConstraint.parse('<4.0.6')),
+            DependencyPinEvaluation.blocksPatchReleases);
 
         expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <1.2.4')),
             DependencyPinEvaluation.blocksPatchReleases);
-        expect(
-            inspectVersionForPins(VersionConstraint.parse('>=1.3.0 <1.4.0')), DependencyPinEvaluation.blocksMinorBumps);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=1.3.0 <1.4.0')),
+            DependencyPinEvaluation.blocksMinorBumps);
       });
     });
 
     test('when upper bound does not allow either patch or minor updates', () {
       expect(inspectVersionForPins(VersionConstraint.parse('>=1.2.3 <4.5.6')),
           DependencyPinEvaluation.blocksPatchReleases);
-      expect(inspectVersionForPins(VersionConstraint.parse('<4.5.6')), DependencyPinEvaluation.blocksPatchReleases);
+      expect(inspectVersionForPins(VersionConstraint.parse('<4.5.6')),
+          DependencyPinEvaluation.blocksPatchReleases);
     });
 
     test('when the maximum version is 0.0.X', () {
-      expect(
-          inspectVersionForPins(VersionConstraint.parse('>=0.0.1 <0.0.2')), DependencyPinEvaluation.blocksMinorBumps);
-      expect(inspectVersionForPins(VersionConstraint.parse('<0.0.2')), DependencyPinEvaluation.blocksMinorBumps);
+      expect(inspectVersionForPins(VersionConstraint.parse('>=0.0.1 <0.0.2')),
+          DependencyPinEvaluation.blocksMinorBumps);
+      expect(inspectVersionForPins(VersionConstraint.parse('<0.0.2')),
+          DependencyPinEvaluation.blocksMinorBumps);
     });
 
     test('when the maximum bound contains build', () {
       expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0+1')),
           DependencyPinEvaluation.buildOrPrerelease);
-      expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0+1')), DependencyPinEvaluation.buildOrPrerelease);
+      expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0+1')),
+          DependencyPinEvaluation.buildOrPrerelease);
 
       expect(inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0+1')),
           DependencyPinEvaluation.buildOrPrerelease);
-      expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0+1')), DependencyPinEvaluation.buildOrPrerelease);
+      expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0+1')),
+          DependencyPinEvaluation.buildOrPrerelease);
     });
 
     group('when the maximum bound contains prerelease', () {
       test('', () {
-        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0-1')),
+        expect(
+            inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0-1')),
             DependencyPinEvaluation.buildOrPrerelease);
-        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0-1')), DependencyPinEvaluation.buildOrPrerelease);
+        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0-1')),
+            DependencyPinEvaluation.buildOrPrerelease);
 
-        expect(inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0-1')),
+        expect(
+            inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0-1')),
             DependencyPinEvaluation.buildOrPrerelease);
-        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0-1')), DependencyPinEvaluation.buildOrPrerelease);
+        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0-1')),
+            DependencyPinEvaluation.buildOrPrerelease);
       });
 
       test('but determines not a pin for prerelease=0', () {
-        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0-0')), DependencyPinEvaluation.notAPin);
-        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0-0')), DependencyPinEvaluation.notAPin);
+        expect(
+            inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0-0')),
+            DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0-0')),
+            DependencyPinEvaluation.notAPin);
 
-        expect(inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0-0')), DependencyPinEvaluation.notAPin);
-        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0-0')), DependencyPinEvaluation.notAPin);
+        expect(
+            inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0-0')),
+            DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0-0')),
+            DependencyPinEvaluation.notAPin);
       });
     });
 
     group('not a pin when maximum version is', () {
       test('<X.0.0', () {
-        expect(inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0')), DependencyPinEvaluation.notAPin);
-        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0')), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=1.0.0 <2.0.0')),
+            DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('<2.0.0')),
+            DependencyPinEvaluation.notAPin);
       });
 
       test('<0.X.0', () {
-        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0')), DependencyPinEvaluation.notAPin);
-        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0')), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0 <0.3.0')),
+            DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('<0.2.0')),
+            DependencyPinEvaluation.notAPin);
       });
 
       test('unset', () {
-        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0')), DependencyPinEvaluation.notAPin);
+        expect(inspectVersionForPins(VersionConstraint.parse('>=0.2.0')),
+            DependencyPinEvaluation.notAPin);
       });
     });
   });

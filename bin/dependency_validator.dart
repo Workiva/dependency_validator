@@ -16,11 +16,13 @@ import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
 import 'package:dependency_validator/dependency_validator.dart';
+import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
-const String helpMessage = '''Dependency Validator 2.0 is configured statically via the pubspec.yaml
+const String helpMessage =
+    '''Dependency Validator 2.0 is configured statically via the pubspec.yaml
 example:
     # in pubspec.yaml
     dependency_validator:
@@ -45,10 +47,10 @@ final ArgParser argParser = ArgParser()
     help: 'Display extra information for debugging.',
   );
 
-void showHelpAndExit() {
+void showHelpAndExit({ExitCode exitCode = ExitCode.success}) {
   Logger.root.shout(helpMessage);
   Logger.root.shout(argParser.usage);
-  exit(0);
+  exit(exitCode.code);
 }
 
 void main(List<String> args) async {
@@ -65,7 +67,7 @@ void main(List<String> args) async {
   try {
     argResults = argParser.parse(args);
   } on FormatException catch (_) {
-    showHelpAndExit();
+    showHelpAndExit(exitCode: ExitCode.usage);
   }
 
   if (argResults.wasParsed(helpArg) && argResults[helpArg]) {

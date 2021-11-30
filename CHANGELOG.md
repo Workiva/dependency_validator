@@ -1,3 +1,7 @@
+# 2.0.2
+
+- Return non-zero exit code from executable when incorrect args are used
+
 # 2.0.1
 
 - Fix a path issue on Windows.
