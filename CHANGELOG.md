@@ -1,3 +1,7 @@
+# 3.1.2
+
+- Return non-zero exit code from executable when incorrect args are used
+
 # 3.1.0
 
 - Deprecate static configuration in `pubspec.yaml` (because `pub publish` warns

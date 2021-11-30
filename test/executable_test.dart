@@ -15,10 +15,12 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-ProcessResult checkProject(String projectPath) {
+ProcessResult checkProject(String projectPath,
+    {List<String> optionalArgs = const []}) {
   final pubGetResult =
       Process.runSync('dart', ['pub', 'get'], workingDirectory: projectPath);
   if (pubGetResult.exitCode != 0) {
@@ -30,6 +32,7 @@ ProcessResult checkProject(String projectPath) {
     'dependency_validator',
     // This makes it easier to print(result.stdout) for debugging tests
     '--verbose',
+    ...optionalArgs,
   ];
 
   return Process.runSync('dart', args, workingDirectory: projectPath);
@@ -88,6 +91,31 @@ void main() {
     tearDown(() {
       printOnFailure(result.stdout);
       printOnFailure(result.stderr);
+    });
+
+    test('fails with incorrect usage', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dev_dependencies:
+            dependency_validator:
+              path: ${Directory.current.path}
+          ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      result = checkProject('${d.sandbox}/common_binaries',
+          optionalArgs: ['-x', 'tool/wdesk_sdk']);
+
+      expect(result.exitCode, ExitCode.usage.code);
     });
 
     group('fails when there are packages missing from the pubspec', () {

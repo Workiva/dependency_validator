@@ -187,10 +187,10 @@ Future<void> run() async {
           // Remove all explicitly declared dependencies
           .difference(deps)
           .difference(devDeps)
-            // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(pubspec.name)
-            // Ignore known missing packages.
-            ..removeAll(ignoredPackages);
+        // Ignore self-imports - packages have implicit access to themselves.
+        ..remove(pubspec.name)
+        // Ignore known missing packages.
+        ..removeAll(ignoredPackages);
 
   if (missingDependencies.isNotEmpty) {
     log(
@@ -209,10 +209,10 @@ Future<void> run() async {
           // Remove all explicitly declared dependencies
           .difference(devDeps)
           .difference(deps)
-            // Ignore self-imports - packages have implicit access to themselves.
-            ..remove(pubspec.name)
-            // Ignore known missing packages.
-            ..removeAll(ignoredPackages);
+        // Ignore self-imports - packages have implicit access to themselves.
+        ..remove(pubspec.name)
+        // Ignore known missing packages.
+        ..removeAll(ignoredPackages);
 
   if (missingDevDependencies.isNotEmpty) {
     log(
@@ -267,8 +267,8 @@ Future<void> run() async {
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
-            // Remove this package, since we know they're using our executable
-            ..remove(dependencyValidatorPackageName);
+        // Remove this package, since we know they're using our executable
+        ..remove(dependencyValidatorPackageName);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
