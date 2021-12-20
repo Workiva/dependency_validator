@@ -33,6 +33,7 @@ executables:
 
 dependency_validator:
   ignore:
+    - meta # ignored because it is pinned to workaround an SDK issue
     - json_serializable
     - _foo
     - foo
