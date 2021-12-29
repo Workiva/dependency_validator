@@ -29,3 +29,6 @@ dev_dependencies:
 
 executables:
   dependency_validator:
+
+dependency_overrides:
+  yaml: 3.0.0
