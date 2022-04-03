@@ -667,6 +667,23 @@ void main() {
                 'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
+      test('should not print message about pinned packages if pins are ignored',
+          () async {
+        await d.dir('dependency_pins', [
+          d.file('dart_dependency_validator.yaml', unindent('''
+            ignored_pinned_packages: true
+            '''))
+        ]).create();
+        result = checkProject('${d.sandbox}/dependency_pins');
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          isNot(
+            contains('These packages are pinned in pubspec.yaml:\n  * logging'),
+          ),
+        );
+      });
+
       test('ignores infractions if the package is ignored', () async {
         await d.dir('dependency_pins', [
           d.file('dart_dependency_validator.yaml', unindent('''

@@ -1,3 +1,7 @@
+# 3.2.0
+
+- Feature: Added option `ignored_pinned_packages` for ignoring pinned packages.
+
 # 3.1.2
 
 - Return non-zero exit code from executable when incorrect args are used
