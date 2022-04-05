@@ -78,7 +78,7 @@ Future<void> run() async {
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
-  if (!config.ignoredPinnedPackages) {
+  if (!config.allowPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
   }
 

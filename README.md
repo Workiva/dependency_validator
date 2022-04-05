@@ -39,8 +39,8 @@ things in a `dart_dependency_validator.yaml` file in the root of your package:
 ```yaml
 # dart_dependency_validator.yaml
 
-# Set true if you use pinned dependencies
-ignored_pinned_packages: true
+# Set true if you allow pinned packages in your project.
+allow_pins: true
 # Exclude one or more paths from being scanned. Supports glob syntax.
 exclude:
   - "app/**"

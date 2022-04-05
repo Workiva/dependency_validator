@@ -667,11 +667,11 @@ void main() {
                 'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
-      test('should not print message about pinned packages if pins are ignored',
+      test('should not print message about pinned packages if pins allowed',
           () async {
         await d.dir('dependency_pins', [
           d.file('dart_dependency_validator.yaml', unindent('''
-            ignored_pinned_packages: true
+            allow_pins: true
             '''))
         ]).create();
         result = checkProject('${d.sandbox}/dependency_pins');

@@ -1,6 +1,6 @@
 # 3.2.0
 
-- Feature: Added option `ignored_pinned_packages` for ignoring pinned packages.
+- Feature: Added option `allow_pins` for disabling/enabling checks for pins. Pins not allowed by default.
 
 # 3.1.2
 
