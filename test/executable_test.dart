@@ -641,7 +641,7 @@ void main() {
             environment:
               sdk: '>=2.4.0 <3.0.0'
             dependencies:
-              logging: 1.0.0 <=2.0.0'
+              logging: 1.0.2
             dev_dependencies:
               dependency_validator:
                 path: ${Directory.current.path}
