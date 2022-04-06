@@ -25,7 +25,9 @@ DepValidatorConfig _$DepValidatorConfigFromJson(Map json) {
       ignore: $checkedConvert(json, 'ignore',
               (v) => (v as List<dynamic>?)?.map((e) => e as String).toList()) ??
           [],
+      allowPins:
+          $checkedConvert(json, 'allow_pins', (v) => v as bool?) ?? false,
     );
     return val;
-  });
+  }, fieldKeyMap: const {'allowPins': 'allow_pins'});
 }

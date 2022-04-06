@@ -1,3 +1,7 @@
+# 3.2.0
+
+- Feature: Added option `allow_pins` for disabling/enabling checks for pins. Pins not allowed by default.
+
 # 3.1.2
 
 - Return non-zero exit code from executable when incorrect args are used

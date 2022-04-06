@@ -78,7 +78,9 @@ Future<void> run() async {
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
-  checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
+  if (!config.allowPins) {
+    checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
+  }
 
   // Extract the package names from the `dependencies` section.
   final deps = Set<String>.from(pubspec.dependencies.keys);

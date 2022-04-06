@@ -39,7 +39,14 @@ class DepValidatorConfig {
   @JsonKey(defaultValue: [])
   final List<String> ignore;
 
-  const DepValidatorConfig({this.exclude = const [], this.ignore = const []});
+  @JsonKey(defaultValue: false)
+  final bool allowPins;
+
+  const DepValidatorConfig({
+    this.exclude = const [],
+    this.ignore = const [],
+    this.allowPins = false,
+  });
 
   factory DepValidatorConfig.fromJson(Map json) =>
       _$DepValidatorConfigFromJson(json);
