@@ -640,8 +640,9 @@ void main() {
             private: true
             environment:
               sdk: '>=2.4.0 <3.0.0'
+            dependencies:
+              logging: 1.0.0 <=2.0.0'
             dev_dependencies:
-              logging: '>=1.0.0 <=2.0.0'
               dependency_validator:
                 path: ${Directory.current.path}
             dependency_overrides:
@@ -667,21 +668,21 @@ void main() {
                 'These packages are pinned in pubspec.yaml:\n  * logging'));
       });
 
-      test('should not print message about pinned packages if pins allowed',
-          () async {
+      test('should not fails if package is pinned but pins allowed', () async {
         await d.dir('dependency_pins', [
+          d.dir('lib', [
+            d.file('test.dart', unindent('''
+            "import 'package:logging/logging.dart'; 
+            final log = Logger('ExampleLogger');"
+            ''')),
+          ]),
           d.file('dart_dependency_validator.yaml', unindent('''
             allow_pins: true
             '''))
         ]).create();
         result = checkProject('${d.sandbox}/dependency_pins');
-        expect(result.exitCode, 1);
-        expect(
-          result.stderr,
-          isNot(
-            contains('These packages are pinned in pubspec.yaml:\n  * logging'),
-          ),
-        );
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
       });
 
       test('ignores infractions if the package is ignored', () async {
