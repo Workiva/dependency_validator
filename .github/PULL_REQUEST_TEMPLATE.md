@@ -21,7 +21,7 @@ _[See CONTRIBUTING.md][contributing-review-types] for more details on review typ
             *** Please refrain from tagging the whole team to prevent extraneous notifications. ***
 
             If you're not sure who from our team should review these changes, then leave this section
-            blank for now and post a link to the PR in the #support-client-plat Slack channel.
+            blank for now and post a link to the PR in the #support-frontend-architecture Slack channel.
 
   -->
 
