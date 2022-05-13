@@ -12,7 +12,7 @@
 ## Review
 _[See CONTRIBUTING.md][contributing-review-types] for more details on review types (+1 / QA +1 / +10) and code review process._
 
-  <!-- If you're making a PR from outside of the Client Platform team, then first off, thanks! :)
+  <!-- If you're making a PR from outside of the Frontend Development Experience team, then first off, thanks! :)
 
         For open-source contributors, tag @Workiva/app-frameworks and we'll take a look!
 
