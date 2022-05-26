@@ -1,25 +1,37 @@
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 class AutoFix {
-  final commands = <String>[];
+  final _pubAdd = <String>[];
+  final _pubAddDev = <String>[];
+  final _pubRemove = <String>[];
 
   void handleMissingDependencies(Set<String> deps) {
-    commands.add('dart pub add ' + deps.join(' '));
+    _pubAdd.addAll(deps);
   }
 
   void handleMissingDevDependencies(Set<String> deps) {
-    commands.add('dart pub add --dev ' + deps.join(' '));
+    _pubAddDev.addAll(deps);
   }
 
   void handleOverPromotedDependencies(Set<String> deps, Pubspec pubspec) {
-    TODO;
+    _pubRemove.addAll(deps);
+    _pubAddDev.addAll(TODO);
   }
 
   void handleUnderPromotedDependencies(Set<String> deps, Pubspec pubspec) {
-    TODO;
+    _pubRemove.addAll(deps);
+    _pubAdd.addAll(TODO);
   }
 
   void handleUnusedDependencies(Set<String> deps) {
-    commands.add('dart remove ' + deps.join(' '));
+    _pubRemove.addAll(deps);
+  }
+
+  List<String> compile() {
+    return [
+      'dart remove ' + _pubRemove.join(' '),
+      'dart pub add ' + _pubAdd.join(' '),
+      'dart pub add --dev ' + _pubAddDev.join(' '),
+    ];
   }
 }
