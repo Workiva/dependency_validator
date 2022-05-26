@@ -360,7 +360,7 @@ Future<void> run({required bool shouldAutoFix}) async {
 
     if (shouldAutoFix) {
       logger.info('Start autofix...');
-      final process = await Process.start('/bin/sh', ['-c', autoFixCommand]);
+      final process = await Process.start('/bin/sh', ['-euxc', autoFixCommand]);
       process.stdout.pipe(stdout);
       process.stderr.pipe(stderr);
       final exitCode = await process.exitCode;
