@@ -28,7 +28,7 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<void> run() async {
+Future<void> run({required bool shouldAutoFix}) async {
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
@@ -357,6 +357,16 @@ Future<void> run() async {
   final autoFixCommand = autoFix.compile();
   if (autoFixCommand.isNotEmpty) {
     logger.info('Suggestion for auto fix: ${autoFixCommand}');
+
+    if (shouldAutoFix) {
+      logger.info('Start autofix...');
+      final process = await Process.start(autoFixCommand, [], runInShell: true);
+      process.stdout.pipe(stdout);
+      process.stderr.pipe(stderr);
+      final exitCode = await process.exitCode;
+      if (exitCode != 0) throw Exception('process exit with exitCode=$exitCode');
+      logger.info('End autofix.');
+    }
   }
 
   if (exitCode == 0) {
