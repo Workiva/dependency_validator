@@ -361,7 +361,7 @@ Future<void> run({required bool shouldAutoFix}) async {
 
   if (shouldAutoFix && autoFixCommand.isNotEmpty) {
     logger.info('Start autofix...');
-    final process = await Process.start('/bin/sh', ['-euxc', autoFixCommand]);
+    final process = await Process.start('/bin/sh', ['-xc', autoFixCommand]);
     process.stdout.pipe(stdout);
     process.stderr.pipe(stderr);
     final processExitCode = await process.exitCode;

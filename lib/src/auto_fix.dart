@@ -77,7 +77,7 @@ class AutoFix {
     return [
       if (_pubRemoveNames.isNotEmpty) 'dart pub remove ' + _pubRemoveNames.join(' '),
       ...mergedPubAdds.map((e) => e.compile()),
-    ].join(' && ');
+    ].join('; ');
   }
 }
 
