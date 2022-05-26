@@ -44,9 +44,9 @@ class AutoFix {
 
   String compile() {
     return [
-      'dart pub remove ' + _pubRemove.join(' '),
-      'dart pub add ' + _pubAdd.join(' '),
-      'dart pub add --dev ' + _pubAddDev.join(' '),
+      if (_pubRemove.isNotEmpty) 'dart pub remove ' + _pubRemove.join(' '),
+      if (_pubAdd.isNotEmpty) 'dart pub add ' + _pubAdd.join(' '),
+      if (_pubAddDev.isNotEmpty) 'dart pub add --dev ' + _pubAddDev.join(' '),
     ].join(' && ');
   }
 }
