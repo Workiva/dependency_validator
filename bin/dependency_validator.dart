@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:io' show exit, stderr, stdout;
+import 'dart:io' show Directory, exit, stderr, stdout;
 
 import 'package:args/args.dart';
 import 'package:dependency_validator/src/dependency_validator.dart';
@@ -36,6 +36,11 @@ usage:''';
 
 /// Parses the command-line arguments
 final ArgParser argParser = ArgParser()
+  ..addOption(
+    'path',
+    abbr: 'p',
+    help: 'Specify package path',
+  )
   ..addFlag(
     helpArg,
     abbr: 'h',
@@ -76,6 +81,11 @@ void main(List<String> args) async {
 
   if (argResults.wasParsed(verboseArg) && argResults[verboseArg]) {
     Logger.root.level = Level.ALL;
+  }
+
+  final path = argResults['path'] as String?;
+  if (path != null) {
+    Directory.current = path;
   }
 
   await run();
