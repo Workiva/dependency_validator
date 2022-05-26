@@ -356,11 +356,7 @@ Future<void> run() async {
 
   final autoFixCommands = autoFix.compile();
   if (autoFixCommands.isNotEmpty) {
-    log(
-      Level.INFO,
-      'Suggestion for auto fix:',
-      autoFixCommands,
-    );
+    logger.info('Suggestion for auto fix: ${autoFixCommands.join(" && ")}');
   }
 
   if (exitCode == 0) {
