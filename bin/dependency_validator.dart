@@ -18,7 +18,6 @@ import 'package:args/args.dart';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
-import 'package:test/test.dart';
 
 const String pathArg = 'path';
 const String autoFixArg = 'auto-fix';
