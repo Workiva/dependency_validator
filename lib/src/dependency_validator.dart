@@ -357,16 +357,18 @@ Future<void> run({required bool shouldAutoFix}) async {
   final autoFixCommand = autoFix.compile();
   if (autoFixCommand.isNotEmpty) {
     logger.info('Suggestion for auto fix: ${autoFixCommand}');
+  }
 
-    if (shouldAutoFix) {
-      logger.info('Start autofix...');
-      final process = await Process.start('/bin/sh', ['-euxc', autoFixCommand]);
-      process.stdout.pipe(stdout);
-      process.stderr.pipe(stderr);
-      final exitCode = await process.exitCode;
-      if (exitCode != 0) throw Exception('process exit with exitCode=$exitCode');
-      logger.info('End autofix.');
-    }
+  if (shouldAutoFix && autoFixCommand.isNotEmpty) {
+    logger.info('Start autofix...');
+    final process = await Process.start('/bin/sh', ['-euxc', autoFixCommand]);
+    process.stdout.pipe(stdout);
+    process.stderr.pipe(stderr);
+    final processExitCode = await process.exitCode;
+    if (processExitCode != 0) throw Exception('process exit with exitCode=$processExitCode');
+    logger.info('End autofix.');
+    
+    exitCode = 0;
   }
 
   if (exitCode == 0) {
