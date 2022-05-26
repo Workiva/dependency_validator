@@ -247,7 +247,7 @@ Future<void> run() async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    autoFix.handleOverPromotedDependencies(overPromotedDependencies);
+    autoFix.handleOverPromotedDependencies(overPromotedDependencies, pubspec);
     exitCode = 1;
   }
 
@@ -264,7 +264,7 @@ Future<void> run() async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    autoFix.handleUnderPromotedDependencies(underPromotedDependencies);
+    autoFix.handleUnderPromotedDependencies(underPromotedDependencies, pubspec);
     exitCode = 1;
   }
 
