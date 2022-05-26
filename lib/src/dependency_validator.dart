@@ -354,9 +354,9 @@ Future<void> run() async {
     exitCode = 1;
   }
 
-  final autoFixCommands = autoFix.compile();
-  if (autoFixCommands.isNotEmpty) {
-    logger.info('Suggestion for auto fix: ${autoFixCommands.join(" && ")}');
+  final autoFixCommand = autoFix.compile();
+  if (autoFixCommand.isNotEmpty) {
+    logger.info('Suggestion for auto fix: ${autoFixCommand}');
   }
 
   if (exitCode == 0) {
