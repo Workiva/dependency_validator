@@ -29,8 +29,6 @@ import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 Future<void> run() async {
-  final autoFix = AutoFix();
-
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
@@ -78,6 +76,8 @@ Future<void> run() async {
   final pubspecFile = File('pubspec.yaml');
   final pubspec =
       Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
+
+  final autoFix = AutoFix(pubspec);
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
@@ -247,7 +247,7 @@ Future<void> run() async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    autoFix.handleOverPromotedDependencies(overPromotedDependencies, pubspec);
+    autoFix.handleOverPromotedDependencies(overPromotedDependencies);
     exitCode = 1;
   }
 
@@ -264,7 +264,7 @@ Future<void> run() async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    autoFix.handleUnderPromotedDependencies(underPromotedDependencies, pubspec);
+    autoFix.handleUnderPromotedDependencies(underPromotedDependencies);
     exitCode = 1;
   }
 
