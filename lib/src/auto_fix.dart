@@ -1,3 +1,4 @@
+import 'package:dependency_validator/src/utils.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 class AutoFix {
@@ -37,9 +38,19 @@ class AutoFix {
 
   String? _parseConstraint(String name) {
     final dependency = pubspec.dependencies[name] ?? pubspec.devDependencies[name];
-    if (dependency == null || dependency is! HostedDependency) return null;
-    final constraint = dependency.version.toString();
-    return name + ':' + constraint;
+    if (dependency == null) {
+      logger.warning('parseConstraint cannot find dependency name=$name');
+      return null;
+    }
+
+    if (dependency is HostedDependency) {
+      final constraint = dependency.version.toString();
+      return name + ':' + constraint;
+    }
+
+    logger.warning('parseConstraint do not know type of dependency '
+        'name=$name dependency=$dependency type=${dependency.runtimeType}');
+    return null;
   }
 
   String compile() {
