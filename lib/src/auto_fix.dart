@@ -56,10 +56,14 @@ class AutoFix {
     }
 
     if (dependency is GitDependency) {
+      var extraArgs = '--git-url ${dependency.url} ';
+      if (dependency.ref != null) extraArgs += '--git-ref ${dependency.ref} ';
+      if (dependency.path != null) extraArgs += '--git-path ${dependency.path} ';
+
       return PubAddCommand(
         packageAndConstraints: [name],
         dev: dev,
-        extraArgs: '--git-url ${dependency.url} --git-ref ${dependency.ref} --git-path ${dependency.path}',
+        extraArgs: extraArgs,
       );
     }
 
