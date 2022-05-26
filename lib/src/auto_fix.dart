@@ -10,11 +10,11 @@ class AutoFix {
   AutoFix(this.pubspec);
 
   void handleMissingDependencies(Set<String> deps) {
-    _pubAdds.addAll(deps.map((dep) => PubAddCommand(packageAndConstraints: [dep], dev: false)));
+    _pubAdds.add(PubAddCommand(packageAndConstraints: deps.toList(), dev: false));
   }
 
   void handleMissingDevDependencies(Set<String> deps) {
-    _pubAdds.addAll(deps.map((dep) => PubAddCommand(packageAndConstraints: [dep], dev: true)));
+    _pubAdds.add(PubAddCommand(packageAndConstraints: deps.toList(), dev: true));
   }
 
   void handleOverPromotedDependencies(Set<String> deps) {
@@ -73,10 +73,10 @@ class AutoFix {
   }
 
   String compile() {
-    final mergedPubAdds = PubAddCommand.merge(_pubAdds);
+    // final mergedPubAdds = PubAddCommand.merge(_pubAdds);
     return [
       if (_pubRemoveNames.isNotEmpty) 'dart pub remove ' + _pubRemoveNames.join(' '),
-      ...mergedPubAdds.map((e) => e.compile()),
+      ..._pubAdds.map((e) => e.compile()),
     ].join('; ');
   }
 }
@@ -100,31 +100,31 @@ class PubAddCommand {
     return ans;
   }
 
-  static List<PubAddCommand> merge(List<PubAddCommand> commands) {
-    final simpleAdd = <PubAddCommand>[];
-    final simpleAddDev = <PubAddCommand>[];
-    final others = <PubAddCommand>[];
-
-    for (final command in commands) {
-      if (command.extraArgs == null) {
-        (command.dev ? simpleAddDev : simpleAdd).add(command);
-      } else {
-        others.add(command);
-      }
-    }
-
-    return [
-      if (simpleAdd.isNotEmpty)
-        PubAddCommand(
-          packageAndConstraints: simpleAdd.expand((c) => c.packageAndConstraints).toList(),
-          dev: false,
-        ),
-      if (simpleAddDev.isNotEmpty)
-        PubAddCommand(
-          packageAndConstraints: simpleAddDev.expand((c) => c.packageAndConstraints).toList(),
-          dev: true,
-        ),
-      ...others,
-    ];
-  }
+  // static List<PubAddCommand> merge(List<PubAddCommand> commands) {
+  //   final simpleAdd = <PubAddCommand>[];
+  //   final simpleAddDev = <PubAddCommand>[];
+  //   final others = <PubAddCommand>[];
+  //
+  //   for (final command in commands) {
+  //     if (command.extraArgs == null) {
+  //       (command.dev ? simpleAddDev : simpleAdd).add(command);
+  //     } else {
+  //       others.add(command);
+  //     }
+  //   }
+  //
+  //   return [
+  //     if (simpleAdd.isNotEmpty)
+  //       PubAddCommand(
+  //         packageAndConstraints: simpleAdd.expand((c) => c.packageAndConstraints).toList(),
+  //         dev: false,
+  //       ),
+  //     if (simpleAddDev.isNotEmpty)
+  //       PubAddCommand(
+  //         packageAndConstraints: simpleAddDev.expand((c) => c.packageAndConstraints).toList(),
+  //         dev: true,
+  //       ),
+  //     ...others,
+  //   ];
+  // }
 }
