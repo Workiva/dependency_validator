@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:build_config/build_config.dart';
+import 'package:dependency_validator/src/auto_fix.dart';
 import 'package:glob/glob.dart';
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
@@ -28,6 +29,8 @@ import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
 Future<void> run() async {
+  final autoFix = AutoFix();
+
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
@@ -200,6 +203,7 @@ Future<void> run() async {
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
+    autoFix.handleMissingDependencies(missingDependencies);
     exitCode = 1;
   }
 
@@ -222,6 +226,7 @@ Future<void> run() async {
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
+    autoFix.handleMissingDevDependencies(missingDevDependencies);
     exitCode = 1;
   }
 
@@ -242,6 +247,7 @@ Future<void> run() async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
+    autoFix.handleOverPromotedDependencies(overPromotedDependencies);
     exitCode = 1;
   }
 
@@ -258,6 +264,7 @@ Future<void> run() async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
+    autoFix.handleUnderPromotedDependencies(underPromotedDependencies);
     exitCode = 1;
   }
 
@@ -343,6 +350,7 @@ Future<void> run() async {
       'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
+    autoFix.handleUnusedDependencies(unusedDependencies);
     exitCode = 1;
   }
 
