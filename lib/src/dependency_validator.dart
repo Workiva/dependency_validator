@@ -354,6 +354,15 @@ Future<void> run() async {
     exitCode = 1;
   }
 
+  final autoFixCommands = autoFix.compile();
+  if (autoFixCommands.isNotEmpty) {
+    log(
+      Level.INFO,
+      'Suggestion for auto fix:',
+      autoFixCommands,
+    );
+  }
+
   if (exitCode == 0) {
     logger.info(green.wrap('✓ No dependency issues found!'));
   }
