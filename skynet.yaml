@@ -5,6 +5,12 @@ image: drydock.workiva.net/workiva/skynet-images:3708893 # Uses the image from t
 size: small
 timeout: 600
 
+run:
+  on-pull-request: false
+  on-promotion: true
+  when-modified-file-name-is: 
+    - skynet.yaml
+
 env:
 # encrypted github token used for requests to api.github.com
  - secure: 3vJwYHNwLaC1kIKDTSrvPc2FwzGATGH9Iy00Ubis+5lvNVkjBSUJnvCRdyq0REDPmA1iEUteFTcPtUzJVJmWSBaJDOI=
