@@ -1,3 +1,7 @@
+# 3.2.2
+
+- Raise dependency minimums to ensure all dependencies are null-safe.
+
 # 3.2.0
 
 - Feature: Added option `allow_pins` for disabling/enabling checks for pins. Pins not allowed by default.
