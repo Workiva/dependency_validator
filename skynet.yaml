@@ -1,19 +1,13 @@
-name: verify-github-actions
-description: Verify that the github actions run passed, this is needed to make pipelines pass without manual intervention
+name: tests
+description: Tests
 contact: 'Frontend Frameworks Architecture / #support-frontend-architecture'
-image: drydock.workiva.net/workiva/skynet-images:3708893 # Uses the image from this branch: https://github.com/Workiva/skynet-images/pull/127
+image: drydock.workiva.net/workiva/skynet-images:bash_curl_alpinelatest-latest
 size: small
-timeout: 600
+timeout: short
 
 run:
-  on-pull-request: false
-  on-promotion: true
-  when-modified-file-name-is: 
-    - skynet.yaml
-
-env:
-# encrypted github token used for requests to api.github.com
- - secure: 3vJwYHNwLaC1kIKDTSrvPc2FwzGATGH9Iy00Ubis+5lvNVkjBSUJnvCRdyq0REDPmA1iEUteFTcPtUzJVJmWSBaJDOI=
+  on-tag: true
+  on-pull-request: true
 
 scripts:
-  - python3 /actions/verify_github_actions.py
+  - echo "No tests currently set"
