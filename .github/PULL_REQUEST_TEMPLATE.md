@@ -36,7 +36,7 @@ Please review: <!-- Tag people here or via GitHub's "Request Review" feature-->
 
 ## Merge Checklist
 While we perform many automated checks before auto-merging, some manual checks are needed:
-- [ ] A Client Platform member has reviewed these changes
+- [ ] A Frontend Frameworks Architecture member has reviewed these changes
 - [ ] There are no unaddressed comments _- this check can be automated if reviewers use the "Request Changes" feature_
 - [ ] _For release PRs -_ Version metadata in Rosie comment is correct
 
