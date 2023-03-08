@@ -8,7 +8,7 @@ Add the following to your pubspec.yaml:
 
 ```yaml
 dev_dependencies:
-  dependency_validator: ^3.0.0
+  dependency_validator: ^3.2.2
 ```
 
 ## Usage
