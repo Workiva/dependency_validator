@@ -20,6 +20,7 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'constants.dart';
@@ -80,6 +81,10 @@ Future<void> run() async {
 
   if (!config.allowPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
+  }
+
+  if (!config.allowAny) {
+    checkPubspecForAny(pubspec, ignoredPackages: ignoredPackages);
   }
 
   // Extract the package names from the `dependencies` section.
@@ -386,6 +391,45 @@ void checkPubspecForPins(
 
   infractions.addAll(getDependenciesWithPins(pubspec.devDependencies,
       ignoredPackages: ignoredPackages));
+
+  if (infractions.isNotEmpty) {
+    log(Level.WARNING, 'These packages are pinned in pubspec.yaml:',
+        infractions);
+    exitCode = 1;
+  }
+}
+
+/// Checks for the `any` version constraint in a pubspec file.
+///
+/// The [any] version constraint is any dependency that does not specify a
+/// version, and every version is accepted.
+///
+/// Examples of dependencies that should cause a failure:
+///
+/// package:
+///
+/// or as a hosted dependency not on pub.dev:
+///
+/// package:
+///   hosted:
+///     name: name
+///     url: url
+///
+void checkPubspecForAny(
+  Pubspec pubspec,
+  { List<String> ignoredPackages = const [] }
+) {
+  final infractions = {
+    ...pubspec.dependencies,
+    ...pubspec.devDependencies,
+  }.entries
+    .where((entry) => !ignoredPackages.contains(entry.key) )
+    .where((entry) {
+      final dependency = entry.value;
+
+      if (dependency is! HostedDependency) return false;
+      return dependency.version == VersionConstraint.any;
+    }).map((entry) => entry.key).toList();
 
   if (infractions.isNotEmpty) {
     log(Level.WARNING, 'These packages are pinned in pubspec.yaml:',
