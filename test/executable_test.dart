@@ -672,7 +672,7 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart'; 
+            "import 'package:logging/logging.dart';
             final log = Logger('ExampleLogger');"
             ''')),
           ]),
@@ -697,5 +697,124 @@ void main() {
         expect(result.stdout, contains('No dependency issues found!'));
       });
     });
+
+    group('when dependency version is any', () {
+      final basePubspec = unindent('''
+        name: dependency_pins
+        version: 0.0.0
+        private: true
+        environment:
+          sdk: '>=2.4.0 <3.0.0'
+        dependencies:
+          logging: 1.0.2
+      ''');
+
+      group('allows when allowAny is true', () {
+        test('for dependency', () async {
+          final pubspec = '''
+            $basePubspec
+            dependencies:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          expect(result.exitCode, 0);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+
+        test('for dev_dependency', () async {
+          final pubspec = '''
+            $basePubspec
+            dev_dependencies:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          expect(result.exitCode, 0);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+
+        test('for dependency_overrides', () async {
+          final pubspec = '''
+            $basePubspec
+            dependency_overrides:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          expect(result.exitCode, 0);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+      });
+
+      group('rejects when allowAny is false', () {
+        test('for dependency', () async {
+         final pubspec = '''
+            $basePubspec
+            dependencies:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(
+            pubspec,
+            'any_dependency_version',
+            configFile: { 'allow_any': 'false' },
+          );
+          expect(result.exitCode, 1);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+
+        test('for dev_dependency', () async {
+          final pubspec = '''
+            $basePubspec
+            dev_dependencies:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(
+            pubspec,
+            'any_dependency_version',
+            configFile: { 'allow_any': 'false' },
+          );
+          expect(result.exitCode, 1);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+
+        test('for dependency_overrides', () async {
+          final pubspec = '''
+            $basePubspec
+            dependency_overrides:
+              logging:
+          ''';
+
+          result = await checkProjectWithPubspec(
+            pubspec,
+            'any_dependency_version',
+            configFile: { 'allow_any': 'false' },
+          );
+          expect(result.exitCode, 1);
+          expect(result.stdout, contains('No dependency issues found!'));
+        });
+      });
+    });
   });
+}
+
+
+Future<ProcessResult> checkProjectWithPubspec(
+  String pubspec,
+  String directory, {
+  Map<String, String> configFile = const {},
+}) async {
+  await d.dir(directory, [
+    d.file('pubspec.yaml', unindent(pubspec)),
+    if (configFile.isNotEmpty) d.file(
+      'dart_dependency_validator.yaml',
+      configFile.keys
+        .map((key) => '$key: ${configFile[key]}')
+        .join('\n')
+    )
+  ]).create();
+
+  return checkProject('${d.sandbox}/$directory');
 }
