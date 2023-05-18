@@ -717,7 +717,8 @@ void main() {
               logging:
           ''';
 
-          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          result =
+              await checkProjectWithPubspec(pubspec, 'any_dependency_version');
           expect(result.exitCode, 0);
           expect(result.stdout, contains('No dependency issues found!'));
         });
@@ -729,7 +730,8 @@ void main() {
               logging:
           ''';
 
-          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          result =
+              await checkProjectWithPubspec(pubspec, 'any_dependency_version');
           expect(result.exitCode, 0);
           expect(result.stdout, contains('No dependency issues found!'));
         });
@@ -741,7 +743,8 @@ void main() {
               logging:
           ''';
 
-          result = await checkProjectWithPubspec(pubspec, 'any_dependency_version');
+          result =
+              await checkProjectWithPubspec(pubspec, 'any_dependency_version');
           expect(result.exitCode, 0);
           expect(result.stdout, contains('No dependency issues found!'));
         });
@@ -749,7 +752,7 @@ void main() {
 
       group('rejects when allowAny is false', () {
         test('for dependency', () async {
-         final pubspec = '''
+          final pubspec = '''
             $basePubspec
             dependencies:
               logging:
@@ -758,7 +761,7 @@ void main() {
           result = await checkProjectWithPubspec(
             pubspec,
             'any_dependency_version',
-            configFile: { 'allow_any': 'false' },
+            configFile: {'allow_any': 'false'},
           );
           expect(result.exitCode, 1);
           expect(result.stdout, contains('No dependency issues found!'));
@@ -774,7 +777,7 @@ void main() {
           result = await checkProjectWithPubspec(
             pubspec,
             'any_dependency_version',
-            configFile: { 'allow_any': 'false' },
+            configFile: {'allow_any': 'false'},
           );
           expect(result.exitCode, 1);
           expect(result.stdout, contains('No dependency issues found!'));
@@ -790,7 +793,7 @@ void main() {
           result = await checkProjectWithPubspec(
             pubspec,
             'any_dependency_version',
-            configFile: { 'allow_any': 'false' },
+            configFile: {'allow_any': 'false'},
           );
           expect(result.exitCode, 1);
           expect(result.stdout, contains('No dependency issues found!'));
@@ -800,7 +803,6 @@ void main() {
   });
 }
 
-
 Future<ProcessResult> checkProjectWithPubspec(
   String pubspec,
   String directory, {
@@ -808,12 +810,9 @@ Future<ProcessResult> checkProjectWithPubspec(
 }) async {
   await d.dir(directory, [
     d.file('pubspec.yaml', unindent(pubspec)),
-    if (configFile.isNotEmpty) d.file(
-      'dart_dependency_validator.yaml',
-      configFile.keys
-        .map((key) => '$key: ${configFile[key]}')
-        .join('\n')
-    )
+    if (configFile.isNotEmpty)
+      d.file('dart_dependency_validator.yaml',
+          configFile.keys.map((key) => '$key: ${configFile[key]}').join('\n'))
   ]).create();
 
   return checkProject('${d.sandbox}/$directory');
