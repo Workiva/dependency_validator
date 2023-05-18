@@ -13,8 +13,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        sdk: [ stable, beta, dev ]
+        sdk: [ 2.18.7, stable, beta, dev ]
     steps:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v1
