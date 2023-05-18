@@ -415,21 +415,22 @@ void checkPubspecForPins(
 ///     name: name
 ///     url: url
 ///
-void checkPubspecForAny(
-  Pubspec pubspec,
-  { List<String> ignoredPackages = const [] }
-) {
+void checkPubspecForAny(Pubspec pubspec,
+    {List<String> ignoredPackages = const []}) {
   final infractions = {
     ...pubspec.dependencies,
     ...pubspec.devDependencies,
-  }.entries
-    .where((entry) => !ignoredPackages.contains(entry.key) )
-    .where((entry) {
-      final dependency = entry.value;
+  }
+      .entries
+      .where((entry) => !ignoredPackages.contains(entry.key))
+      .where((entry) {
+        final dependency = entry.value;
 
-      if (dependency is! HostedDependency) return false;
-      return dependency.version == VersionConstraint.any;
-    }).map((entry) => entry.key).toList();
+        if (dependency is! HostedDependency) return false;
+        return dependency.version == VersionConstraint.any;
+      })
+      .map((entry) => entry.key)
+      .toList();
 
   if (infractions.isNotEmpty) {
     log(Level.WARNING, 'These packages are pinned in pubspec.yaml:',
