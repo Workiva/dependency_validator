@@ -1,13 +1,5 @@
-import 'package:checked_yaml/checked_yaml.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:yaml/yaml.dart';
 
-part 'pubspec_config.g.dart';
-
-@JsonSerializable(
-    anyMap: true,
-    checked: true,
-    createToJson: false,
-    fieldRename: FieldRename.snake)
 class PubspecDepValidatorConfig {
   final DepValidatorConfig dependencyValidator;
 
@@ -18,28 +10,19 @@ class PubspecDepValidatorConfig {
   PubspecDepValidatorConfig({DepValidatorConfig? dependencyValidator})
       : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
-  factory PubspecDepValidatorConfig.fromJson(Map json) =>
-      _$PubspecDepValidatorConfigFromJson(json);
+  factory PubspecDepValidatorConfig.fromJson(Map json) {
+    var cfgMap = json['dependency_validator'] as Map;
+    var dependencyValidator = DepValidatorConfig.fromJson(cfgMap);
+    return PubspecDepValidatorConfig(dependencyValidator: dependencyValidator);
+  }
 
   factory PubspecDepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
-      checkedYamlDecode(
-          yamlContent, (m) => PubspecDepValidatorConfig.fromJson(m ?? {}),
-          allowNull: true, sourceUrl: sourceUrl);
+      PubspecDepValidatorConfig.fromJson(loadYaml(yamlContent, sourceUrl: sourceUrl) ?? {});
 }
 
-@JsonSerializable(
-    anyMap: true,
-    checked: true,
-    createToJson: false,
-    fieldRename: FieldRename.snake)
 class DepValidatorConfig {
-  @JsonKey(defaultValue: [])
   final List<String> exclude;
-
-  @JsonKey(defaultValue: [])
   final List<String> ignore;
-
-  @JsonKey(defaultValue: false)
   final bool allowPins;
 
   const DepValidatorConfig({
@@ -49,10 +32,15 @@ class DepValidatorConfig {
   });
 
   factory DepValidatorConfig.fromJson(Map json) =>
-      _$DepValidatorConfigFromJson(json);
+      DepValidatorConfig(
+        exclude: _toListOfString(json['exclude']),
+        ignore: _toListOfString(json['ignore']),
+        allowPins: (json['allow_pins'] as bool?) ?? false,
+      );
 
   factory DepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
-      checkedYamlDecode(
-          yamlContent, (m) => DepValidatorConfig.fromJson(m ?? {}),
-          allowNull: true, sourceUrl: sourceUrl);
+      DepValidatorConfig.fromJson(loadYaml(yamlContent, sourceUrl: sourceUrl) ?? {});
 }
+
+List<String> _toListOfString(dynamic v) =>
+  (v as List<dynamic>?)?.map((e) => e as String).toList() ?? [];
