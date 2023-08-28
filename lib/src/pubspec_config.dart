@@ -11,7 +11,7 @@ class PubspecDepValidatorConfig {
       : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
   factory PubspecDepValidatorConfig.fromJson(Map json) {
-    var cfgMap = json['dependency_validator'] as Map;
+    var cfgMap = (json['dependency_validator'] ?? {}) as Map;
     var dependencyValidator = DepValidatorConfig.fromJson(cfgMap);
     return PubspecDepValidatorConfig(dependencyValidator: dependencyValidator);
   }
