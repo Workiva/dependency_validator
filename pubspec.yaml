@@ -26,6 +26,16 @@ dev_dependencies:
   test: ^1.17.12
   test_descriptor: ^2.0.0
   workiva_analysis_options: ^1.2.2
+  workiva_dependency_constrainer:
+    hosted:
+      name: workiva_dependency_constrainer
+      url: https://pub.workiva.org
+    version: ^1.0.0
 
 executables:
   dependency_validator:
+
+
+dependency_validator:
+  ignore:
+    - workiva_dependency_constrainer
