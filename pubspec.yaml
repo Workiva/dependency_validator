@@ -12,7 +12,7 @@ dependencies:
   checked_yaml: ^2.0.1
   glob: ^2.0.1
   io: ^1.0.0
-  json_annotation: ^4.0.1
+  json_annotation: ^4.8.0
   logging: ^1.0.1
   package_config: ^2.0.0
   path: ^1.8.0
@@ -22,7 +22,7 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.1.2
-  json_serializable: ^5.0.2
+  json_serializable: ^6.0.0
   test: ^1.17.12
   test_descriptor: ^2.0.0
   workiva_analysis_options: ^1.2.2
