@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:build_config/build_config.dart';
+import 'package:dependency_validator/src/auto_fix.dart';
 import 'package:glob/glob.dart';
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
@@ -27,7 +28,7 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<void> run() async {
+Future<void> run({required bool shouldAutoFix}) async {
   if (!File('pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
@@ -75,6 +76,8 @@ Future<void> run() async {
   final pubspecFile = File('pubspec.yaml');
   final pubspec =
       Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
+
+  final autoFix = AutoFix(pubspec);
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
@@ -200,6 +203,7 @@ Future<void> run() async {
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
+    autoFix.handleMissingDependencies(missingDependencies);
     exitCode = 1;
   }
 
@@ -222,6 +226,7 @@ Future<void> run() async {
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
+    autoFix.handleMissingDevDependencies(missingDevDependencies);
     exitCode = 1;
   }
 
@@ -242,6 +247,7 @@ Future<void> run() async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
+    autoFix.handleOverPromotedDependencies(overPromotedDependencies);
     exitCode = 1;
   }
 
@@ -258,6 +264,7 @@ Future<void> run() async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
+    autoFix.handleUnderPromotedDependencies(underPromotedDependencies);
     exitCode = 1;
   }
 
@@ -343,7 +350,25 @@ Future<void> run() async {
       'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
+    autoFix.handleUnusedDependencies(unusedDependencies);
     exitCode = 1;
+  }
+
+  final autoFixCommand = autoFix.compile();
+  if (autoFixCommand.isNotEmpty) {
+    logger.info('Suggestion for auto fix: ${autoFixCommand}');
+  }
+
+  if (shouldAutoFix && autoFixCommand.isNotEmpty) {
+    logger.info('Start autofix...');
+    final process = await Process.start('/bin/sh', ['-xc', autoFixCommand]);
+    process.stdout.pipe(stdout);
+    process.stderr.pipe(stderr);
+    final processExitCode = await process.exitCode;
+    if (processExitCode != 0) throw Exception('process exit with exitCode=$processExitCode');
+    logger.info('End autofix.');
+    
+    exitCode = 0;
   }
 
   if (exitCode == 0) {

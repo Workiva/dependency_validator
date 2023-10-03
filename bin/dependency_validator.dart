@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:io' show exit, stderr, stdout;
+import 'dart:io' show Directory, exit, stderr, stdout;
 
 import 'package:args/args.dart';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
 
+const String pathArg = 'path';
+const String autoFixArg = 'auto-fix';
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
 const String helpMessage =
@@ -36,6 +38,16 @@ usage:''';
 
 /// Parses the command-line arguments
 final ArgParser argParser = ArgParser()
+  ..addOption(
+    pathArg,
+    abbr: 'p',
+    help: 'Specify package path',
+  )
+  ..addFlag(
+    autoFixArg,
+    abbr: 'a',
+    help: 'Auto fix issues',
+  )
   ..addFlag(
     helpArg,
     abbr: 'h',
@@ -78,5 +90,10 @@ void main(List<String> args) async {
     Logger.root.level = Level.ALL;
   }
 
-  await run();
+  final path = argResults[pathArg] as String?;
+  if (path != null) {
+    Directory.current = path;
+  }
+
+  await run(shouldAutoFix: argResults[autoFixArg]);
 }
