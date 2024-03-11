@@ -592,7 +592,7 @@ void main() {
       result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 1);
-      expect(result.stdout, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
+      expect(result.stderr, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
     });
 
     test(
