@@ -14,7 +14,7 @@ dev_dependencies:
 ## Usage
 
 ```bash
-pub run dependency_validator
+dart run dependency_validator
 ```
 
 This will report any missing, under-promoted, over-promoted, and unused
