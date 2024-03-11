@@ -314,7 +314,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('under_promoted', [
@@ -386,7 +386,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('unused', [
@@ -454,7 +454,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       await d.dir('project', [
@@ -498,7 +498,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       final validDotDart = ''
