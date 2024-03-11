@@ -19,6 +19,12 @@ import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+/// `master` on build_config has a min sdk bound of dart 3.0.0.
+/// Since dependency_validator is still designed to be used on dart 2
+/// code, we still want to run unit tests using this older version
+///
+/// The following ref, is the last commit in build_config that allowed
+/// dart 2 as a dependency
 const buildConfigRef = 'e2c837b48bd3c4428cb40e2bc1a6cf47d45df8cc';
 
 ProcessResult checkProject(String projectPath,
