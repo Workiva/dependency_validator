@@ -324,7 +324,7 @@ Future<void> run() async {
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,
-      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies',
+      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
       unusedDependencies,
       nonDevPackagesWithExecutables,
     );
