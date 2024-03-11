@@ -19,6 +19,14 @@ import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+/// `master` on build_config has a min sdk bound of dart 3.0.0.
+/// Since dependency_validator is still designed to be used on dart 2
+/// code, we still want to run unit tests using this older version
+///
+/// The following ref, is the last commit in build_config that allowed
+/// dart 2 as a dependency
+const buildConfigRef = 'e2c837b48bd3c4428cb40e2bc1a6cf47d45df8cc';
+
 ProcessResult checkProject(String projectPath,
     {List<String> optionalArgs = const []}) {
   final pubGetResult =
@@ -65,7 +73,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       final fakeProjectBuild = unindent('''
@@ -134,7 +142,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('missing', [
@@ -241,7 +249,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('over_promoted', [
@@ -312,7 +320,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('under_promoted', [
@@ -384,7 +392,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('unused', [
@@ -452,7 +460,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       await d.dir('project', [
@@ -496,7 +504,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       final validDotDart = ''
@@ -537,7 +545,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       await d.dir('common_binaries', [
@@ -551,6 +559,40 @@ void main() {
 
       expect(result.exitCode, 0);
       expect(result.stdout, contains('No dependency issues found!'));
+    });
+
+    test('fails when dependencies not used provide executables, but are not dev_dependencies', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dependencies:
+            build_runner: ^1.7.1
+            coverage: any
+            dart_style: ^1.3.3
+            dependency_validator:
+              path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: https://github.com/dart-lang/build.git
+                path: build_config
+                ref: $buildConfigRef
+          ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      result = checkProject('${d.sandbox}/common_binaries');
+
+      expect(result.exitCode, 1);
+      expect(result.stderr, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
     });
 
     test(
@@ -573,7 +615,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       await d.dir('common_binaries', [
@@ -607,7 +649,7 @@ void main() {
               git:
                 url: https://github.com/dart-lang/build.git
                 path: build_config
-                ref: master
+                ref: $buildConfigRef
           ''');
 
       final build = unindent(r'''
@@ -650,7 +692,7 @@ void main() {
                 git:
                   url: https://github.com/dart-lang/build.git
                   path: build_config
-                  ref: master
+                  ref: $buildConfigRef
             ''');
 
         await d.dir('dependency_pins', [
@@ -672,7 +714,7 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart'; 
+            "import 'package:logging/logging.dart';
             final log = Logger('ExampleLogger');"
             ''')),
           ]),
