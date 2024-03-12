@@ -14,7 +14,9 @@
 
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build_config/build_config.dart';
+import 'package:dependency_validator/src/import_export_ast_visitor.dart';
 import 'package:glob/glob.dart';
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
@@ -114,11 +116,7 @@ Future<void> run() async {
   // export directive.
   final packagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    final matches =
-        importExportDartPackageRegex.allMatches(file.readAsStringSync());
-    for (final match in matches) {
-      packagesUsedInPublicFiles.add(match.group(2)!);
-    }
+    packagesUsedInPublicFiles.addAll(getDartDirectivePackageNames(file));
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -160,11 +158,7 @@ Future<void> run() async {
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
-    final matches =
-        importExportDartPackageRegex.allMatches(file.readAsStringSync());
-    for (final match in matches) {
-      packagesUsedOutsidePublicDirs.add(match.group(2)!);
-    }
+    packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
   }
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());

@@ -403,6 +403,14 @@ void main() {
         expect(result.stderr, contains('fake_project'));
       });
 
+      test('and import is commented out', () async {
+         await d.dir('unused', [
+           d.dir('lib', [
+            d.file('invalid.dart', '// import \'package:fake_project/fake.dart\';'), // commented out import
+          ]),
+        ]).create();
+      });
+
       test('except when they are ignored', () async {
         await d.dir('unused', [
           d.file('dart_dependency_validator.yaml', unindent('''
@@ -501,7 +509,8 @@ void main() {
 
       final validDotDart = ''
           'import \'package:logging/logging.dart\';'
-          'import \'package:fake_project/fake.dart\';';
+          'import \'package:fake_project/fake.dart\';'
+          '// import \'package:does_not_exist/fake.dart\''; // commented out and unused
 
       await d.dir('valid', [
         d.dir('lib', [
@@ -672,7 +681,7 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart'; 
+            "import 'package:logging/logging.dart';
             final log = Logger('ExampleLogger');"
             ''')),
           ]),
