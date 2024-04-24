@@ -544,9 +544,9 @@ void main() {
           environment:
             sdk: '>=2.4.0 <3.0.0'
           dev_dependencies:
-            build_runner: ^1.7.1
+            build_runner: ^2.3.3
             coverage: any
-            dart_style: ^1.3.3
+            dart_style: ^2.3.2
             dependency_validator:
               path: ${Directory.current.path}
           dependency_overrides:
@@ -578,9 +578,9 @@ void main() {
           environment:
             sdk: '>=2.4.0 <3.0.0'
           dependencies:
-            build_runner: ^1.7.1
+            build_runner: ^2.3.3
             coverage: any
-            dart_style: ^1.3.3
+            dart_style: ^2.3.2
             dependency_validator:
               path: ${Directory.current.path}
           dependency_overrides:
@@ -614,9 +614,9 @@ void main() {
           environment:
             sdk: '>=2.4.0 <3.0.0'
           dev_dependencies:
-            build_test: ^1.0.0
+            build_test: ^2.0.1
             build_vm_compilers: ^1.0.3
-            build_web_compilers: ^2.5.1
+            build_web_compilers: ^3.2.7
             dependency_validator:
               path: ${Directory.current.path}
           dependency_overrides:
@@ -723,8 +723,8 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart';
-            final log = Logger('ExampleLogger');"
+            import 'package:logging/logging.dart';
+            final log = Logger('ExampleLogger');
             ''')),
           ]),
           d.file('dart_dependency_validator.yaml', unindent('''
