@@ -308,22 +308,35 @@ Future<void> run() async {
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
-  final packagesWithExecutables = Set<String>();
-  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
-    // Search for executables, if found we assume they are used
-    final binDir = Directory(p.join(p.fromUri(package!.root), 'bin'));
-    hasDartFiles() =>
-        binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
-    if (binDir.existsSync() && hasDartFiles()) {
-      packagesWithExecutables.add(package.name);
-    }
+  final packagesWithExecutables = unusedDependencies
+    .where((name) {
+      final package = packageConfig[name];
+      final binDir = Directory(p.join(p.fromUri(package!.root), 'bin'));
+      if (!binDir.existsSync()) return false;
+
+      // Search for executables, if found we assume they are used
+      return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
+    }).toSet();
+
+  final nonDevPackagesWithExecutables = packagesWithExecutables
+    .where(pubspec.dependencies.containsKey)
+    .toSet();
+  if (nonDevPackagesWithExecutables.isNotEmpty) {
+    logIntersection(
+      Level.WARNING,
+      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
+      unusedDependencies,
+      nonDevPackagesWithExecutables,
+    );
+    exitCode = 1;
   }
 
   logIntersection(
-      Level.INFO,
-      'The following packages contain executables, they are assumed to be used:',
-      unusedDependencies,
-      packagesWithExecutables);
+    Level.INFO,
+    'The following packages contain executables, they are assumed to be used:',
+    unusedDependencies,
+    packagesWithExecutables,
+  );
   unusedDependencies.removeAll(packagesWithExecutables);
 
   if (unusedDependencies.contains('analyzer')) {

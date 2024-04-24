@@ -561,6 +561,40 @@ void main() {
       expect(result.stdout, contains('No dependency issues found!'));
     });
 
+    test('fails when dependencies not used provide executables, but are not dev_dependencies', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.4.0 <3.0.0'
+          dependencies:
+            build_runner: ^1.7.1
+            coverage: any
+            dart_style: ^1.3.3
+            dependency_validator:
+              path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: https://github.com/dart-lang/build.git
+                path: build_config
+                ref: $buildConfigRef
+          ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      result = checkProject('${d.sandbox}/common_binaries');
+
+      expect(result.exitCode, 1);
+      expect(result.stderr, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
+    });
+
     test(
         'passes when dependencies are not imported but provide auto applied builders',
         () async {
@@ -680,7 +714,7 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart'; 
+            "import 'package:logging/logging.dart';
             final log = Logger('ExampleLogger');"
             ''')),
           ]),
