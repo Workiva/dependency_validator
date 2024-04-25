@@ -14,7 +14,6 @@
 
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:build_config/build_config.dart';
 import 'package:dependency_validator/src/import_export_ast_visitor.dart';
 import 'package:glob/glob.dart';

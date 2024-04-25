@@ -414,9 +414,15 @@ void main() {
       test('and import is commented out', () async {
          await d.dir('unused', [
            d.dir('lib', [
-            d.file('invalid.dart', '// import \'package:fake_project/fake.dart\';'), // commented out import
+            d.file('commented_out.dart', '// import \'package:other_project/other.dart\';'), // commented out import
           ]),
+          d.dir('test', [
+            d.file('valid.dart', 'import \'package:fake_project/fake.dart\';'),
+          ])
         ]).create();
+        result = checkProject('${d.sandbox}/unused');
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
       });
 
       test('except when they are ignored', () async {
