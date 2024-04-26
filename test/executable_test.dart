@@ -64,7 +64,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
@@ -107,7 +107,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
@@ -133,7 +133,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <4.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               dependency_validator:
                 path: ${Directory.current.path}
@@ -237,7 +237,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <4.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dependencies:
               path: any
               yaml: any
@@ -309,7 +309,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <4.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               logging: any
               yaml: any
@@ -381,7 +381,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <4.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               fake_project:
                 path: ${d.sandbox}/fake_project
@@ -463,7 +463,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dependencies:
             analyzer: any
           dev_dependencies:
@@ -503,7 +503,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dependencies:
             logging: any
             yaml: any
@@ -548,7 +548,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             build_runner: ^2.3.3
             coverage: any
@@ -582,7 +582,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dependencies:
             build_runner: ^2.3.3
             coverage: any
@@ -618,7 +618,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             build_test: ^2.0.1
             build_vm_compilers: ^1.0.3
@@ -653,7 +653,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <4.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             fake_project:
               path: ${d.sandbox}/fake_project
@@ -696,7 +696,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <4.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dependencies:
               logging: 1.0.2
             dev_dependencies:
