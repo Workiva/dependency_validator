@@ -311,19 +311,6 @@ Future<void> run() async {
       return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
     }).toSet();
 
-  final nonDevPackagesWithExecutables = packagesWithExecutables
-    .where(pubspec.dependencies.containsKey)
-    .toSet();
-  if (nonDevPackagesWithExecutables.isNotEmpty) {
-    logIntersection(
-      Level.WARNING,
-      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
-      unusedDependencies,
-      nonDevPackagesWithExecutables,
-    );
-    exitCode = 1;
-  }
-
   logIntersection(
     Level.INFO,
     'The following packages contain executables, they are assumed to be used:',
