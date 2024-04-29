@@ -1,3 +1,10 @@
+# 4.0.0
+
+- **Breaking Change:** Added "non-dev packages that are only used within bin/" check to cover this edge case.
+This is enabled by default, and will break the execution of dependency_validator if it occurs within the codebase.
+Resolution is to either ignore the dependency, or demote the dependency to a dev_dep
+- Fixed bug where uris declared within comments and strings would register as dependency "usages"
+
 # 3.2.2
 
 - Raise dependency minimums to ensure all dependencies are null-safe.
