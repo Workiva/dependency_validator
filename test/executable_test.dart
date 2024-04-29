@@ -64,7 +64,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
@@ -107,7 +107,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             dependency_validator:
               path: ${Directory.current.path}
@@ -133,7 +133,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <3.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               dependency_validator:
                 path: ${Directory.current.path}
@@ -237,7 +237,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <3.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dependencies:
               path: any
               yaml: any
@@ -309,7 +309,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <3.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               logging: any
               yaml: any
@@ -381,7 +381,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <3.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dev_dependencies:
               fake_project:
                 path: ${d.sandbox}/fake_project
@@ -409,6 +409,20 @@ void main() {
             contains(
                 'These packages may be unused, or you may be using assets from these packages:'));
         expect(result.stderr, contains('fake_project'));
+      });
+
+      test('and import is commented out', () async {
+         await d.dir('unused', [
+           d.dir('lib', [
+            d.file('commented_out.dart', '// import \'package:other_project/other.dart\';'), // commented out import
+          ]),
+          d.dir('test', [
+            d.file('valid.dart', 'import \'package:fake_project/fake.dart\';'),
+          ])
+        ]).create();
+        result = checkProject('${d.sandbox}/unused');
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
       });
 
       test('except when they are ignored', () async {
@@ -449,7 +463,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dependencies:
             analyzer: any
           dev_dependencies:
@@ -489,7 +503,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dependencies:
             logging: any
             yaml: any
@@ -509,7 +523,8 @@ void main() {
 
       final validDotDart = ''
           'import \'package:logging/logging.dart\';'
-          'import \'package:fake_project/fake.dart\';';
+          'import \'package:fake_project/fake.dart\';'
+          '// import \'package:does_not_exist/fake.dart\''; // commented out and unused
 
       await d.dir('valid', [
         d.dir('lib', [
@@ -533,11 +548,11 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
-            build_runner: ^1.7.1
+            build_runner: ^2.3.3
             coverage: any
-            dart_style: ^1.3.3
+            dart_style: ^2.3.2
             dependency_validator:
               path: ${Directory.current.path}
           dependency_overrides:
@@ -561,6 +576,40 @@ void main() {
       expect(result.stdout, contains('No dependency issues found!'));
     });
 
+    test('fails when dependencies not used provide executables, but are not dev_dependencies', () async {
+      final pubspec = unindent('''
+          name: common_binaries
+          version: 0.0.0
+          private: true
+          environment:
+            sdk: '>=2.12.0 <4.0.0'
+          dependencies:
+            build_runner: ^2.3.3
+            coverage: any
+            dart_style: ^2.3.2
+            dependency_validator:
+              path: ${Directory.current.path}
+          dependency_overrides:
+            build_config:
+              git:
+                url: https://github.com/dart-lang/build.git
+                path: build_config
+                ref: $buildConfigRef
+          ''');
+
+      await d.dir('common_binaries', [
+        d.dir('lib', [
+          d.file('fake.dart', 'bool fake = true;'),
+        ]),
+        d.file('pubspec.yaml', pubspec),
+      ]).create();
+
+      result = checkProject('${d.sandbox}/common_binaries');
+
+      expect(result.exitCode, 1);
+      expect(result.stderr, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
+    });
+
     test(
         'passes when dependencies are not imported but provide auto applied builders',
         () async {
@@ -569,11 +618,11 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
-            build_test: ^1.0.0
+            build_test: ^2.0.1
             build_vm_compilers: ^1.0.3
-            build_web_compilers: ^2.5.1
+            build_web_compilers: ^3.2.7
             dependency_validator:
               path: ${Directory.current.path}
           dependency_overrides:
@@ -604,7 +653,7 @@ void main() {
           version: 0.0.0
           private: true
           environment:
-            sdk: '>=2.4.0 <3.0.0'
+            sdk: '>=2.12.0 <4.0.0'
           dev_dependencies:
             fake_project:
               path: ${d.sandbox}/fake_project
@@ -647,7 +696,7 @@ void main() {
             version: 0.0.0
             private: true
             environment:
-              sdk: '>=2.4.0 <3.0.0'
+              sdk: '>=2.12.0 <4.0.0'
             dependencies:
               logging: 1.0.2
             dev_dependencies:
@@ -680,8 +729,8 @@ void main() {
         await d.dir('dependency_pins', [
           d.dir('lib', [
             d.file('test.dart', unindent('''
-            "import 'package:logging/logging.dart'; 
-            final log = Logger('ExampleLogger');"
+            import 'package:logging/logging.dart';
+            final log = Logger('ExampleLogger');
             ''')),
           ]),
           d.file('dart_dependency_validator.yaml', unindent('''

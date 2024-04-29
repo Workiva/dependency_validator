@@ -13,8 +13,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        sdk: [ 2.19.6 ]
+        sdk: [2.19.6, stable]
     steps:
       - uses: actions/checkout@v2
       - uses: dart-lang/setup-dart@v1
@@ -24,9 +25,8 @@ jobs:
         run: dart pub get
       - name: Validate dependencies
         run: dart run dependency_validator
-      - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed .
-        if: ${{ matrix.sdk == 'stable' }}
+      # - name: Check formatting
+      #   run: dart format --output=none --set-exit-if-changed .
       - name: Analyze project source
         run: dart analyze
       - name: Run tests
