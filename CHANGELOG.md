@@ -1,7 +1,3 @@
-# 4.0.1
-- Reverted "non-dev packages that are only used within bin/", this was an invalid assumption and would cause
-failures for any consumer which treats `/bin` as apart of the public api.
-
 # 4.0.0
 
 - **Breaking Change:** Added "non-dev packages that are only used within bin/" check to cover this edge case.
