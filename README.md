@@ -4,17 +4,14 @@
 
 ## Installation
 
-Add the following to your pubspec.yaml:
-
-```yaml
-dev_dependencies:
-  dependency_validator: ^3.0.0
+```
+dart pub global activate dependency_validator
 ```
 
 ## Usage
 
 ```bash
-dart run dependency_validator
+dart pub global run dependency_validator
 ```
 
 This will report any missing, under-promoted, over-promoted, and unused
