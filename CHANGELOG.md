@@ -1,3 +1,7 @@
+# 4.1.0
+
+- Update specified analyzer range to support `v6.0.0+`. This supports dependency_validator running on dart 3 better
+
 # 4.0.0
 
 - **Breaking Change:** Added "non-dev packages that are only used within bin/" check to cover this edge case.
