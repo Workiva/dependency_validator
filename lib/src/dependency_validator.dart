@@ -301,19 +301,17 @@ Future<void> run() async {
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
-  final packagesWithExecutables = unusedDependencies
-    .where((name) {
-      final package = packageConfig[name];
-      final binDir = Directory(p.join(p.fromUri(package!.root), 'bin'));
-      if (!binDir.existsSync()) return false;
+  final packagesWithExecutables = unusedDependencies.where((name) {
+    final package = packageConfig[name];
+    final binDir = Directory(p.join(p.fromUri(package!.root), 'bin'));
+    if (!binDir.existsSync()) return false;
 
-      // Search for executables, if found we assume they are used
-      return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
-    }).toSet();
+    // Search for executables, if found we assume they are used
+    return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
+  }).toSet();
 
-  final nonDevPackagesWithExecutables = packagesWithExecutables
-    .where(pubspec.dependencies.containsKey)
-    .toSet();
+  final nonDevPackagesWithExecutables =
+      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,

@@ -25,12 +25,14 @@ jobs:
         run: dart pub get
       - name: Validate dependencies
         run: dart run dependency_validator
-      # - name: Check formatting
-      #   run: dart format --output=none --set-exit-if-changed .
       - name: Analyze project source
         run: dart analyze
       - name: Run tests
         run: dart test
+
+      - name: Check formatting
+        if: ${{ matrix.sdk == '2.19.6'}}
+        run: dart format --output=none --set-exit-if-changed .
 
       - uses: anchore/sbom-action@v0
         if: ${{ matrix.sdk == '2.19.6'}}

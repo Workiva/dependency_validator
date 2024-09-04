@@ -27,7 +27,8 @@ class ImportExportVisitor extends GeneralizingAstVisitor {
     if (!uri.startsWith('package:')) return;
 
     final packageParts = uri.substring('package:'.length).split('/');
-    if (packageParts.isEmpty) return; // sanity check, this probably will never happen
+    if (packageParts.isEmpty)
+      return; // sanity check, this probably will never happen
 
     packageNames.add(packageParts.first);
   }

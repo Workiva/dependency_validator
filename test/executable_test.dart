@@ -412,9 +412,10 @@ void main() {
       });
 
       test('and import is commented out', () async {
-         await d.dir('unused', [
-           d.dir('lib', [
-            d.file('commented_out.dart', '// import \'package:other_project/other.dart\';'), // commented out import
+        await d.dir('unused', [
+          d.dir('lib', [
+            d.file('commented_out.dart',
+                '// import \'package:other_project/other.dart\';'), // commented out import
           ]),
           d.dir('test', [
             d.file('valid.dart', 'import \'package:fake_project/fake.dart\';'),
@@ -576,7 +577,9 @@ void main() {
       expect(result.stdout, contains('No dependency issues found!'));
     });
 
-    test('fails when dependencies not used provide executables, but are not dev_dependencies', () async {
+    test(
+        'fails when dependencies not used provide executables, but are not dev_dependencies',
+        () async {
       final pubspec = unindent('''
           name: common_binaries
           version: 0.0.0
@@ -607,7 +610,10 @@ void main() {
       result = checkProject('${d.sandbox}/common_binaries');
 
       expect(result.exitCode, 1);
-      expect(result.stderr, contains('The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
+      expect(
+          result.stderr,
+          contains(
+              'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies'));
     });
 
     test(
