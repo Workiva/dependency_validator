@@ -11,7 +11,17 @@ jobs:
     uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.4
 
   checks:
+    strategy:
+      matrix:
+        sdk: [2.19.6, stable]
     uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.4
+    with:
+      sdk: ${{ matrix.sdk }}
 
   unit-tests:
+    strategy:
+      matrix:
+        sdk: [2.19.6, stable]
     uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.4
+    with:
+      sdk: ${{ matrix.sdk }}
