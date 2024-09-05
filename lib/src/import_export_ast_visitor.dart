@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
@@ -7,7 +8,14 @@ import 'package:analyzer/dart/ast/visitor.dart';
 /// Returns the list of package names that are exported and imported into the
 /// provided dart file
 Set<String> getDartDirectivePackageNames(File file) {
-  final parsed = parseString(content: file.readAsStringSync(), path: file.path);
+  ParseStringResult parsed;
+  try {
+    parsed = parseString(content: file.readAsStringSync(), path: file.path);
+  } catch(e) {
+    print('Error parsing: ${file.path}');
+    exit(1);
+  }
+
   final visitor = ImportExportVisitor();
   parsed.unit.visitChildren(visitor);
   return visitor.packageNames;
