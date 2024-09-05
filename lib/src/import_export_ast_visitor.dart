@@ -11,8 +11,9 @@ Set<String> getDartDirectivePackageNames(File file) {
   ParseStringResult parsed;
   try {
     parsed = parseString(content: file.readAsStringSync(), path: file.path);
-  } catch(e) {
+  } on ArgumentError catch (e) {
     print('Error parsing: ${file.path}');
+    print(e.message);
     exit(1);
   }
 
