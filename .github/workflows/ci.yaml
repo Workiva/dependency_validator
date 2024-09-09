@@ -8,15 +8,15 @@ on:
 
 jobs:
   build:
-    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.5
+    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.6
 
   checks:
-    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.5
+    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.6
 
   unit-tests:
     strategy:
       matrix:
         sdk: [2.19.6, stable]
-    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.5
+    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.6
     with:
       sdk: ${{ matrix.sdk }}
