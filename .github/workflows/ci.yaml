@@ -11,7 +11,7 @@ jobs:
     uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.5
 
   checks:
-    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@fixed_validate-publish-condition
+    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.5
 
   unit-tests:
     strategy:
