@@ -1,3 +1,7 @@
+# 4.1.1
+
+- Update the output of parse failures to include the path to the file which failed to parse
+
 # 4.1.0
 
 - Update specified analyzer range to support `v6.0.0+`. This supports dependency_validator running on dart 3 better
