@@ -33,11 +33,6 @@ Future<void> run() async {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
   }
-  if (!File('.dart_tool/package_config.json').existsSync()) {
-    logger.shout(red.wrap(
-        'No .dart_tool/package_config.json file found, please run "pub get" first.'));
-    exit(1);
-  }
 
   DepValidatorConfig config;
   final configFile = File('dart_dependency_validator.yaml');
@@ -45,7 +40,8 @@ Future<void> run() async {
     config = DepValidatorConfig.fromYaml(configFile.readAsStringSync());
   } else {
     final pubspecConfig = PubspecDepValidatorConfig.fromYaml(
-        File('pubspec.yaml').readAsStringSync());
+      File('pubspec.yaml').readAsStringSync(),
+    );
     if (pubspecConfig.isNotEmpty) {
       logger.warning(yellow.wrap(
           'Configuring dependency_validator in pubspec.yaml is deprecated.\n'
@@ -53,6 +49,7 @@ Future<void> run() async {
     }
     config = pubspecConfig.dependencyValidator;
   }
+
   final excludes = config.exclude
       .map((s) {
         try {
