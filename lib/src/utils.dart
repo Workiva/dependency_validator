@@ -183,3 +183,12 @@ DependencyPinEvaluation inspectVersionForPins(VersionConstraint constraint) {
 
   return DependencyPinEvaluation.emptyPin;
 }
+
+/// Utilities for Pubspec objects.
+extension PubspecUtils on Pubspec {
+  /// Whether this package is the root of a Pub Workspace.
+  bool get isWorkspaceRoot => workspace != null;
+
+  /// Whether this package is a sub-package in a Pub Workspace.
+  bool get isInWorkspace => resolution == 'workspace';
+}

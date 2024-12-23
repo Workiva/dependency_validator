@@ -28,19 +28,19 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<void> run() async {
-  if (!File('pubspec.yaml').existsSync()) {
+Future<void> run({String root = "."}) async {
+  if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
     exit(1);
   }
 
   DepValidatorConfig config;
-  final configFile = File('dart_dependency_validator.yaml');
+  final configFile = File('$root/dart_dependency_validator.yaml');
   if (configFile.existsSync()) {
     config = DepValidatorConfig.fromYaml(configFile.readAsStringSync());
   } else {
     final pubspecConfig = PubspecDepValidatorConfig.fromYaml(
-      File('pubspec.yaml').readAsStringSync(),
+      File('$root/pubspec.yaml').readAsStringSync(),
     );
     if (pubspecConfig.isNotEmpty) {
       logger.warning(yellow.wrap(
@@ -67,12 +67,21 @@ Future<void> run() async {
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
-  final optionsIncludePackage = getAnalysisOptionsIncludePackage();
+  final optionsIncludePackage = getAnalysisOptionsIncludePackage(path: root);
 
   // Read and parse the pubspec.yaml in the current working directory.
-  final pubspecFile = File('pubspec.yaml');
+  final pubspecFile = File('$root/pubspec.yaml');
   final pubspec =
       Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
+
+  if (pubspec.isWorkspaceRoot) {
+    logger.fine('In a workspace. Recursing through sub-packages...');
+    for (final package in pubspec.workspace ?? []) {
+      await run(root: package);
+      logger.info('');
+    }
+    return;
+  }
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
@@ -89,7 +98,7 @@ Future<void> run() async {
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
-  final publicDirs = ['bin/', 'lib/'];
+  final publicDirs = ['$root/bin/', '$root/lib/'];
   final publicDartFiles = [
     for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
   ];
@@ -132,11 +141,11 @@ Future<void> run() async {
   final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
 
   final nonPublicDartFiles =
-      listDartFilesIn('./', [...excludes, ...publicDirGlobs]);
+      listDartFilesIn('$root/', [...excludes, ...publicDirGlobs]);
   final nonPublicScssFiles =
-      listScssFilesIn('./', [...excludes, ...publicDirGlobs]);
+      listScssFilesIn('$root/', [...excludes, ...publicDirGlobs]);
   final nonPublicLessFiles =
-      listLessFilesIn('./', [...excludes, ...publicDirGlobs]);
+      listLessFilesIn('$root/', [...excludes, ...publicDirGlobs]);
 
   logger
     ..fine('non-public dart files:\n'
