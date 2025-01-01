@@ -85,6 +85,7 @@ void main(List<String> args) async {
     Logger.root.level = Level.ALL;
   }
 
+  Logger.root.info('');
   final rootDir = argResults.option(rootDirArg) ?? '.';
   await checkPackage(root: rootDir);
 }
