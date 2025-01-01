@@ -80,7 +80,6 @@ Future<void> run({String root = "."}) async {
       await run(root: package);
       logger.info('');
     }
-    return;
   }
 
   logger.info('Validating dependencies for ${pubspec.name}...');
@@ -139,13 +138,14 @@ Future<void> run({String root = "."}) async {
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
   final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
+  final subpackageGlobs = [for (final subpackage in pubspec.workspace ?? []) Glob('$subpackage**')];
 
   final nonPublicDartFiles =
-      listDartFilesIn('$root/', [...excludes, ...publicDirGlobs]);
+      listDartFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
   final nonPublicScssFiles =
-      listScssFilesIn('$root/', [...excludes, ...publicDirGlobs]);
+      listScssFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
   final nonPublicLessFiles =
-      listLessFilesIn('$root/', [...excludes, ...publicDirGlobs]);
+      listLessFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
 
   logger
     ..fine('non-public dart files:\n'
