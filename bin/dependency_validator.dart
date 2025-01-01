@@ -78,5 +78,5 @@ void main(List<String> args) async {
     Logger.root.level = Level.ALL;
   }
 
-  await run();
+  await checkPackage();
 }

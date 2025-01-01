@@ -28,10 +28,11 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<void> run({String root = "."}) async {
+Future<bool> checkPackage({String root = "."}) async {
+  var result = true;
   if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
-    exit(1);
+    return false;
   }
 
   DepValidatorConfig config;
@@ -59,8 +60,7 @@ Future<void> run({String root = "."}) async {
           return null;
         }
       })
-      .where((g) => g != null)
-      .cast<Glob>()
+      .nonNulls
       .toList();
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
   final ignoredPackages = config.ignore;
@@ -72,12 +72,12 @@ Future<void> run({String root = "."}) async {
   // Read and parse the pubspec.yaml in the current working directory.
   final pubspecFile = File('$root/pubspec.yaml');
   final pubspec =
-      Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
+      Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri,);
 
   if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in pubspec.workspace ?? []) {
-      await run(root: package);
+      await checkPackage(root: package);
       logger.info('');
     }
   }
@@ -199,7 +199,7 @@ Future<void> run({String root = "."}) async {
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
@@ -221,7 +221,7 @@ Future<void> run({String root = "."}) async {
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -241,7 +241,7 @@ Future<void> run({String root = "."}) async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -257,7 +257,7 @@ Future<void> run({String root = "."}) async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -275,8 +275,7 @@ Future<void> run({String root = "."}) async {
   if (packageConfig == null) {
     logger.severe(red.wrap(
         'Could not find package config. Make sure you run `dart pub get` first.'));
-    exitCode = 1;
-    return;
+    return false;
   }
 
   // Remove deps that provide builders that will be applied
@@ -303,7 +302,7 @@ Future<void> run({String root = "."}) async {
       Level.FINE,
       'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
       unusedDependencies,
-      packagesWithConsumedBuilders);
+      packagesWithConsumedBuilders,);
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
@@ -325,7 +324,7 @@ Future<void> run({String root = "."}) async {
       unusedDependencies,
       nonDevPackagesWithExecutables,
     );
-    exitCode = 1;
+    result = false;
   }
 
   logIntersection(
@@ -353,12 +352,13 @@ Future<void> run({String root = "."}) async {
       'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
-  if (exitCode == 0) {
+  if (result) {
     logger.info(green.wrap('✓ No dependency issues found!'));
   }
+  return result;
 }
 
 /// Whether a dependency at [path] defines an auto applied builder.

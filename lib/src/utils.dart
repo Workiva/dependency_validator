@@ -93,7 +93,7 @@ Iterable<File> listFilesWithExtensionIn(
 /// Logs the given [message] at [level] and lists all of the given [dependencies].
 void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
-  var combined = [message, bulletItems(sortedDependencies), ''].join('\n');
+  var combined = [message, bulletItems(sortedDependencies)].join('\n');
   if (level >= Level.SEVERE) {
     combined = red.wrap(combined)!;
   } else if (level >= Level.WARNING) {
