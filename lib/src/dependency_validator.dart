@@ -28,7 +28,7 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<bool> checkPackage({String root = "."}) async {
+Future<bool> checkPackage({required String root}) async {
   var result = true;
   if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
