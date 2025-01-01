@@ -74,10 +74,11 @@ Future<bool> checkPackage({required String root}) async {
   final pubspec =
       Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri,);
 
+  var subResult = true;
   if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in pubspec.workspace ?? []) {
-      await checkPackage(root: package);
+      subResult &= await checkPackage(root: package);
       logger.info('');
     }
   }
@@ -358,7 +359,7 @@ Future<bool> checkPackage({required String root}) async {
   if (result) {
     logger.info(green.wrap('✓ No dependency issues found!'));
   }
-  return result;
+  return result && subResult;
 }
 
 /// Whether a dependency at [path] defines an auto applied builder.

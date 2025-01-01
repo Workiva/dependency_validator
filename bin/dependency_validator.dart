@@ -87,5 +87,6 @@ void main(List<String> args) async {
 
   Logger.root.info('');
   final rootDir = argResults.option(rootDirArg) ?? '.';
-  await checkPackage(root: rootDir);
+  final result = await checkPackage(root: rootDir);
+  exit(result ? 0 : 1);
 }
