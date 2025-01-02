@@ -48,3 +48,4 @@ ignore:
 
 > Note: Previously this configuration lived in the `pubspec.yaml`, but that
 > option was deprecated because `pub publish` warns about unrecognized keys.
+
