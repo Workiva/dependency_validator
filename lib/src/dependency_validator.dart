@@ -28,24 +28,21 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<void> run() async {
-  if (!File('pubspec.yaml').existsSync()) {
+Future<bool> checkPackage({required String root}) async {
+  var result = true;
+  if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
-    exit(1);
-  }
-  if (!File('.dart_tool/package_config.json').existsSync()) {
-    logger.shout(red.wrap(
-        'No .dart_tool/package_config.json file found, please run "pub get" first.'));
-    exit(1);
+    return false;
   }
 
   DepValidatorConfig config;
-  final configFile = File('dart_dependency_validator.yaml');
+  final configFile = File('$root/dart_dependency_validator.yaml');
   if (configFile.existsSync()) {
     config = DepValidatorConfig.fromYaml(configFile.readAsStringSync());
   } else {
     final pubspecConfig = PubspecDepValidatorConfig.fromYaml(
-        File('pubspec.yaml').readAsStringSync());
+      File('$root/pubspec.yaml').readAsStringSync(),
+    );
     if (pubspecConfig.isNotEmpty) {
       logger.warning(yellow.wrap(
           'Configuring dependency_validator in pubspec.yaml is deprecated.\n'
@@ -53,29 +50,42 @@ Future<void> run() async {
     }
     config = pubspecConfig.dependencyValidator;
   }
+
   final excludes = config.exclude
       .map((s) {
         try {
-          return Glob(s);
+          // Globs don't support './' paths. Use posix to avoid '\' paths
+          final globPath = p.posix.normalize('$root/$s');
+          return Glob(globPath);
         } catch (_, __) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
         }
       })
-      .where((g) => g != null)
-      .cast<Glob>()
+      .nonNulls
       .toList();
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
   final ignoredPackages = config.ignore;
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
-  final optionsIncludePackage = getAnalysisOptionsIncludePackage();
+  final optionsIncludePackage = getAnalysisOptionsIncludePackage(path: root);
 
   // Read and parse the pubspec.yaml in the current working directory.
-  final pubspecFile = File('pubspec.yaml');
-  final pubspec =
-      Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri);
+  final pubspecFile = File('$root/pubspec.yaml');
+  final pubspec = Pubspec.parse(
+    pubspecFile.readAsStringSync(),
+    sourceUrl: pubspecFile.uri,
+  );
+
+  var subResult = true;
+  if (pubspec.isWorkspaceRoot) {
+    logger.fine('In a workspace. Recursing through sub-packages...');
+    for (final package in pubspec.workspace ?? []) {
+      subResult &= await checkPackage(root: package);
+      logger.info('');
+    }
+  }
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
@@ -92,7 +102,7 @@ Future<void> run() async {
   logger.fine('dev_dependencies:\n'
       '${bulletItems(devDeps)}\n');
 
-  final publicDirs = ['bin/', 'lib/'];
+  final publicDirs = ['$root/bin/', '$root/lib/'];
   final publicDartFiles = [
     for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
   ];
@@ -133,13 +143,22 @@ Future<void> run() async {
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
   final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
+  final subpackageGlobs = [
+    for (final subpackage in pubspec.workspace ?? []) Glob('$subpackage**')
+  ];
 
-  final nonPublicDartFiles =
-      listDartFilesIn('./', [...excludes, ...publicDirGlobs]);
-  final nonPublicScssFiles =
-      listScssFilesIn('./', [...excludes, ...publicDirGlobs]);
-  final nonPublicLessFiles =
-      listLessFilesIn('./', [...excludes, ...publicDirGlobs]);
+  final nonPublicDartFiles = listDartFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
+  final nonPublicScssFiles = listScssFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
+  final nonPublicLessFiles = listLessFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
 
   logger
     ..fine('non-public dart files:\n'
@@ -193,7 +212,7 @@ Future<void> run() async {
       'These packages are used in lib/ but are not dependencies:',
       missingDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
@@ -215,7 +234,7 @@ Future<void> run() async {
       'These packages are used outside lib/ but are not dev_dependencies:',
       missingDevDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
@@ -235,7 +254,7 @@ Future<void> run() async {
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are used in lib/, but are dev_dependencies.
@@ -251,7 +270,7 @@ Future<void> run() async {
       'These packages are used in lib/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
   // Packages that are not used anywhere but are dependencies.
@@ -269,8 +288,7 @@ Future<void> run() async {
   if (packageConfig == null) {
     logger.severe(red.wrap(
         'Could not find package config. Make sure you run `dart pub get` first.'));
-    exitCode = 1;
-    return;
+    return false;
   }
 
   // Remove deps that provide builders that will be applied
@@ -294,10 +312,11 @@ Future<void> run() async {
   }
 
   logIntersection(
-      Level.FINE,
-      'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
-      unusedDependencies,
-      packagesWithConsumedBuilders);
+    Level.FINE,
+    'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
+    unusedDependencies,
+    packagesWithConsumedBuilders,
+  );
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
@@ -319,7 +338,7 @@ Future<void> run() async {
       unusedDependencies,
       nonDevPackagesWithExecutables,
     );
-    exitCode = 1;
+    result = false;
   }
 
   logIntersection(
@@ -347,12 +366,13 @@ Future<void> run() async {
       'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
     );
-    exitCode = 1;
+    result = false;
   }
 
-  if (exitCode == 0) {
+  if (result) {
     logger.info(green.wrap('✓ No dependency issues found!'));
   }
+  return result && subResult;
 }
 
 /// Whether a dependency at [path] defines an auto applied builder.

@@ -4,7 +4,7 @@ description: Checks for missing, under-promoted, over-promoted, and unused depen
 homepage: https://github.com/Workiva/dependency_validator
 
 environment:
-  sdk: '>=2.19.0 <3.0.0'
+  sdk: '^3.0.0'
 
 dependencies:
   analyzer: '>=5.4.0 <7.0.0'
@@ -27,6 +27,13 @@ dev_dependencies:
   test: ^1.17.12
   test_descriptor: ^2.0.0
   workiva_analysis_options: ^1.2.2
+
+dependency_overrides:
+  pubspec_parse:
+    git:
+      url: https://github.com/Levi-Lesches/dart-lang-tools
+      ref: pubspec-workspaces-1814
+      path: pkgs/pubspec_parse
 
 executables:
   dependency_validator:

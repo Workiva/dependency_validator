@@ -21,6 +21,7 @@ import 'package:logging/logging.dart';
 
 const String helpArg = 'help';
 const String verboseArg = 'verbose';
+const String rootDirArg = 'directory';
 const String helpMessage =
     '''Dependency Validator 2.0 is configured statically via the pubspec.yaml
 example:
@@ -45,6 +46,12 @@ final ArgParser argParser = ArgParser()
     verboseArg,
     defaultsTo: false,
     help: 'Display extra information for debugging.',
+  )
+  ..addOption(
+    rootDirArg,
+    abbr: "C",
+    help: 'Validate dependencies in a subdirectory',
+    defaultsTo: '.',
   );
 
 void showHelpAndExit({ExitCode exitCode = ExitCode.success}) {
@@ -78,5 +85,8 @@ void main(List<String> args) async {
     Logger.root.level = Level.ALL;
   }
 
-  await run();
+  Logger.root.info('');
+  final rootDir = argResults.option(rootDirArg) ?? '.';
+  final result = await checkPackage(root: rootDir);
+  exit(result ? 0 : 1);
 }
