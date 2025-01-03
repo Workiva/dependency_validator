@@ -73,8 +73,10 @@ Future<bool> checkPackage({required String root}) async {
 
   // Read and parse the pubspec.yaml in the current working directory.
   final pubspecFile = File('$root/pubspec.yaml');
-  final pubspec =
-      Pubspec.parse(pubspecFile.readAsStringSync(), sourceUrl: pubspecFile.uri,);
+  final pubspec = Pubspec.parse(
+    pubspecFile.readAsStringSync(),
+    sourceUrl: pubspecFile.uri,
+  );
 
   var subResult = true;
   if (pubspec.isWorkspaceRoot) {
@@ -141,14 +143,22 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
   final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
-  final subpackageGlobs = [for (final subpackage in pubspec.workspace ?? []) Glob('$subpackage**')];
+  final subpackageGlobs = [
+    for (final subpackage in pubspec.workspace ?? []) Glob('$subpackage**')
+  ];
 
-  final nonPublicDartFiles =
-      listDartFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
-  final nonPublicScssFiles =
-      listScssFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
-  final nonPublicLessFiles =
-      listLessFilesIn('$root/', [...excludes, ...publicDirGlobs, ...subpackageGlobs]);
+  final nonPublicDartFiles = listDartFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
+  final nonPublicScssFiles = listScssFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
+  final nonPublicLessFiles = listLessFilesIn(
+    '$root/',
+    [...excludes, ...publicDirGlobs, ...subpackageGlobs],
+  );
 
   logger
     ..fine('non-public dart files:\n'
@@ -302,10 +312,11 @@ Future<bool> checkPackage({required String root}) async {
   }
 
   logIntersection(
-      Level.FINE,
-      'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
-      unusedDependencies,
-      packagesWithConsumedBuilders,);
+    Level.FINE,
+    'The following packages contain builders that are auto-applied or referenced in "build.yaml"',
+    unusedDependencies,
+    packagesWithConsumedBuilders,
+  );
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
