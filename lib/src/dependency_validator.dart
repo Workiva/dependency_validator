@@ -54,7 +54,9 @@ Future<bool> checkPackage({required String root}) async {
   final excludes = config.exclude
       .map((s) {
         try {
-          return Glob(s);
+          // Globs don't support './' paths. Use posix to avoid '\' paths
+          final globPath = p.posix.normalize('$root/$s');
+          return Glob(globPath);
         } catch (_, __) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
