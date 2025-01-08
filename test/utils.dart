@@ -20,7 +20,6 @@ Future<ProcessResult> checkProject({
   List<d.Descriptor> project = const [],
   List<String> args = const [],
   bool embedConfigInPubspec = false,
-  bool runPubGet = false,
 }) async {
   final pubspec = Pubspec(
     'project',
@@ -43,14 +42,6 @@ Future<ProcessResult> checkProject({
   ]);
   await dir.create();
   final path = '${d.sandbox}/project';
-  if (runPubGet) {
-    final pubGet = await Process.run(
-      'dart',
-      ['pub', 'get'],
-      workingDirectory: path,
-    );
-    expect(pubGet.exitCode, 0);
-  }
   final commandArgs = ['run', 'dependency_validator', '--verbose', ...args];
   return await Process.run('dart', commandArgs, workingDirectory: path);
 }

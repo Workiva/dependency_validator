@@ -316,7 +316,6 @@ void main() {
             'include: package:pedantic/analysis_options.1.8.0.yaml',
           ),
         ],
-        runPubGet: true,
       );
 
       expect(result.exitCode, 0);
@@ -335,7 +334,6 @@ void main() {
             d.file('main.dart', 'book fake = true;'),
           ]),
         ],
-        runPubGet: true,
       );
 
       expect(result.exitCode, 0);
@@ -356,7 +354,6 @@ void main() {
             d.file('main.dart', 'bool fake = true;'),
           ]),
         ],
-        runPubGet: true,
       );
 
       expect(result.exitCode, 1);
@@ -382,7 +379,6 @@ void main() {
             d.file('main.dart', 'book fake = true;'),
           ]),
         ],
-        runPubGet: true,
       );
 
       expect(result.exitCode, 0);
@@ -410,7 +406,6 @@ void main() {
           '''),
           ),
         ],
-        runPubGet: true,
       );
 
       expect(result.exitCode, 0);
