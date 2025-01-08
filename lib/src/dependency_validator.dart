@@ -32,6 +32,7 @@ Future<bool> checkPackage({required String root}) async {
   var result = true;
   if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
+    logger.fine('Path: $root/pubspec.yaml');
     return false;
   }
 
@@ -55,7 +56,7 @@ Future<bool> checkPackage({required String root}) async {
       .map((s) {
         try {
           // Globs don't support './' paths. Use posix to avoid '\' paths
-          final globPath = p.posix.normalize('$root/$s');
+          final globPath = '$root/$s'.replaceAll(r'\', '/');
           return Glob(globPath);
         } catch (_, __) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
@@ -82,7 +83,7 @@ Future<bool> checkPackage({required String root}) async {
   if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in pubspec.workspace ?? []) {
-      subResult &= await checkPackage(root: package);
+      subResult &= await checkPackage(root: '$root/$package');
       logger.info('');
     }
   }
@@ -142,10 +143,17 @@ Future<bool> checkPackage({required String root}) async {
   logger.fine('packages used in public facing files:\n'
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
-  final publicDirGlobs = [for (final dir in publicDirs) Glob('$dir**')];
-  final subpackageGlobs = [
-    for (final subpackage in pubspec.workspace ?? []) Glob('$subpackage**')
+  final publicDirGlobs = [
+    for (final dir in publicDirs)
+      Glob('$dir**'.replaceAll(r'\', '/')),
   ];
+
+  final subpackageGlobs = [
+    for (final subpackage in pubspec.workspace ?? [])
+      Glob('$root/$subpackage**'.replaceAll(r'\', '/')),
+  ];
+
+  logger.fine('subpackage globs: $subpackageGlobs');
 
   final nonPublicDartFiles = listDartFilesIn(
     '$root/',
@@ -303,9 +311,11 @@ Future<bool> checkPackage({required String root}) async {
           .any((key) => key.startsWith('$dependencyName:'));
 
   final packagesWithConsumedBuilders = Set<String>();
-  for (final package in unusedDependencies.map((name) => packageConfig[name])) {
+  for (final name in unusedDependencies) {
+    final package = packageConfig[name];
+    if (package == null) continue;
     // Check if a builder is used from this package
-    if (rootPackageReferencesDependencyInBuildYaml(package!.name) ||
+    if (rootPackageReferencesDependencyInBuildYaml(package.name) ||
         await dependencyDefinesAutoAppliedBuilder(p.fromUri(package.root))) {
       packagesWithConsumedBuilders.add(package.name);
     }
@@ -320,14 +330,21 @@ Future<bool> checkPackage({required String root}) async {
   unusedDependencies.removeAll(packagesWithConsumedBuilders);
 
   // Remove deps that provide executables, those are assumed to be used
-  final packagesWithExecutables = unusedDependencies.where((name) {
+  bool providesExecutable(String name) {
     final package = packageConfig[name];
-    final binDir = Directory(p.join(p.fromUri(package!.root), 'bin'));
+    if (package == null) return false;
+    final binDir = Directory(p.join(p.fromUri(package.root), 'bin'));
     if (!binDir.existsSync()) return false;
 
     // Search for executables, if found we assume they are used
     return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
-  }).toSet();
+  }
+
+  final packagesWithExecutables = {
+    for (final package in unusedDependencies)
+      if (providesExecutable(package))
+        package,
+  };
 
   final nonDevPackagesWithExecutables =
       packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();

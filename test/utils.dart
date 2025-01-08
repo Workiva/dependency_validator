@@ -4,8 +4,12 @@ import 'dart:io';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:logging/logging.dart';
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
+import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
+
+export 'package:logging/logging.dart' show Level;
 
 import 'pubspec_to_json.dart';
 
@@ -40,16 +44,38 @@ String unindent(String multilineString) {
   return multilineString.replaceAll('$indent', '');
 }
 
-Future<bool> checkWorkspace({
-  required Pubspec workspacePubspec,
+void initLogs() => Logger.root.onRecord
+  .map((record) => record.message)
+  .listen(print);
+
+final requireDart36 = {
+  "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
+};
+
+Future<void> checkWorkspace({
+  required Map<String, Dependency> workspaceDeps,
+  required Map<String, Dependency> subpackageDeps,
   required List<d.Descriptor> workspace,
-  required Pubspec subpackagePubspec,
   required List<d.Descriptor> subpackage,
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
   bool checkSubpackage = false,
-  bool verbose = false,
+  Level logLevel = Level.OFF,
+  Matcher matcher = isTrue,
 }) async {
+
+  final workspacePubspec = Pubspec(
+    'workspace',
+    environment: requireDart36,
+    workspace: ['subpackage'],
+    dependencies: workspaceDeps,
+  );
+  final subpackagePubspec = Pubspec(
+    'subpackage',
+    environment: requireDart36,
+    resolution: 'workspace',
+    dependencies: subpackageDeps,
+  );
   final dir = d.dir('workspace', [
     ...workspace,
     d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
@@ -63,7 +89,9 @@ Future<bool> checkWorkspace({
     ]),
   ],);
   await dir.create();
-  final root = checkSubpackage ? "subpackage" : "workspace";
-  Logger.root.level = verbose ? Level.ALL : Level.OFF;
-  return await checkPackage(root: "${d.sandbox}/$root");
+  final root = checkSubpackage ? "workspace/subpackage" : "workspace";
+
+  Logger.root.level = logLevel;
+  final result = await checkPackage(root: "${d.sandbox}/$root");
+  expect(result, matcher);
 }
