@@ -13,29 +13,57 @@ export 'package:logging/logging.dart' show Level;
 
 import 'pubspec_to_json.dart';
 
-ProcessResult checkProject(
-  String projectPath, {
-  List<String> optionalArgs = const [],
-}) {
-  final pubGetResult = Process.runSync(
-    'dart',
-    ['pub', 'get'],
-    workingDirectory: projectPath,
+Future<ProcessResult> checkProject({
+  DepValidatorConfig? config,
+  Map<String, Dependency> dependencies = const {},
+  Map<String, Dependency> devDependencies = const {},
+  List<d.Descriptor> project = const [],
+  List<String> args = const [],
+  bool embedConfigInPubspec = false,
+  bool runPubGet = false,
+}) async {
+  final pubspec = Pubspec(
+    'project',
+    environment: requireDart36,
+    dependencies: dependencies,
+    devDependencies: {
+      ...devDependencies,
+      'dependency_validator': PathDependency(Directory.current.absolute.path),
+    },
   );
-  if (pubGetResult.exitCode != 0) {
-    return pubGetResult;
+  final pubspecJson = pubspec.toJson();
+  if (embedConfigInPubspec && config != null) {
+    pubspecJson['dependency_validator'] = config.toJson();
   }
-
-  final args = [
-    'run',
-    'dependency_validator',
-    // This makes it easier to print(result.stdout) for debugging tests
-    '--verbose',
-    ...optionalArgs,
-  ];
-
-  return Process.runSync('dart', args, workingDirectory: projectPath);
+  final dir = d.dir('project', [
+    ...project,
+    d.file('pubspec.yaml', jsonEncode(pubspecJson)),
+    if (config != null && !embedConfigInPubspec)
+      d.file('dart_dependency_validator.yaml', jsonEncode(config.toJson())),
+  ]);
+  await dir.create();
+  final path = '${d.sandbox}/project';
+  if (runPubGet) {
+    final pubGet = await Process.run(
+      'dart',
+      ['pub', 'get'],
+      workingDirectory: path,
+    );
+    expect(pubGet.exitCode, 0);
+  }
+  final commandArgs = ['run', 'dependency_validator', '--verbose', ...args];
+  return await Process.run('dart', commandArgs, workingDirectory: path);
 }
+
+Dependency hostedCompatibleWith(String version) => HostedDependency(
+      version: VersionConstraint.compatibleWith(Version.parse(version)),
+    );
+
+Dependency hostedPinned(String version) => HostedDependency(
+      version: Version.parse(version),
+    );
+
+final hostedAny = HostedDependency(version: VersionConstraint.any);
 
 /// Removes indentation from `'''` string blocks.
 String unindent(String multilineString) {
@@ -79,14 +107,18 @@ Future<void> checkWorkspace({
       ...workspace,
       d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
       if (workspaceConfig != null)
-        d.file('dart_dependency_validator.yaml',
-            jsonEncode(workspaceConfig.toJson())),
+        d.file(
+          'dart_dependency_validator.yaml',
+          jsonEncode(workspaceConfig.toJson()),
+        ),
       d.dir('subpackage', [
         ...subpackage,
         d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
         if (subpackageConfig != null)
-          d.file('dart_dependency_validator.yaml',
-              jsonEncode(subpackageConfig.toJson())),
+          d.file(
+            'dart_dependency_validator.yaml',
+            jsonEncode(subpackageConfig.toJson()),
+          ),
       ]),
     ],
   );

@@ -16,7 +16,6 @@ import 'dart:io';
 
 import 'package:build_config/build_config.dart';
 import 'package:dependency_validator/src/import_export_ast_visitor.dart';
-import 'package:glob/glob.dart';
 import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
@@ -55,9 +54,7 @@ Future<bool> checkPackage({required String root}) async {
   final excludes = config.exclude
       .map((s) {
         try {
-          // Globs don't support './' paths. Use posix to avoid '\' paths
-          final globPath = '$root/$s'.replaceAll(r'\', '/');
-          return Glob(globPath);
+          return makeGlob("$root/$s");
         } catch (_, __) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
@@ -104,6 +101,7 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(devDeps)}\n');
 
   final publicDirs = ['$root/bin/', '$root/lib/'];
+  logger.fine("Excluding: $excludes");
   final publicDartFiles = [
     for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
   ];
@@ -144,12 +142,12 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
   final publicDirGlobs = [
-    for (final dir in publicDirs) Glob('$dir**'.replaceAll(r'\', '/')),
+    for (final dir in publicDirs) makeGlob('$dir**'),
   ];
 
   final subpackageGlobs = [
     for (final subpackage in pubspec.workspace ?? [])
-      Glob('$root/$subpackage**'.replaceAll(r'\', '/')),
+      makeGlob('$root/$subpackage**'),
   ];
 
   logger.fine('subpackage globs: $subpackageGlobs');

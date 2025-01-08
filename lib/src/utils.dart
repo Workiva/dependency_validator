@@ -192,3 +192,10 @@ extension PubspecUtils on Pubspec {
   /// Whether this package is a sub-package in a Pub Workspace.
   bool get isInWorkspace => resolution == 'workspace';
 }
+
+/// Makes a glob object for the given path.
+///
+/// This function removes `./` paths and replaces all `\` with `/`.
+Glob makeGlob(String path) => Glob(
+      p.posix.normalize(path.replaceAll(r'\', '/')),
+    );

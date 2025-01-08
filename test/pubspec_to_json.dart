@@ -49,6 +49,10 @@ extension PubspecToJson on Pubspec {
           for (final (name, dependency) in dependencies.records)
             name: dependency.toJson(),
         },
+        "dev_dependencies": {
+          for (final (name, dependency) in devDependencies.records)
+            name: dependency.toJson(),
+        }
         // ...
       };
 }
