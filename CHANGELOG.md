@@ -1,3 +1,8 @@
+# 5.0.0
+
+- **Breaking change**: Requires Dart 3.0 or above
+- Added support for Pub Workspaces (monorepos)
+
 # 4.1.1
 
 - Update the output of parse failures to include the path to the file which failed to parse
