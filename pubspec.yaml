@@ -18,7 +18,7 @@ dependencies:
   package_config: ^2.0.0
   path: ^1.8.0
   pub_semver: ^2.0.0
-  pubspec_parse: ^1.0.0
+  pubspec_parse: ^1.5.0
   yaml: ^3.1.0
 
 dev_dependencies:
@@ -27,13 +27,6 @@ dev_dependencies:
   test: ^1.17.12
   test_descriptor: ^2.0.0
   workiva_analysis_options: ^1.2.2
-
-dependency_overrides:
-  pubspec_parse:
-    git:
-      url: https://github.com/Levi-Lesches/dart-lang-tools
-      ref: pubspec-workspaces-1814
-      path: pkgs/pubspec_parse
 
 executables:
   dependency_validator:
