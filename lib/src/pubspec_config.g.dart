@@ -41,3 +41,10 @@ DepValidatorConfig _$DepValidatorConfigFromJson(Map json) => $checkedCreate(
       },
       fieldKeyMap: const {'allowPins': 'allow_pins'},
     );
+
+Map<String, dynamic> _$DepValidatorConfigToJson(DepValidatorConfig instance) =>
+    <String, dynamic>{
+      'exclude': instance.exclude,
+      'ignore': instance.ignore,
+      'allow_pins': instance.allowPins,
+    };
