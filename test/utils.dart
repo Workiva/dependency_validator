@@ -44,9 +44,8 @@ String unindent(String multilineString) {
   return multilineString.replaceAll('$indent', '');
 }
 
-void initLogs() => Logger.root.onRecord
-  .map((record) => record.message)
-  .listen(print);
+void initLogs() =>
+    Logger.root.onRecord.map((record) => record.message).listen(print);
 
 final requireDart36 = {
   "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
@@ -63,7 +62,6 @@ Future<void> checkWorkspace({
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
 }) async {
-
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
@@ -76,18 +74,23 @@ Future<void> checkWorkspace({
     resolution: 'workspace',
     dependencies: subpackageDeps,
   );
-  final dir = d.dir('workspace', [
-    ...workspace,
-    d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
-    if (workspaceConfig != null)
-      d.file('dart_dependency_validator.yaml', jsonEncode(workspaceConfig.toJson())),
-    d.dir('subpackage', [
-      ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
-      if (subpackageConfig != null)
-        d.file('dart_dependency_validator.yaml', jsonEncode(subpackageConfig.toJson())),
-    ]),
-  ],);
+  final dir = d.dir(
+    'workspace',
+    [
+      ...workspace,
+      d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
+      if (workspaceConfig != null)
+        d.file('dart_dependency_validator.yaml',
+            jsonEncode(workspaceConfig.toJson())),
+      d.dir('subpackage', [
+        ...subpackage,
+        d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+        if (subpackageConfig != null)
+          d.file('dart_dependency_validator.yaml',
+              jsonEncode(subpackageConfig.toJson())),
+      ]),
+    ],
+  );
   await dir.create();
   final root = checkSubpackage ? "workspace/subpackage" : "workspace";
 

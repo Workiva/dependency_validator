@@ -144,8 +144,7 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(packagesUsedInPublicFiles)}\n');
 
   final publicDirGlobs = [
-    for (final dir in publicDirs)
-      Glob('$dir**'.replaceAll(r'\', '/')),
+    for (final dir in publicDirs) Glob('$dir**'.replaceAll(r'\', '/')),
   ];
 
   final subpackageGlobs = [
@@ -342,8 +341,7 @@ Future<bool> checkPackage({required String root}) async {
 
   final packagesWithExecutables = {
     for (final package in unusedDependencies)
-      if (providesExecutable(package))
-        package,
+      if (providesExecutable(package)) package,
   };
 
   final nonDevPackagesWithExecutables =
