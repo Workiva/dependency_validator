@@ -58,21 +58,20 @@ Future<void> checkWorkspace({
   required List<d.Descriptor> subpackage,
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
-  bool checkSubpackage = false,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
 }) async {
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
-    workspace: ['subpackage'],
     dependencies: workspaceDeps,
+    workspace: ['subpackage'],
   );
   final subpackagePubspec = Pubspec(
     'subpackage',
     environment: requireDart36,
-    resolution: 'workspace',
     dependencies: subpackageDeps,
+    resolution: 'workspace',
   );
   final dir = d.dir(
     'workspace',
@@ -92,9 +91,7 @@ Future<void> checkWorkspace({
     ],
   );
   await dir.create();
-  final root = checkSubpackage ? "workspace/subpackage" : "workspace";
-
   Logger.root.level = logLevel;
-  final result = await checkPackage(root: "${d.sandbox}/$root");
+  final result = await checkPackage(root: '${d.sandbox}/workspace');
   expect(result, matcher);
 }

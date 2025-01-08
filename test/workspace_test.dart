@@ -69,7 +69,6 @@ void main() => group('Workspaces', () {
                   workspaceDeps: {},
                   subpackage: usesHttp,
                   subpackageDeps: dependsOnHttp,
-                  checkSubpackage: true,
                 ));
 
         test(
