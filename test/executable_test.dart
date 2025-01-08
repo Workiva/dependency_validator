@@ -19,6 +19,8 @@ import 'package:io/io.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+import 'utils.dart';
+
 /// `master` on build_config has a min sdk bound of dart 3.0.0.
 /// Since dependency_validator is still designed to be used on dart 2
 /// code, we still want to run unit tests using this older version
@@ -26,32 +28,6 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 /// The following ref, is the last commit in build_config that allowed
 /// dart 2 as a dependency
 const buildConfigRef = 'e2c837b48bd3c4428cb40e2bc1a6cf47d45df8cc';
-
-ProcessResult checkProject(String projectPath,
-    {List<String> optionalArgs = const []}) {
-  final pubGetResult =
-      Process.runSync('dart', ['pub', 'get'], workingDirectory: projectPath);
-  if (pubGetResult.exitCode != 0) {
-    return pubGetResult;
-  }
-
-  final args = [
-    'run',
-    'dependency_validator',
-    // This makes it easier to print(result.stdout) for debugging tests
-    '--verbose',
-    ...optionalArgs,
-  ];
-
-  return Process.runSync('dart', args, workingDirectory: projectPath);
-}
-
-/// Removes indentation from `'''` string blocks.
-String unindent(String multilineString) {
-  var indent = RegExp(r'^( *)').firstMatch(multilineString)![1];
-  assert(indent != null && indent.isNotEmpty);
-  return multilineString.replaceAll('$indent', '');
-}
 
 void main() {
   group('dependency_validator', () {
