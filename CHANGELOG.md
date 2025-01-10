@@ -1,3 +1,11 @@
+# 5.0.2
+
+- Fixed changelog entries caused from mis-configured auto-release
+
+# 5.0.1
+
+- Fixed analyzer version constraint which was no longer compatable with the specified dart sdk
+
 # 5.0.0
 
 - **Breaking change**: Requires Dart 3.0 or above
