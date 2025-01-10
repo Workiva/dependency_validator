@@ -46,5 +46,24 @@ ignore:
   - analyzer
 ```
 
-> Note: Previously this configuration lived in the `pubspec.yaml`, but that
+> [!Note]
+> Previously this configuration lived in the `pubspec.yaml`, but that
 > option was deprecated because `pub publish` warns about unrecognized keys.
+
+## Pub Workspaces (monorepos)
+
+This package supports [Pub Workspaces](https://dart.dev/tools/pub/workspaces), a collection of packages in one repository. Workspaces allow Pub to share dependencies between your packages. Your top-level package's `pubspec.yaml` should have a `workspace` field that indicates which sub-packages should be included, like this:
+
+```yaml
+workspace:
+  - pkg1
+  - pkg2
+```
+
+and your sub-packages should have `resolution: workspace` in their `pubspec.yaml`s. For more information, see the linked documentation.
+
+**Running `dependency_validator` will always validate the package your terminal is in**. If you run the tool on the top-level workspace package, it will analyze the workspace package _and_ its sub-packages. To just analyze a sub-package, run the tool in its folder, or pass the `-C` argument:
+
+```bash
+$ dart run dependency_validator -C pkg1
+```

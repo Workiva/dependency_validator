@@ -93,7 +93,7 @@ Iterable<File> listFilesWithExtensionIn(
 /// Logs the given [message] at [level] and lists all of the given [dependencies].
 void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();
-  var combined = [message, bulletItems(sortedDependencies), ''].join('\n');
+  var combined = [message, bulletItems(sortedDependencies)].join('\n');
   if (level >= Level.SEVERE) {
     combined = red.wrap(combined)!;
   } else if (level >= Level.WARNING) {
@@ -183,3 +183,19 @@ DependencyPinEvaluation inspectVersionForPins(VersionConstraint constraint) {
 
   return DependencyPinEvaluation.emptyPin;
 }
+
+/// Utilities for Pubspec objects.
+extension PubspecUtils on Pubspec {
+  /// Whether this package is the root of a Pub Workspace.
+  bool get isWorkspaceRoot => workspace != null;
+
+  /// Whether this package is a sub-package in a Pub Workspace.
+  bool get isInWorkspace => resolution == 'workspace';
+}
+
+/// Makes a glob object for the given path.
+///
+/// This function removes `./` paths and replaces all `\` with `/`.
+Glob makeGlob(String path) => Glob(
+      p.posix.normalize(path.replaceAll(r'\', '/')),
+    );

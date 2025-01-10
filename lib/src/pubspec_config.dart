@@ -30,7 +30,7 @@ class PubspecDepValidatorConfig {
 @JsonSerializable(
     anyMap: true,
     checked: true,
-    createToJson: false,
+    createToJson: true,
     fieldRename: FieldRename.snake)
 class DepValidatorConfig {
   @JsonKey(defaultValue: [])
@@ -55,4 +55,6 @@ class DepValidatorConfig {
       checkedYamlDecode(
           yamlContent, (m) => DepValidatorConfig.fromJson(m ?? {}),
           allowNull: true, sourceUrl: sourceUrl);
+
+  Map<String, dynamic> toJson() => _$DepValidatorConfigToJson(this);
 }
