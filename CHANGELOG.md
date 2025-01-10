@@ -1,3 +1,6 @@
+# 5.0.1
+- Analyzer dependency updates
+
 # 5.0.0
 
 - **Breaking change**: Requires Dart 3.0 or above
