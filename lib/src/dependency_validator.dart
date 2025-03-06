@@ -263,7 +263,8 @@ Future<void> run() async {
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
         // Remove this package, since we know they're using our executable
-        ..remove(dependencyValidatorPackageName);
+        ..remove(dependencyValidatorPackageName)
+        ..removeAll(ignoredPackages);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
@@ -310,6 +311,18 @@ Future<void> run() async {
     return binDir.listSync().any((entity) => entity.path.endsWith('.dart'));
   }).toSet();
 
+  final nonDevPackagesWithExecutables =
+      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
+  if (nonDevPackagesWithExecutables.isNotEmpty) {
+    logIntersection(
+      Level.WARNING,
+      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
+      unusedDependencies,
+      nonDevPackagesWithExecutables,
+    );
+    exitCode = 1;
+  }
+
   logIntersection(
     Level.INFO,
     'The following packages contain executables, they are assumed to be used:',
@@ -326,26 +339,11 @@ Future<void> run() async {
     );
   }
 
-  // Ignore known unused packages
-  unusedDependencies.removeAll(ignoredPackages);
-
   if (unusedDependencies.isNotEmpty) {
     log(
       Level.WARNING,
       'These packages may be unused, or you may be using assets from these packages:',
       unusedDependencies,
-    );
-    exitCode = 1;
-  }
-
-  final nonDevPackagesWithExecutables =
-      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
-  if (nonDevPackagesWithExecutables.isNotEmpty) {
-    logIntersection(
-      Level.WARNING,
-      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
-      unusedDependencies,
-      nonDevPackagesWithExecutables,
     );
     exitCode = 1;
   }
