@@ -1,3 +1,11 @@
+# 4.1.3
+
+- Fixed bug where `ignore` in the validator config was not actually ignoring all rules for unused dependencies
+
+# 4.1.2
+
+- Updated dependencies & analysis options
+
 # 4.1.1
 
 - Update the output of parse failures to include the path to the file which failed to parse
