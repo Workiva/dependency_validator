@@ -263,7 +263,8 @@ Future<void> run() async {
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
         // Remove this package, since we know they're using our executable
-        ..remove(dependencyValidatorPackageName);
+        ..remove(dependencyValidatorPackageName)
+        ..removeAll(ignoredPackages);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
@@ -337,9 +338,6 @@ Future<void> run() async {
           'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.'),
     );
   }
-
-  // Ignore known unused packages
-  unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
     log(
