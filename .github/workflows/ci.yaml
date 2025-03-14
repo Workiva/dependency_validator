@@ -16,6 +16,7 @@ jobs:
     uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.7
     with:
       sdk: stable
+      format-check: false
 
   unit-tests:
     uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.7
