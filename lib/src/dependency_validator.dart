@@ -303,14 +303,15 @@ Future<bool> checkPackage({required String root}) async {
 
   // Packages that are not used anywhere but are dependencies.
   final unusedDependencies =
-  // Start with all explicitly declared dependencies
-  deps
-      .union(devDeps)
-      // Remove all deps that were used in Dart code somewhere in this package
-      .difference(packagesUsedInPublicFiles)
-      .difference(packagesUsedOutsidePublicDirs)
-    // Remove this package, since we know they're using our executable
-    ..remove(dependencyValidatorPackageName);
+      // Start with all explicitly declared dependencies
+      deps
+          .union(devDeps)
+          // Remove all deps that were used in Dart code somewhere in this package
+          .difference(packagesUsedInPublicFiles)
+          .difference(packagesUsedOutsidePublicDirs)
+        // Remove this package, since we know they're using our executable
+        ..remove(dependencyValidatorPackageName)
+        ..removeAll(ignoredPackages);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
@@ -399,9 +400,6 @@ Future<bool> checkPackage({required String root}) async {
       ),
     );
   }
-
-  // Ignore known unused packages
-  unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
     log(
