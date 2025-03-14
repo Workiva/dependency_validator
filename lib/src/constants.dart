@@ -1,15 +1,18 @@
 /// Regex used to detect all Dart import and export directives.
 final RegExp importExportDartPackageRegex = RegExp(
-    r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''',
-    multiLine: true);
+  r'''\b(import|export)\s+['"]{1,3}package:([a-zA-Z0-9_]+)\/[^;]+''',
+  multiLine: true,
+);
 
 /// Regex used to detect all Sass import directives.
-final RegExp importScssPackageRegex =
-    RegExp(r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''');
+final RegExp importScssPackageRegex = RegExp(
+  r'''\@import\s+['"]{1,3}package:\s*([a-zA-Z0-9_]+)\/[^;]+''',
+);
 
 /// Regex used to detect all Less import directives.
 final RegExp importLessPackageRegex = RegExp(
-    r'@import\s+(?:\(.*\)\s+)?"(?:packages\/|package:\/\/)([a-zA-Z1-9_-]+)\/');
+  r'@import\s+(?:\(.*\)\s+)?"(?:packages\/|package:\/\/)([a-zA-Z1-9_-]+)\/',
+);
 
 /// String key in pubspec.yaml for the dependencies map.
 const String dependenciesKey = 'dependencies';
@@ -50,21 +53,27 @@ class DependencyPinEvaluation {
   /// possible prerelease.
   static const DependencyPinEvaluation buildOrPrerelease =
       DependencyPinEvaluation._(
-          'Builds or preleases as max bounds block minor bumps and patches.');
+        'Builds or preleases as max bounds block minor bumps and patches.',
+      );
 
   /// 1.2.3
-  static const DependencyPinEvaluation directPin =
-      DependencyPinEvaluation._('This is a direct pin.');
+  static const DependencyPinEvaluation directPin = DependencyPinEvaluation._(
+    'This is a direct pin.',
+  );
 
   /// >1.2.3 <1.2.3
   static const DependencyPinEvaluation emptyPin = DependencyPinEvaluation._(
-      'Empty dependency versions cannot be resolved.');
+    'Empty dependency versions cannot be resolved.',
+  );
 
   /// <=1.2.3
   static const DependencyPinEvaluation inclusiveMax = DependencyPinEvaluation._(
-      'Inclusive max bounds restrict minor bumps and patches.');
+    'Inclusive max bounds restrict minor bumps and patches.',
+  );
 
   /// :)
-  static const DependencyPinEvaluation notAPin =
-      DependencyPinEvaluation._('This dependency is good to go.', isPin: false);
+  static const DependencyPinEvaluation notAPin = DependencyPinEvaluation._(
+    'This dependency is good to go.',
+    isPin: false,
+  );
 }
