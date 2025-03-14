@@ -4,10 +4,11 @@ import 'package:json_annotation/json_annotation.dart';
 part 'pubspec_config.g.dart';
 
 @JsonSerializable(
-    anyMap: true,
-    checked: true,
-    createToJson: false,
-    fieldRename: FieldRename.snake)
+  anyMap: true,
+  checked: true,
+  createToJson: false,
+  fieldRename: FieldRename.snake,
+)
 class PubspecDepValidatorConfig {
   final DepValidatorConfig dependencyValidator;
 
@@ -16,22 +17,26 @@ class PubspecDepValidatorConfig {
       dependencyValidator.ignore.isNotEmpty;
 
   PubspecDepValidatorConfig({DepValidatorConfig? dependencyValidator})
-      : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
+    : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
   factory PubspecDepValidatorConfig.fromJson(Map json) =>
       _$PubspecDepValidatorConfigFromJson(json);
 
   factory PubspecDepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
       checkedYamlDecode(
-          yamlContent, (m) => PubspecDepValidatorConfig.fromJson(m ?? {}),
-          allowNull: true, sourceUrl: sourceUrl);
+        yamlContent,
+        (m) => PubspecDepValidatorConfig.fromJson(m ?? {}),
+        allowNull: true,
+        sourceUrl: sourceUrl,
+      );
 }
 
 @JsonSerializable(
-    anyMap: true,
-    checked: true,
-    createToJson: true,
-    fieldRename: FieldRename.snake)
+  anyMap: true,
+  checked: true,
+  createToJson: true,
+  fieldRename: FieldRename.snake,
+)
 class DepValidatorConfig {
   @JsonKey(defaultValue: [])
   final List<String> exclude;
@@ -53,8 +58,11 @@ class DepValidatorConfig {
 
   factory DepValidatorConfig.fromYaml(String yamlContent, {sourceUrl}) =>
       checkedYamlDecode(
-          yamlContent, (m) => DepValidatorConfig.fromJson(m ?? {}),
-          allowNull: true, sourceUrl: sourceUrl);
+        yamlContent,
+        (m) => DepValidatorConfig.fromJson(m ?? {}),
+        allowNull: true,
+        sourceUrl: sourceUrl,
+      );
 
   Map<String, dynamic> toJson() => _$DepValidatorConfigToJson(this);
 }

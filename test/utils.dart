@@ -47,12 +47,11 @@ Future<ProcessResult> checkProject({
 }
 
 Dependency hostedCompatibleWith(String version) => HostedDependency(
-      version: VersionConstraint.compatibleWith(Version.parse(version)),
-    );
+  version: VersionConstraint.compatibleWith(Version.parse(version)),
+);
 
-Dependency hostedPinned(String version) => HostedDependency(
-      version: Version.parse(version),
-    );
+Dependency hostedPinned(String version) =>
+    HostedDependency(version: Version.parse(version));
 
 final hostedAny = HostedDependency(version: VersionConstraint.any);
 
@@ -92,27 +91,24 @@ Future<void> checkWorkspace({
     dependencies: subpackageDeps,
     resolution: 'workspace',
   );
-  final dir = d.dir(
-    'workspace',
-    [
-      ...workspace,
-      d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
-      if (workspaceConfig != null)
+  final dir = d.dir('workspace', [
+    ...workspace,
+    d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
+    if (workspaceConfig != null)
+      d.file(
+        'dart_dependency_validator.yaml',
+        jsonEncode(workspaceConfig.toJson()),
+      ),
+    d.dir('subpackage', [
+      ...subpackage,
+      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+      if (subpackageConfig != null)
         d.file(
           'dart_dependency_validator.yaml',
-          jsonEncode(workspaceConfig.toJson()),
+          jsonEncode(subpackageConfig.toJson()),
         ),
-      d.dir('subpackage', [
-        ...subpackage,
-        d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
-        if (subpackageConfig != null)
-          d.file(
-            'dart_dependency_validator.yaml',
-            jsonEncode(subpackageConfig.toJson()),
-          ),
-      ]),
-    ],
-  );
+    ]),
+  ]);
   await dir.create();
   Logger.root.level = logLevel;
   final result = await checkPackage(root: '${d.sandbox}/workspace');

@@ -36,23 +36,20 @@ example:
 usage:''';
 
 /// Parses the command-line arguments
-final ArgParser argParser = ArgParser()
-  ..addFlag(
-    helpArg,
-    abbr: 'h',
-    help: 'Displays this info.',
-  )
-  ..addFlag(
-    verboseArg,
-    defaultsTo: false,
-    help: 'Display extra information for debugging.',
-  )
-  ..addOption(
-    rootDirArg,
-    abbr: "C",
-    help: 'Validate dependencies in a subdirectory',
-    defaultsTo: '.',
-  );
+final ArgParser argParser =
+    ArgParser()
+      ..addFlag(helpArg, abbr: 'h', help: 'Displays this info.')
+      ..addFlag(
+        verboseArg,
+        defaultsTo: false,
+        help: 'Display extra information for debugging.',
+      )
+      ..addOption(
+        rootDirArg,
+        abbr: "C",
+        help: 'Validate dependencies in a subdirectory',
+        defaultsTo: '.',
+      );
 
 void showHelpAndExit({ExitCode exitCode = ExitCode.success}) {
   Logger.root.shout(helpMessage);

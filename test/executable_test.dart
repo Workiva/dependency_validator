@@ -32,9 +32,7 @@ void main() {
     });
 
     test('fails with incorrect usage', () async {
-      result = await checkProject(
-        args: ['-x', 'tool/wdesk_sdk'],
-      );
+      result = await checkProject(args: ['-x', 'tool/wdesk_sdk']);
       expect(result.exitCode, ExitCode.usage.code);
     });
 
@@ -63,10 +61,7 @@ void main() {
       );
 
       test('except when lib is excluded', () async {
-        result = await checkProject(
-          project: project,
-          config: excludeLib,
-        );
+        result = await checkProject(project: project, config: excludeLib);
         expect(result.exitCode, 0);
         expect(result.stderr, isEmpty);
       });
@@ -88,22 +83,21 @@ void main() {
       });
 
       test('except when they are ignored', () async {
-        result = await checkProject(
-          project: project,
-          config: ignorePackages,
-        );
+        result = await checkProject(project: project, config: ignorePackages);
         expect(result.exitCode, 0);
       });
 
-      test('except when they are ignored (deprecated pubspec method)',
-          () async {
-        result = await checkProject(
-          project: project,
-          config: ignorePackages,
-          embedConfigInPubspec: true,
-        );
-        expect(result.exitCode, 0);
-      });
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            config: ignorePackages,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+        },
+      );
     });
 
     group('fails when there are over promoted packages', () {
@@ -113,10 +107,7 @@ void main() {
           d.file('over_promoted.scss', '@import "package:yaml/foo";'),
         ]),
       ];
-      final dependencies = {
-        "path": hostedAny,
-        "yaml": hostedAny,
-      };
+      final dependencies = {"path": hostedAny, "yaml": hostedAny};
       final config = DepValidatorConfig(ignore: ['path', 'yaml']);
 
       test('', () async {
@@ -145,23 +136,22 @@ void main() {
         expect(result.exitCode, 0);
       });
 
-      test('except when they are ignored (deprecated pubspec method)',
-          () async {
-        result = await checkProject(
-          project: project,
-          dependencies: dependencies,
-          config: config,
-          embedConfigInPubspec: true,
-        );
-        expect(result.exitCode, 0);
-      });
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            dependencies: dependencies,
+            config: config,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+        },
+      );
     });
 
     group('fails when there are under promoted packages', () {
-      final devDependencies = {
-        "logging": hostedAny,
-        "yaml": hostedAny,
-      };
+      final devDependencies = {"logging": hostedAny, "yaml": hostedAny};
 
       final project = [
         d.dir('lib', [
@@ -197,29 +187,27 @@ void main() {
         expect(result.exitCode, 0);
       });
 
-      test('except when they are ignored (deprecated pubspec method)',
-          () async {
-        result = await checkProject(
-          project: project,
-          devDependencies: devDependencies,
-          config: config,
-          embedConfigInPubspec: true,
-        );
-        expect(result.exitCode, 0);
-      });
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            devDependencies: devDependencies,
+            config: config,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+        },
+      );
     });
 
     group('fails when there are unused packages', () {
-      final devDependencies = {
-        'yaml': hostedAny,
-      };
+      final devDependencies = {'yaml': hostedAny};
 
       final config = DepValidatorConfig(ignore: ['yaml']);
 
       test('', () async {
-        result = await checkProject(
-          devDependencies: devDependencies,
-        );
+        result = await checkProject(devDependencies: devDependencies);
 
         expect(result.exitCode, 1);
         expect(
@@ -243,7 +231,7 @@ void main() {
             ]),
             d.dir('test', [
               d.file('valid.dart', 'import "package:yaml/fake.dart";'),
-            ])
+            ]),
           ],
         );
         expect(result.exitCode, 0);
@@ -259,56 +247,54 @@ void main() {
         expect(result.stdout, contains('No dependency issues found!'));
       });
 
-      test('except when they are ignored (deprecated pubspec method)',
-          () async {
-        result = await checkProject(
-          devDependencies: devDependencies,
-          config: config,
-          embedConfigInPubspec: true,
-        );
-        expect(result.exitCode, 0);
-        expect(result.stdout, contains('No dependency issues found!'));
-      });
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            devDependencies: devDependencies,
+            config: config,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+          expect(result.stdout, contains('No dependency issues found!'));
+        },
+      );
     });
 
-    test('warns when the analyzer package is depended on but not used',
-        () async {
-      result = await checkProject(
-        dependencies: {
-          "analyzer": hostedAny,
-        },
-        project: [
-          d.dir('lib', [
-            d.file('main.dart', ''),
-          ]),
-        ],
-        config: DepValidatorConfig(ignore: ['analyzer']),
-      );
-      expect(result.exitCode, 0);
-      expect(
-        result.stderr,
-        contains(
-          'You do not need to depend on `analyzer` to run the Dart analyzer.',
-        ),
-      );
-    });
+    test(
+      'warns when the analyzer package is depended on but not used',
+      () async {
+        result = await checkProject(
+          dependencies: {"analyzer": hostedAny},
+          project: [
+            d.dir('lib', [d.file('main.dart', '')]),
+          ],
+          config: DepValidatorConfig(ignore: ['analyzer']),
+        );
+        expect(result.exitCode, 0);
+        expect(
+          result.stderr,
+          contains(
+            'You do not need to depend on `analyzer` to run the Dart analyzer.',
+          ),
+        );
+      },
+    );
 
     test('passes when all dependencies are used and valid', () async {
       result = await checkProject(
-        dependencies: {
-          "logging": hostedAny,
-          "yaml": hostedAny,
-        },
-        devDependencies: {
-          "pedantic": hostedAny,
-        },
+        dependencies: {"logging": hostedAny, "yaml": hostedAny},
+        devDependencies: {"pedantic": hostedAny},
         project: [
           d.dir('lib', [
-            d.file('main.dart', unindent('''
+            d.file(
+              'main.dart',
+              unindent('''
               import 'package:logging/logging.dart';
               import 'package:yaml/yaml.dart';
               // import 'package:does_not_exist/fake.dart';
-            ''')),
+            '''),
+            ),
             d.file('main.scss', '@import "package:yaml/foo";'),
           ]),
           d.file(
@@ -330,9 +316,7 @@ void main() {
           'dart_style': hostedCompatibleWith('2.3.2'),
         },
         project: [
-          d.dir('lib', [
-            d.file('main.dart', 'book fake = true;'),
-          ]),
+          d.dir('lib', [d.file('main.dart', 'book fake = true;')]),
         ],
       );
 
@@ -341,81 +325,75 @@ void main() {
     });
 
     test(
-        'fails when dependencies not used provide executables, but are not dev_dependencies',
-        () async {
-      result = await checkProject(
-        dependencies: {
-          "build_runner": hostedCompatibleWith('2.3.3'),
-          "coverage": hostedAny,
-          "dart_style": hostedCompatibleWith('2.3.2'),
-        },
-        project: [
-          d.dir('lib', [
-            d.file('main.dart', 'bool fake = true;'),
-          ]),
-        ],
-      );
+      'fails when dependencies not used provide executables, but are not dev_dependencies',
+      () async {
+        result = await checkProject(
+          dependencies: {
+            "build_runner": hostedCompatibleWith('2.3.3'),
+            "coverage": hostedAny,
+            "dart_style": hostedCompatibleWith('2.3.2'),
+          },
+          project: [
+            d.dir('lib', [d.file('main.dart', 'bool fake = true;')]),
+          ],
+        );
 
-      expect(result.exitCode, 1);
-      expect(
-        result.stderr,
-        contains(
-          'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies',
-        ),
-      );
-    });
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies',
+          ),
+        );
+      },
+    );
 
     test(
-        'passes when dependencies are not imported but provide auto applied builders',
-        () async {
-      result = await checkProject(
-        devDependencies: {
-          'build_test': hostedCompatibleWith('2.0.1'),
-          'build_vm_compilers': hostedCompatibleWith('1.0.3'),
-          'build_web_compilers': hostedCompatibleWith('3.2.7'),
-        },
-        project: [
-          d.dir('lib', [
-            d.file('main.dart', 'book fake = true;'),
-          ]),
-        ],
-      );
+      'passes when dependencies are not imported but provide auto applied builders',
+      () async {
+        result = await checkProject(
+          devDependencies: {
+            'build_test': hostedCompatibleWith('2.0.1'),
+            'build_vm_compilers': hostedCompatibleWith('1.0.3'),
+            'build_web_compilers': hostedCompatibleWith('3.2.7'),
+          },
+          project: [
+            d.dir('lib', [d.file('main.dart', 'book fake = true;')]),
+          ],
+        );
 
-      expect(result.exitCode, 0);
-      expect(result.stdout, contains('No dependency issues found!'));
-    });
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      },
+    );
 
-    test('passes when dependencies are not imported but provide used builders',
-        () async {
-      result = await checkProject(
-        devDependencies: {
-          'yaml': hostedAny,
-        },
-        project: [
-          d.dir('lib', [
-            d.file('main.dart', 'bool fake = true;'),
-          ]),
-          d.file(
-            'build.yaml',
-            unindent(r'''
+    test(
+      'passes when dependencies are not imported but provide used builders',
+      () async {
+        result = await checkProject(
+          devDependencies: {'yaml': hostedAny},
+          project: [
+            d.dir('lib', [d.file('main.dart', 'bool fake = true;')]),
+            d.file(
+              'build.yaml',
+              unindent(r'''
               targets:
                 $default:
                   builders:
                     yaml|someBuilder:
                       options: {}
           '''),
-          ),
-        ],
-      );
+            ),
+          ],
+        );
 
-      expect(result.exitCode, 0);
-      expect(result.stdout, contains('No dependency issues found!'));
-    });
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      },
+    );
 
     group('when a dependency is pinned', () {
-      final dependencies = {
-        'logging': hostedPinned('1.0.2'),
-      };
+      final dependencies = {'logging': hostedPinned('1.0.2')};
 
       final allowPins = DepValidatorConfig(allowPins: true);
       final ignorePackage = DepValidatorConfig(ignore: ['logging']);
