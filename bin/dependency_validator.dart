@@ -37,11 +37,7 @@ usage:''';
 
 /// Parses the command-line arguments
 final ArgParser argParser = ArgParser()
-  ..addFlag(
-    helpArg,
-    abbr: 'h',
-    help: 'Displays this info.',
-  )
+  ..addFlag(helpArg, abbr: 'h', help: 'Displays this info.')
   ..addFlag(
     verboseArg,
     defaultsTo: false,

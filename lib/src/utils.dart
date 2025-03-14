@@ -75,15 +75,19 @@ Iterable<File> listLessFilesIn(String dirPath, List<Glob> excludedDirs) =>
 /// This also excludes Dart files that are in a hidden directory, like
 /// `.dart_tool`.
 Iterable<File> listFilesWithExtensionIn(
-    String dirPath, List<Glob> excludes, String ext) {
+  String dirPath,
+  List<Glob> excludes,
+  String ext,
+) {
   if (!FileSystemEntity.isDirectorySync(dirPath)) return [];
 
   return Directory(dirPath)
       .listSync(recursive: true)
       .whereType<File>()
       // Skip files in hidden directories (e.g. `.dart_tool/`)
-      .where((file) =>
-          !p.split(file.path).any((d) => d != '.' && d.startsWith('.')))
+      .where(
+        (file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')),
+      )
       // Filter by the given file extension
       .where((file) => p.extension(file.path) == '.$ext')
       // Skip any files that match one of the given exclude globs
@@ -104,8 +108,12 @@ void log(Level level, String message, Iterable<String> dependencies) {
 
 /// Logs the given [message] at [level] and lists the intersection of [dependenciesA]
 /// and [dependenciesB] if there is one.
-void logIntersection(Level level, String message, Set<String> dependenciesA,
-    Set<String> dependenciesB) {
+void logIntersection(
+  Level level,
+  String message,
+  Set<String> dependenciesA,
+  Set<String> dependenciesB,
+) {
   final intersection = dependenciesA.intersection(dependenciesB);
   if (intersection.isNotEmpty) {
     log(level, message, intersection);
@@ -113,8 +121,10 @@ void logIntersection(Level level, String message, Set<String> dependenciesA,
 }
 
 /// Lists the packages with infractions
-List<String> getDependenciesWithPins(Map<String, Dependency> dependencies,
-    {List<String> ignoredPackages = const []}) {
+List<String> getDependenciesWithPins(
+  Map<String, Dependency> dependencies, {
+  List<String> ignoredPackages = const [],
+}) {
   final List<String> infractions = [];
   for (String packageName in dependencies.keys) {
     if (ignoredPackages.contains(packageName)) {
@@ -128,7 +138,8 @@ List<String> getDependenciesWithPins(Map<String, Dependency> dependencies,
 
       if (evaluation.isPin) {
         infractions.add(
-            '$packageName: ${packageMeta.version} -- ${evaluation.message}');
+          '$packageName: ${packageMeta.version} -- ${evaluation.message}',
+        );
       }
     } else {
       // This feature only works for versions, not git refs or paths.
@@ -196,6 +207,5 @@ extension PubspecUtils on Pubspec {
 /// Makes a glob object for the given path.
 ///
 /// This function removes `./` paths and replaces all `\` with `/`.
-Glob makeGlob(String path) => Glob(
-      p.posix.normalize(path.replaceAll(r'\', '/')),
-    );
+Glob makeGlob(String path) =>
+    Glob(p.posix.normalize(path.replaceAll(r'\', '/')));

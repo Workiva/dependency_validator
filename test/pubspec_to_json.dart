@@ -27,9 +27,7 @@ extension on Dependency {
               if (path != null) "path": path,
             },
           },
-        PathDependency(:final path) => {
-            "path": path.replaceAll(r'\', '/'),
-          },
+        PathDependency(:final path) => {"path": path.replaceAll(r'\', '/')},
       };
 }
 
@@ -52,7 +50,7 @@ extension PubspecToJson on Pubspec {
         "dev_dependencies": {
           for (final (name, dependency) in devDependencies.records)
             name: dependency.toJson(),
-        }
+        },
         // ...
       };
 }
