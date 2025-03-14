@@ -310,7 +310,8 @@ Future<bool> checkPackage({required String root}) async {
       .difference(packagesUsedInPublicFiles)
       .difference(packagesUsedOutsidePublicDirs)
     // Remove this package, since we know they're using our executable
-    ..remove(dependencyValidatorPackageName);
+    ..remove(dependencyValidatorPackageName)
+    ..removeAll(ignoredPackages);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
@@ -399,9 +400,6 @@ Future<bool> checkPackage({required String root}) async {
       ),
     );
   }
-
-  // Ignore known unused packages
-  unusedDependencies.removeAll(ignoredPackages);
 
   if (unusedDependencies.isNotEmpty) {
     log(
