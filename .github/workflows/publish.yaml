@@ -12,6 +12,6 @@ permissions:
 
 jobs:
   publish:
-    uses: Workiva/gha-dart-oss/.github/workflows/publish.yaml@v0.1.7
+    uses: Workiva/gha-dart-oss/.github/workflows/publish.yaml@v0.1.12
     with:
       sdk: stable
