@@ -199,7 +199,8 @@ Future<bool> checkPackage({required String root}) async {
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
-    if (optionsIncludePackage != null) optionsIncludePackage,
+    if (optionsIncludePackage != null && optionsIncludePackage.isNotEmpty)
+      ...optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
     packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));

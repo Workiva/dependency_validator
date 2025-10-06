@@ -43,7 +43,44 @@ linter:
       await d.file('analysis_options.yaml', '''
 include: package:pedantic/analysis_options.1.8.0.yaml
 ''').create();
-      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), 'pedantic');
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), {'pedantic'});
+    });
+
+    test('returns package names from list `include:`', () async {
+      await d.file('analysis_options.yaml', '''
+include:
+  - package:flutter_lints/flutter.yaml
+  - package:pedantic/analysis_options.1.8.0.yaml
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox),
+          {'flutter_lints', 'pedantic'});
+    });
+
+    test('filters out non-package includes from list', () async {
+      await d.file('analysis_options.yaml', '''
+include:
+  - package:flutter_lints/flutter.yaml
+  - analysis_options_shared.yaml
+  - package:pedantic/analysis_options.1.8.0.yaml
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox),
+          {'flutter_lints', 'pedantic'});
+    });
+
+    test('returns null for list with no package includes', () async {
+      await d.file('analysis_options.yaml', '''
+include:
+  - analysis_options_shared.yaml
+  - ../common_options.yaml
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
+    });
+
+    test('handles empty list', () async {
+      await d.file('analysis_options.yaml', '''
+include: []
+''').create();
+      expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
     });
   });
 
