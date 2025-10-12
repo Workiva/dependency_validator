@@ -48,10 +48,10 @@ Set<String>? getAnalysisOptionsIncludePackage({String? path}) {
   final YamlMap? analysisOptions = loadYaml(optionsFile.readAsStringSync());
   if (analysisOptions == null) return null;
 
-  final dynamic include = analysisOptions['include'];
+  final Object? include = analysisOptions['include'];
   if (include == null) return null;
 
-  final Set<String> packageNames = <String>{};
+  final packageNames = <String>{};
 
   if (include is String) {
     // Handle single string include
@@ -61,7 +61,7 @@ Set<String>? getAnalysisOptionsIncludePackage({String? path}) {
     }
   } else if (include is YamlList) {
     // Handle list of includes
-    for (final dynamic item in include) {
+    for (final item in include) {
       if (item is String && item.startsWith('package:')) {
         final packageName = Uri.parse(item).pathSegments.first;
         packageNames.add(packageName);

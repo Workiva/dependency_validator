@@ -54,18 +54,17 @@ Future<bool> checkPackage({required String root}) async {
     config = pubspecConfig.dependencyValidator;
   }
 
-  final excludes =
-      config.exclude
-          .map((s) {
-            try {
-              return makeGlob("$root/$s");
-            } catch (_, __) {
-              logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
-              return null;
-            }
-          })
-          .nonNulls
-          .toList();
+  final excludes = config.exclude
+      .map((s) {
+        try {
+          return makeGlob("$root/$s");
+        } catch (_, __) {
+          logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
+          return null;
+        }
+      })
+      .nonNulls
+      .toList();
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
   final ignoredPackages = config.ignore;
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
@@ -199,8 +198,7 @@ Future<bool> checkPackage({required String root}) async {
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
-    if (optionsIncludePackage != null && optionsIncludePackage.isNotEmpty)
-      ...optionsIncludePackage,
+    if (optionsIncludePackage != null) ...optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
     packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
@@ -269,13 +267,13 @@ Future<bool> checkPackage({required String root}) async {
   // Packages that are not used in lib/, but are used elsewhere, that are
   // dependencies when they should be dev_dependencies.
   final overPromotedDependencies =
-  // Start with dependencies that are not used in lib/
-  (deps
-        .difference(packagesUsedInPublicFiles)
-        // Intersect with deps that are used outside lib/ (excludes unused deps)
-        .intersection(packagesUsedOutsidePublicDirs))
-    // Ignore known over-promoted packages.
-    ..removeAll(ignoredPackages);
+      // Start with dependencies that are not used in lib/
+      (deps
+          .difference(packagesUsedInPublicFiles)
+          // Intersect with deps that are used outside lib/ (excludes unused deps)
+          .intersection(packagesUsedOutsidePublicDirs))
+        // Ignore known over-promoted packages.
+        ..removeAll(ignoredPackages);
 
   if (overPromotedDependencies.isNotEmpty) {
     log(
@@ -288,10 +286,10 @@ Future<bool> checkPackage({required String root}) async {
 
   // Packages that are used in lib/, but are dev_dependencies.
   final underPromotedDependencies =
-  // Start with dev_dependencies that are used in lib/
-  devDeps.intersection(packagesUsedInPublicFiles)
-    // Ignore known under-promoted packages
-    ..removeAll(ignoredPackages);
+      // Start with dev_dependencies that are used in lib/
+      devDeps.intersection(packagesUsedInPublicFiles)
+        // Ignore known under-promoted packages
+        ..removeAll(ignoredPackages);
 
   if (underPromotedDependencies.isNotEmpty) {
     log(
@@ -335,8 +333,8 @@ Future<bool> checkPackage({required String root}) async {
         for (final target in rootBuildConfig.buildTargets.values)
           ...target.builders.keys,
       ]
-      .map((key) => normalizeBuilderKeyUsage(key, pubspec.name))
-      .any((key) => key.startsWith('$dependencyName:'));
+          .map((key) => normalizeBuilderKeyUsage(key, pubspec.name))
+          .any((key) => key.startsWith('$dependencyName:'));
 
   final packagesWithConsumedBuilders = Set<String>();
   for (final name in unusedDependencies) {
@@ -421,7 +419,10 @@ Future<bool> checkPackage({required String root}) async {
 Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
     (await BuildConfig.fromPackageDir(
       path,
-    )).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
+    ))
+        .builderDefinitions
+        .values
+        .any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///
