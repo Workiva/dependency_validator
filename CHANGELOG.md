@@ -1,3 +1,7 @@
+# 5.0.3
+
+- Add YAML list format support for analysis_options file
+
 # 5.0.2
 
 - Fixed changelog entries caused from mis-configured auto-release
