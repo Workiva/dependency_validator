@@ -53,8 +53,8 @@ class DependencyPinEvaluation {
   /// possible prerelease.
   static const DependencyPinEvaluation buildOrPrerelease =
       DependencyPinEvaluation._(
-        'Builds or preleases as max bounds block minor bumps and patches.',
-      );
+    'Builds or preleases as max bounds block minor bumps and patches.',
+  );
 
   /// 1.2.3
   static const DependencyPinEvaluation directPin = DependencyPinEvaluation._(
