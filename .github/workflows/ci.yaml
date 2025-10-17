@@ -8,16 +8,16 @@ on:
 
 jobs:
   build:
-    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.12
+    uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.13
     with:
       sdk: stable
 
   checks:
-    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.12
+    uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.13
     with:
       sdk: stable
 
   unit-tests:
-    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.12
+    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.13
     with:
       sdk: stable
