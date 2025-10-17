@@ -47,8 +47,8 @@ Future<ProcessResult> checkProject({
 }
 
 Dependency hostedCompatibleWith(String version) => HostedDependency(
-  version: VersionConstraint.compatibleWith(Version.parse(version)),
-);
+      version: VersionConstraint.compatibleWith(Version.parse(version)),
+    );
 
 Dependency hostedPinned(String version) =>
     HostedDependency(version: Version.parse(version));
