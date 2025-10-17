@@ -17,7 +17,7 @@ class PubspecDepValidatorConfig {
       dependencyValidator.ignore.isNotEmpty;
 
   PubspecDepValidatorConfig({DepValidatorConfig? dependencyValidator})
-    : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
+      : dependencyValidator = dependencyValidator ?? DepValidatorConfig();
 
   factory PubspecDepValidatorConfig.fromJson(Map json) =>
       _$PubspecDepValidatorConfigFromJson(json);
