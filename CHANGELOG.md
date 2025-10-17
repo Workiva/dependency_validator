@@ -1,3 +1,11 @@
+# Unreleased
+
+<!-- Add unreleased changes here -->
+
+# 5.0.3
+
+- Widened dependency bounds to accept analyzer v8 
+
 # 5.0.2
 
 - Fixed changelog entries caused from mis-configured auto-release
