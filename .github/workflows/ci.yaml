@@ -25,7 +25,9 @@ jobs:
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
-      - run: dart format .
+      - run: |
+          dart --version
+          dart format .
       - run: |
           git diff --quiet -- . ':(exclude)**pubspec.lock' || {
             echo "::error::The format job failed with source changes"
