@@ -26,6 +26,7 @@ jobs:
         with:
           sdk: stable
       - run: |
+          dart pub get
           dart --version
           dart format .
       - run: |
