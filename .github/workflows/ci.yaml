@@ -16,6 +16,22 @@ jobs:
     uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.12
     with:
       sdk: stable
+      format-check: false
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart format .
+      - run: |
+          git diff --quiet -- . ':(exclude)**pubspec.lock' || {
+            echo "::error::The format job failed with source changes"
+            git --no-pager diff -- . ':(exclude)**pubspec.lock'
+            exit 1
+          }
 
   unit-tests:
     uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.12
