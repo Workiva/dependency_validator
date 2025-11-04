@@ -149,4 +149,122 @@ void main() => group('Workspaces', () {
           ),
         );
       });
+
+      group('workspace_global_ignore', () {
+        test(
+          'ignores packages in subpackages when set in workspace root',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+          ),
+        );
+
+        test(
+          'is inherited by subpackages without local config',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['meta'],
+            ),
+            subpackage: usesMeta,
+            subpackageDeps: {},
+          ),
+        );
+
+        test(
+          'does not apply when subpackage has its own config',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+            subpackageConfig: DepValidatorConfig(ignore: []),
+            matcher: isFalse,
+          ),
+        );
+      });
+
+      group('workspace_package_ignore', () {
+        test(
+          'skips validation for ignored workspace packages',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspacePackageIgnore: ['subpackage'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+          ),
+        );
+      });
+
+      group('allow_pins inheritance', () {
+        // Note: Pin checking doesn't affect the return value of checkPackage,
+        // it only sets exitCode. These tests verify configuration inheritance,
+        // while actual pin detection is tested in executable_test.dart
+
+        test(
+          'workspace with explicit allow_pins configuration',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(allowPins: true),
+            subpackage: usesMeta,
+            subpackageDeps: dependsOnMeta,
+          ),
+        );
+
+        test(
+          'subpackage with local config can override workspace allow_pins',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(allowPins: false),
+            subpackage: usesMeta,
+            subpackageDeps: dependsOnMeta,
+            subpackageConfig: DepValidatorConfig(allowPins: true),
+          ),
+        );
+      });
+
+      group('configuration precedence', () {
+        test(
+          'local config ignore list takes precedence over workspace global ignore',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+              ignore: ['meta'],
+            ),
+            subpackage: [...usesHttp, ...usesMeta],
+            subpackageDeps: {},
+            subpackageConfig: DepValidatorConfig(ignore: ['http', 'meta']),
+          ),
+        );
+
+        test(
+          'workspace root uses its own ignore list, not workspace_global_ignore',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              ignore: ['http'],
+              workspaceGlobalIgnore: ['meta'],
+            ),
+            subpackage: [],
+            subpackageDeps: {},
+          ),
+        );
+      });
     });

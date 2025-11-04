@@ -29,5 +29,17 @@ ignore:
   - analyzer
 
 # Allow dependencies to be pinned to a specific version instead of a range
-allowPins: true
+allow_pins: true
+
+# Workspace-specific configuration (only applies to workspace root packages):
+
+# Ignore specific packages in all workspace sub-packages
+workspace_global_ignore:
+  - some_package
+  - another_package
+
+# Skip validation for specific workspace packages
+workspace_package_ignore:
+  - pkg1
+  - pkg2
 ```
