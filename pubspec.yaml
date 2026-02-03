@@ -7,7 +7,7 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  analyzer: ">=7.1.0 <9.0.0"
+  analyzer: ">=7.1.0 <11.0.0"
   args: ^2.0.0
   build_config: ^1.0.0
   checked_yaml: ^2.0.1
