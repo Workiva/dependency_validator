@@ -3,6 +3,8 @@
 
 # 5.0.4
 
+- Allow up to analyzer 10
+
 <!-- Add unreleased changes here -->
 
 # 5.0.3
