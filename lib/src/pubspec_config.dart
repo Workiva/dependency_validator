@@ -44,12 +44,20 @@ class DepValidatorConfig {
   @JsonKey(defaultValue: [])
   final List<String> ignore;
 
+  @JsonKey(defaultValue: [])
+  final List<String> workspaceGlobalIgnore;
+
+  @JsonKey(defaultValue: [])
+  final List<String> workspacePackageIgnore;
+
   @JsonKey(defaultValue: false)
   final bool allowPins;
 
   const DepValidatorConfig({
     this.exclude = const [],
     this.ignore = const [],
+    this.workspaceGlobalIgnore = const [],
+    this.workspacePackageIgnore = const [],
     this.allowPins = false,
   });
 

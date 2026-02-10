@@ -27,7 +27,10 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<bool> checkPackage({required String root}) async {
+Future<bool> checkPackage(
+    {required String root,
+    List<String>? inheritedWorkspaceGlobalIgnore,
+    bool inheritedAllowedPins = false}) async {
   var result = true;
   if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
@@ -37,7 +40,9 @@ Future<bool> checkPackage({required String root}) async {
 
   DepValidatorConfig config;
   final configFile = File('$root/dart_dependency_validator.yaml');
+  var hasLocalFileConfig = false;
   if (configFile.existsSync()) {
+    hasLocalFileConfig = true;
     config = DepValidatorConfig.fromYaml(configFile.readAsStringSync());
   } else {
     final pubspecConfig = PubspecDepValidatorConfig.fromYaml(
@@ -66,7 +71,9 @@ Future<bool> checkPackage({required String root}) async {
       .nonNulls
       .toList();
   logger.fine('excludes:\n${bulletItems(excludes.map((g) => g.pattern))}\n');
-  final ignoredPackages = config.ignore;
+  final ignoredPackages = hasLocalFileConfig
+      ? config.ignore
+      : inheritedWorkspaceGlobalIgnore ?? config.ignore;
   logger.fine('ignored packages:\n${bulletItems(ignoredPackages)}\n');
 
   // Read and parse the analysis_options.yaml in the current working directory.
@@ -81,16 +88,25 @@ Future<bool> checkPackage({required String root}) async {
 
   var subResult = true;
   if (pubspec.isWorkspaceRoot) {
+    final workspacePackageIgnore = config.workspacePackageIgnore;
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in pubspec.workspace ?? []) {
-      subResult &= await checkPackage(root: '$root/$package');
+      if (workspacePackageIgnore.contains(package)) {
+        logger.info('Skipping ${package} because it is ignored');
+      } else {
+        subResult &= await checkPackage(
+            root: '$root/$package',
+            inheritedWorkspaceGlobalIgnore: config.workspaceGlobalIgnore,
+            inheritedAllowedPins: config.allowPins);
+      }
       logger.info('');
     }
   }
 
   logger.info('Validating dependencies for ${pubspec.name}...');
-
-  if (!config.allowPins) {
+  final allowedPins =
+      hasLocalFileConfig ? config.allowPins : inheritedAllowedPins;
+  if (!allowedPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
   }
 

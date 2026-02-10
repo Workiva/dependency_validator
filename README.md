@@ -67,3 +67,33 @@ and your sub-packages should have `resolution: workspace` in their `pubspec.yaml
 ```bash
 $ dart run dependency_validator -C pkg1
 ```
+
+### Workspace Configuration
+
+When working with workspaces, you can configure workspace-specific settings in the root package's `dart_dependency_validator.yaml` file:
+
+```yaml
+# dart_dependency_validator.yaml (in workspace root)
+
+# Allow pinned packages across the workspace
+allow_pins: true
+
+# Ignore specific packages in all workspace sub-packages
+workspace_global_ignore:
+  - some_package
+  - another_package
+
+# Skip validation for specific workspace packages
+workspace_package_ignore:
+  - pkg1
+  - pkg2
+```
+
+#### Configuration Inheritance
+
+By default, sub-packages inherit certain configuration settings from the workspace root:
+- `workspace_global_ignore`: Packages listed here will be ignored in all sub-packages
+- `allow_pins`: If set to `true` in the workspace root, sub-packages will also allow pinned dependencies
+- `ignore`: The standard ignore list from the workspace root is also inherited
+
+**Important**: If a sub-package has its own `dart_dependency_validator.yaml` file, it will take complete precedence over the workspace configuration. The local config file is always prioritized over any inherited workspace settings.
