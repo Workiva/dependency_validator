@@ -90,7 +90,25 @@ Future<bool> checkPackage(
   if (pubspec.isWorkspaceRoot) {
     final workspacePackageIgnore = config.workspacePackageIgnore;
     logger.fine('In a workspace. Recursing through sub-packages...');
-    for (final package in pubspec.workspace ?? []) {
+    
+    final subPackages = <String>[];
+    for (final workspacePattern in pubspec.workspace ?? []) {
+      if (workspacePattern.contains('*')) {
+        final glob = makeGlob('$root/$workspacePattern');
+        final matchingDirs = Directory(root)
+            .listSync(recursive: true)
+            .whereType<Directory>()
+            .where((dir) => glob.matches(dir.path))
+            .where((dir) => File('${dir.path}/pubspec.yaml').existsSync())
+            .map((dir) => p.relative(dir.path, from: root))
+            .toList();
+        subPackages.addAll(matchingDirs);
+      } else {
+        subPackages.add(workspacePattern);
+      }
+    }
+    
+    for (final package in subPackages) {
       if (workspacePackageIgnore.contains(package)) {
         logger.info('Skipping ${package} because it is ignored');
       } else {

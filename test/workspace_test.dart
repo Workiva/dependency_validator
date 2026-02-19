@@ -267,4 +267,143 @@ void main() => group('Workspaces', () {
           ),
         );
       });
+
+      group('glob patterns', () {
+        test(
+          'handles single glob pattern matching multiple packages',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'handles nested glob pattern',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['modules/*/packages/*'],
+            subpackages: {
+              'modules/core/packages/utils': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'modules/ui/packages/components': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'handles mix of glob patterns and literal paths',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*', 'tools/special_package'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'tools/special_package': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'ignores directories without pubspec.yaml when using glob',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_with_pubspec': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              // packages/not_a_package directory will be created but without pubspec.yaml
+            },
+          ),
+        );
+
+        test(
+          'fails when glob-matched subpackage has an issue',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Uses http but doesn't declare it
+              ),
+            },
+            matcher: isFalse,
+          ),
+        );
+
+        test(
+          'workspace_package_ignore works with glob patterns',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            workspaceConfig: DepValidatorConfig(
+              workspacePackageIgnore: ['packages/package_b'],
+            ),
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Has issue but should be ignored
+              ),
+            },
+          ),
+        );
+
+        test(
+          'workspace_global_ignore applies to glob-matched packages',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Uses http but it's globally ignored
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+      });
     });
