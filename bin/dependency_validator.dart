@@ -15,6 +15,7 @@
 import 'dart:io' show exit, stderr, stdout;
 
 import 'package:args/args.dart';
+import 'package:dependency_validator/src/config_editor.dart';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:io/io.dart';
 import 'package:logging/logging.dart';
@@ -32,6 +33,12 @@ example:
         - 'b_directory/some_specific_file.dart'
       ignore:
         - some_package
+
+commands:
+    config  View and modify configuration from the command line
+            Usage: dependency_validator config <section> <action> [value]
+            Sections: exclude, ignore, allow-pins
+            Run 'dependency_validator config' for full details.
 
 usage:''';
 
@@ -65,6 +72,22 @@ void main(List<String> args) async {
       .where((record) => record.level >= Level.WARNING)
       .map((record) => record.message)
       .listen(stderr.writeln);
+
+  if (args.isNotEmpty && args.first == 'config') {
+    final configArgParser = ArgParser()
+      ..addOption(rootDirArg, abbr: 'C', defaultsTo: '.');
+    late ArgResults configArgResults;
+    try {
+      configArgResults = configArgParser.parse(args.sublist(1));
+    } on FormatException catch (_) {
+      stderr.writeln(
+        'Usage: dependency_validator config [-C dir] <section> <action> [value]',
+      );
+      exit(ExitCode.usage.code);
+    }
+    final root = configArgResults.option(rootDirArg) ?? '.';
+    exit(runConfigCommand(configArgResults.rest, root));
+  }
 
   late ArgResults argResults;
   try {
