@@ -2,7 +2,8 @@
 <!-- Add unreleased changes here -->
 
 # 5.0.6
-<!-- Add unreleased changes here -->
+
+- Allow up to analyzer 13
 
 # 5.0.5
 
@@ -11,8 +12,6 @@
 # 5.0.4
 
 - Allow up to analyzer 10
-
-<!-- Add unreleased changes here -->
 
 # 5.0.3
 
