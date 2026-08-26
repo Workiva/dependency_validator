@@ -10,14 +10,14 @@ jobs:
   build:
     uses: Workiva/gha-dart-oss/.github/workflows/build.yaml@v0.1.14
     with:
-      sdk: stable
+      sdk: 3.7.2 # mirrors .tool-versions
 
   checks:
     uses: Workiva/gha-dart-oss/.github/workflows/checks.yaml@v0.1.14
     with:
-      sdk: stable
+      sdk: 3.7.2 # mirrors .tool-versions
 
   unit-tests:
     uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.14
     with:
-      sdk: stable
+      sdk: 3.7.2 # mirrors .tool-versions
