@@ -131,11 +131,16 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(publicLessFiles.map((f) => f.path))}\n',
     );
 
+  // The language version that the dart files of this package are parsed with.
+  final featureSet = featureSetForPubspec(pubspec);
+
   // Read each file in lib/ and parse the package names from every import and
   // export directive.
   final packagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    packagesUsedInPublicFiles.addAll(getDartDirectivePackageNames(file));
+    packagesUsedInPublicFiles.addAll(
+      getDartDirectivePackageNames(file, featureSet: featureSet),
+    );
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -201,7 +206,9 @@ Future<bool> checkPackage({required String root}) async {
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
-    packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
+    packagesUsedOutsidePublicDirs.addAll(
+      getDartDirectivePackageNames(file, featureSet: featureSet),
+    );
   }
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
