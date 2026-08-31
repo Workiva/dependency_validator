@@ -7,7 +7,7 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  analyzer: ">=7.1.0 <14.0.0"
+  analyzer: ">=7.1.0 <15.0.0"
   args: ^2.0.0
   build_config: ^1.0.0
   checked_yaml: ^2.0.1
@@ -15,7 +15,7 @@ dependencies:
   io: ^1.0.0
   json_annotation: ^4.8.0
   logging: ^1.0.1
-  package_config: ^2.0.0
+  package_config: ">=2.0.0 <4.0.0"
   path: ^1.8.0
   pub_semver: ^2.0.0
   pubspec_parse: ^1.5.0
