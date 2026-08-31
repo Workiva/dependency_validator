@@ -114,3 +114,70 @@ Future<void> checkWorkspace({
   final result = await checkPackage(root: '${d.sandbox}/workspace');
   expect(result, matcher);
 }
+
+Future<void> checkWorkspaceWithMultiplePackages({
+  required Map<String, Dependency> workspaceDeps,
+  required List<String> workspacePatterns,
+  required Map<String, SubpackageConfig> subpackages,
+  required List<d.Descriptor> workspace,
+  DepValidatorConfig? workspaceConfig,
+  Level logLevel = Level.OFF,
+  Matcher matcher = isTrue,
+}) async {
+  final workspacePubspec = Pubspec(
+    'workspace',
+    environment: requireDart36,
+    dependencies: workspaceDeps,
+    workspace: workspacePatterns,
+  );
+  
+  final subpackageDirs = <d.Descriptor>[];
+  for (final entry in subpackages.entries) {
+    final packageName = entry.key;
+    final config = entry.value;
+    final subpackagePubspec = Pubspec(
+      packageName,
+      environment: requireDart36,
+      dependencies: config.dependencies,
+      resolution: 'workspace',
+    );
+    subpackageDirs.add(
+      d.dir(packageName, [
+        ...config.descriptors,
+        d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+        if (config.config != null)
+          d.file(
+            'dart_dependency_validator.yaml',
+            jsonEncode(config.config!.toJson()),
+          ),
+      ]),
+    );
+  }
+  
+  final dir = d.dir('workspace', [
+    ...workspace,
+    d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
+    if (workspaceConfig != null)
+      d.file(
+        'dart_dependency_validator.yaml',
+        jsonEncode(workspaceConfig.toJson()),
+      ),
+    ...subpackageDirs,
+  ]);
+  await dir.create();
+  Logger.root.level = logLevel;
+  final result = await checkPackage(root: '${d.sandbox}/workspace');
+  expect(result, matcher);
+}
+
+class SubpackageConfig {
+  final Map<String, Dependency> dependencies;
+  final List<d.Descriptor> descriptors;
+  final DepValidatorConfig? config;
+
+  SubpackageConfig({
+    required this.dependencies,
+    required this.descriptors,
+    this.config,
+  });
+}

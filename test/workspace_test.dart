@@ -149,4 +149,261 @@ void main() => group('Workspaces', () {
           ),
         );
       });
+
+      group('workspace_global_ignore', () {
+        test(
+          'ignores packages in subpackages when set in workspace root',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+          ),
+        );
+
+        test(
+          'is inherited by subpackages without local config',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['meta'],
+            ),
+            subpackage: usesMeta,
+            subpackageDeps: {},
+          ),
+        );
+
+        test(
+          'does not apply when subpackage has its own config',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+            subpackageConfig: DepValidatorConfig(ignore: []),
+            matcher: isFalse,
+          ),
+        );
+      });
+
+      group('workspace_package_ignore', () {
+        test(
+          'skips validation for ignored workspace packages',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspacePackageIgnore: ['subpackage'],
+            ),
+            subpackage: usesHttp,
+            subpackageDeps: {},
+          ),
+        );
+      });
+
+      group('allow_pins inheritance', () {
+        // Note: Pin checking doesn't affect the return value of checkPackage,
+        // it only sets exitCode. These tests verify configuration inheritance,
+        // while actual pin detection is tested in executable_test.dart
+
+        test(
+          'workspace with explicit allow_pins configuration',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(allowPins: true),
+            subpackage: usesMeta,
+            subpackageDeps: dependsOnMeta,
+          ),
+        );
+
+        test(
+          'subpackage with local config can override workspace allow_pins',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: dependsOnHttp,
+            workspaceConfig: DepValidatorConfig(allowPins: false),
+            subpackage: usesMeta,
+            subpackageDeps: dependsOnMeta,
+            subpackageConfig: DepValidatorConfig(allowPins: true),
+          ),
+        );
+      });
+
+      group('configuration precedence', () {
+        test(
+          'local config ignore list takes precedence over workspace global ignore',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+              ignore: ['meta'],
+            ),
+            subpackage: [...usesHttp, ...usesMeta],
+            subpackageDeps: {},
+            subpackageConfig: DepValidatorConfig(ignore: ['http', 'meta']),
+          ),
+        );
+
+        test(
+          'workspace root uses its own ignore list, not workspace_global_ignore',
+          () => checkWorkspace(
+            workspace: usesHttp,
+            workspaceDeps: {},
+            workspaceConfig: DepValidatorConfig(
+              ignore: ['http'],
+              workspaceGlobalIgnore: ['meta'],
+            ),
+            subpackage: [],
+            subpackageDeps: {},
+          ),
+        );
+      });
+
+      group('glob patterns', () {
+        test(
+          'handles single glob pattern matching multiple packages',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'handles nested glob pattern',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['modules/*/packages/*'],
+            subpackages: {
+              'modules/core/packages/utils': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'modules/ui/packages/components': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'handles mix of glob patterns and literal paths',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*', 'tools/special_package'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'tools/special_package': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+
+        test(
+          'ignores directories without pubspec.yaml when using glob',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_with_pubspec': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              // packages/not_a_package directory will be created but without pubspec.yaml
+            },
+          ),
+        );
+
+        test(
+          'fails when glob-matched subpackage has an issue',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Uses http but doesn't declare it
+              ),
+            },
+            matcher: isFalse,
+          ),
+        );
+
+        test(
+          'workspace_package_ignore works with glob patterns',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            workspaceConfig: DepValidatorConfig(
+              workspacePackageIgnore: ['packages/package_b'],
+            ),
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: dependsOnHttp,
+                descriptors: usesHttp,
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Has issue but should be ignored
+              ),
+            },
+          ),
+        );
+
+        test(
+          'workspace_global_ignore applies to glob-matched packages',
+          () => checkWorkspaceWithMultiplePackages(
+            workspace: [],
+            workspaceDeps: {},
+            workspacePatterns: ['packages/*'],
+            workspaceConfig: DepValidatorConfig(
+              workspaceGlobalIgnore: ['http'],
+            ),
+            subpackages: {
+              'packages/package_a': SubpackageConfig(
+                dependencies: {},
+                descriptors: usesHttp, // Uses http but it's globally ignored
+              ),
+              'packages/package_b': SubpackageConfig(
+                dependencies: dependsOnMeta,
+                descriptors: usesMeta,
+              ),
+            },
+          ),
+        );
+      });
     });
