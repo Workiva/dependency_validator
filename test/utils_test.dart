@@ -21,6 +21,19 @@ import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
+  group('publicDirsDescription', () {
+    test('default conjunction', () {
+      expect(publicDirsDescription(), 'lib/, bin/, or hook/');
+    });
+
+    test('and conjunction', () {
+      expect(
+        publicDirsDescription(conjunction: 'and'),
+        'lib/, bin/, and hook/',
+      );
+    });
+  });
+
   group('getAnalysisOptionsIncludePackage', () {
     test('no analysis_options.yaml', () {
       expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);

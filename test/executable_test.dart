@@ -15,7 +15,6 @@
 @TestOn('vm')
 import 'dart:io';
 
-import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
@@ -51,7 +50,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in ${publicDirsDescription()} but are not dependencies:',
+            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
           ),
         );
         expect(result.stderr, contains('yaml'));
@@ -123,7 +122,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are only used outside ${publicDirsDescription(conjunction: 'and')} and should be downgraded to dev_dependencies:',
+            'These packages are only used outside lib/, bin/, and hook/ and should be downgraded to dev_dependencies:',
           ),
         );
         expect(result.stderr, contains('path'));
@@ -174,7 +173,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in ${publicDirsDescription()} and should be promoted to actual dependencies:',
+            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
           ),
         );
         expect(result.stderr, contains('logging'));
@@ -210,7 +209,7 @@ void main() {
 
       final project = [
         d.dir('hook', [
-          d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+          d.file('build.dart', 'import "package:yaml/yaml.dart";'),
         ]),
       ];
 
@@ -223,7 +222,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in ${publicDirsDescription()} and should be promoted to actual dependencies:',
+            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
           ),
         );
         expect(result.stderr, contains('yaml'));
@@ -257,7 +256,7 @@ void main() {
         dependencies: {"yaml": hostedAny},
         project: [
           d.dir('hook', [
-            d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+            d.file('build.dart', 'import "package:yaml/yaml.dart";'),
           ]),
         ],
       );
@@ -272,7 +271,7 @@ void main() {
           dependencies: {"yaml": hostedAny},
           project: [
             d.dir('hook', [
-              d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+              d.file('build.dart', 'import "package:yaml/yaml.dart";'),
             ]),
           ],
         );
@@ -281,7 +280,7 @@ void main() {
           result.stderr,
           isNot(
             contains(
-              'These packages are only used outside ${publicDirsDescription(conjunction: 'and')} and should be downgraded to dev_dependencies:',
+              'These packages are only used outside lib/, bin/, and hook/ and should be downgraded to dev_dependencies:',
             ),
           ),
         );
@@ -291,7 +290,7 @@ void main() {
     test('fails when hook scripts use undeclared dependencies', () async {
       final project = [
         d.dir('hook', [
-          d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+          d.file('build.dart', 'import "package:yaml/yaml.dart";'),
         ]),
       ];
 
@@ -300,7 +299,7 @@ void main() {
       expect(
         result.stderr,
         contains(
-          'These packages are used in ${publicDirsDescription()} but are not dependencies:',
+          'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
         ),
       );
       expect(result.stderr, contains('yaml'));
@@ -447,7 +446,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'The following packages contain executables, and are only used outside of ${publicDirsDescription(conjunction: 'and')}. These should be downgraded to dev_dependencies',
+            'The following packages contain executables, and are only used outside of lib/, bin/, and hook/. These should be downgraded to dev_dependencies',
           ),
         );
       },
