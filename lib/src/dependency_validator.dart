@@ -258,7 +258,7 @@ Future<bool> checkPackage({required String root}) async {
   if (missingDevDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used outside lib/ but are not dev_dependencies:',
+      'These packages are used outside lib/, bin/, and hook/ but are not dev_dependencies:',
       missingDevDependencies,
     );
     result = false;
@@ -278,7 +278,7 @@ Future<bool> checkPackage({required String root}) async {
   if (overPromotedDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+      'These packages are only used outside lib/, bin/, and hook/ and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
     result = false;

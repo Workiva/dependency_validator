@@ -49,7 +49,9 @@ void main() {
         expect(result.exitCode, 1);
         expect(
           result.stderr,
-          contains('These packages are used in lib/, bin/, or hook/ but are not dependencies:'),
+          contains(
+            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
+          ),
         );
         expect(result.stderr, contains('yaml'));
         expect(result.stderr, contains('some_scss_package'));
@@ -120,7 +122,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+            'These packages are only used outside lib/, bin/, and hook/ and should be downgraded to dev_dependencies:',
           ),
         );
         expect(result.stderr, contains('path'));
