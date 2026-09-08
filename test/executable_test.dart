@@ -150,6 +150,104 @@ void main() {
       );
     });
 
+    group('fails when there are under promoted packages in hook/', () {
+      final devDependencies = {"logging": hostedAny, "yaml": hostedAny};
+
+      final project = [
+        d.dir('hook', [
+          d.file('build.dart', 'import "package:logging/logging.dart";'),
+          d.file('build.scss', '@import "package:yaml/foo";'),
+        ]),
+      ];
+
+      final config = DepValidatorConfig(ignore: ['logging', 'yaml']);
+
+      test('', () async {
+        result = await checkProject(
+          project: project,
+          devDependencies: devDependencies,
+        );
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are used in hook/ and should be promoted to actual dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('logging'));
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test('except when they are ignored', () async {
+        result = await checkProject(
+          project: project,
+          devDependencies: devDependencies,
+          config: config,
+        );
+        expect(result.exitCode, 0);
+      });
+
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            devDependencies: devDependencies,
+            config: config,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+        },
+      );
+    });
+
+    group('fails when there are packages missing from hook/', () {
+      final project = [
+        d.dir('hook', [
+          d.file('build.dart', 'import "package:yaml/yaml.dart";'),
+        ]),
+      ];
+
+      final excludeHook = DepValidatorConfig(exclude: ['hook/**']);
+      final ignorePackages = DepValidatorConfig(ignore: ['yaml']);
+
+      test('', () async {
+        result = await checkProject(project: project);
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains('These packages are used in hook/ but are not dependencies:'),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test('except when hook is excluded', () async {
+        result = await checkProject(project: project, config: excludeHook);
+        expect(result.exitCode, 0);
+        expect(result.stderr, isEmpty);
+      });
+
+      test('except when they are ignored', () async {
+        result = await checkProject(project: project, config: ignorePackages);
+        expect(result.exitCode, 0);
+      });
+    });
+
+    group('passes when hook dependencies are regular dependencies', () {
+      test('', () async {
+        result = await checkProject(
+          project: [
+            d.dir('hook', [
+              d.file('build.dart', 'import "package:path/path.dart";'),
+            ]),
+          ],
+          dependencies: {'path': hostedAny},
+        );
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      });
+    });
+
     group('fails when there are under promoted packages', () {
       final devDependencies = {"logging": hostedAny, "yaml": hostedAny};
 

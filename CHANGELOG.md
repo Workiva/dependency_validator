@@ -1,6 +1,8 @@
 # Unreleased
 <!-- Add unreleased changes here -->
 
+- Validate that dependencies used in `hook/` are regular dependencies, not dev_dependencies.
+
 # 5.0.6
 
 - Allow up to analyzer 13

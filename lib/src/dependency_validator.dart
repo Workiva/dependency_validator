@@ -106,6 +106,7 @@ Future<bool> checkPackage({required String root}) async {
   );
 
   final publicDirs = ['$root/bin/', '$root/lib/'];
+  final hookDirs = ['$root/hook/'];
   logger.fine("Excluding: $excludes");
   final publicDartFiles = [
     for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
@@ -115,6 +116,15 @@ Future<bool> checkPackage({required String root}) async {
   ];
   final publicLessFiles = [
     for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+  ];
+  final hookDartFiles = [
+    for (final dir in hookDirs) ...listDartFilesIn(dir, excludes),
+  ];
+  final hookScssFiles = [
+    for (final dir in hookDirs) ...listScssFilesIn(dir, excludes),
+  ];
+  final hookLessFiles = [
+    for (final dir in hookDirs) ...listLessFilesIn(dir, excludes),
   ];
 
   logger
@@ -129,6 +139,18 @@ Future<bool> checkPackage({required String root}) async {
     ..fine(
       'public facing less files:\n'
       '${bulletItems(publicLessFiles.map((f) => f.path))}\n',
+    )
+    ..fine(
+      'hook dart files:\n'
+      '${bulletItems(hookDartFiles.map((f) => f.path))}\n',
+    )
+    ..fine(
+      'hook scss files:\n'
+      '${bulletItems(hookScssFiles.map((f) => f.path))}\n',
+    )
+    ..fine(
+      'hook less files:\n'
+      '${bulletItems(hookLessFiles.map((f) => f.path))}\n',
     );
 
   // Read each file in lib/ and parse the package names from every import and
@@ -154,7 +176,29 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(packagesUsedInPublicFiles)}\n',
   );
 
+  final packagesUsedInHook = <String>{};
+  for (final file in hookDartFiles) {
+    packagesUsedInHook.addAll(getDartDirectivePackageNames(file));
+  }
+  for (final file in hookScssFiles) {
+    final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedInHook.add(match.group(1)!);
+    }
+  }
+  for (final file in hookLessFiles) {
+    final matches = importLessPackageRegex.allMatches(file.readAsStringSync());
+    for (final match in matches) {
+      packagesUsedInHook.add(match.group(1)!);
+    }
+  }
+  logger.fine(
+    'packages used in hook/:\n'
+    '${bulletItems(packagesUsedInHook)}\n',
+  );
+
   final publicDirGlobs = [for (final dir in publicDirs) makeGlob('$dir**')];
+  final hookDirGlobs = [for (final dir in hookDirs) makeGlob('$dir**')];
 
   final subpackageGlobs = [
     for (final subpackage in pubspec.workspace ?? [])
@@ -166,16 +210,19 @@ Future<bool> checkPackage({required String root}) async {
   final nonPublicDartFiles = listDartFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
+    ...hookDirGlobs,
     ...subpackageGlobs,
   ]);
   final nonPublicScssFiles = listScssFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
+    ...hookDirGlobs,
     ...subpackageGlobs,
   ]);
   final nonPublicLessFiles = listLessFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
+    ...hookDirGlobs,
     ...subpackageGlobs,
   ]);
 
@@ -242,11 +289,29 @@ Future<bool> checkPackage({required String root}) async {
     result = false;
   }
 
+  // Packages that are used in hook/ but are not dependencies.
+  final missingHookDependencies =
+      packagesUsedInHook
+          .difference(deps)
+          .difference(devDeps)
+        ..remove(pubspec.name)
+        ..removeAll(ignoredPackages);
+
+  if (missingHookDependencies.isNotEmpty) {
+    log(
+      Level.WARNING,
+      'These packages are used in hook/ but are not dependencies:',
+      missingHookDependencies,
+    );
+    result = false;
+  }
+
   // Packages that are used outside lib/ but are not dev_dependencies.
   final missingDevDependencies =
       // Start with packages _only_ used outside lib/
       packagesUsedOutsidePublicDirs
           .difference(packagesUsedInPublicFiles)
+          .difference(packagesUsedInHook)
           // Remove all explicitly declared dependencies
           .difference(devDeps)
           .difference(deps)
@@ -272,6 +337,8 @@ Future<bool> checkPackage({required String root}) async {
           .difference(packagesUsedInPublicFiles)
           // Intersect with deps that are used outside lib/ (excludes unused deps)
           .intersection(packagesUsedOutsidePublicDirs))
+        // hook/ scripts run at install time and must stay regular dependencies.
+        ..removeAll(packagesUsedInHook)
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
@@ -300,6 +367,19 @@ Future<bool> checkPackage({required String root}) async {
     result = false;
   }
 
+  // Packages that are used in hook/, but are dev_dependencies.
+  final underPromotedHookDependencies =
+      devDeps.intersection(packagesUsedInHook)..removeAll(ignoredPackages);
+
+  if (underPromotedHookDependencies.isNotEmpty) {
+    log(
+      Level.WARNING,
+      'These packages are used in hook/ and should be promoted to actual dependencies:',
+      underPromotedHookDependencies,
+    );
+    result = false;
+  }
+
   // Packages that are not used anywhere but are dependencies.
   final unusedDependencies =
       // Start with all explicitly declared dependencies
@@ -308,6 +388,7 @@ Future<bool> checkPackage({required String root}) async {
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
+          .difference(packagesUsedInHook)
         // Remove this package, since we know they're using our executable
         ..remove(dependencyValidatorPackageName)
         ..removeAll(ignoredPackages);
