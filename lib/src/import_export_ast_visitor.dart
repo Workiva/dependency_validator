@@ -13,7 +13,13 @@ import 'package:pub_semver/pub_semver.dart';
 /// Without this, [parseString] falls back to the newest language version the
 /// analyzer knows about, which may be unreleased and reject valid code.
 FeatureSet featureSetForSdkConstraint(VersionConstraint? sdkConstraint) {
-  final min = sdkConstraint is VersionRange ? sdkConstraint.min : null;
+  if (sdkConstraint == null) return FeatureSet.latestLanguageVersion();
+
+  final Version? min = switch (sdkConstraint) {
+    Version version => version,
+    VersionRange range => range.min,
+    _ => null,
+  };
   if (min == null) return FeatureSet.latestLanguageVersion();
 
   return FeatureSet.fromEnableFlags2(
@@ -26,16 +32,31 @@ FeatureSet featureSetForSdkConstraint(VersionConstraint? sdkConstraint) {
 /// provided dart file
 Set<String> getDartDirectivePackageNames(File file, {FeatureSet? featureSet}) {
   ParseStringResult parsed;
+  final content = file.readAsStringSync();
   try {
     parsed = parseString(
-      content: file.readAsStringSync(),
+      content: content,
       path: file.path,
       featureSet: featureSet,
     );
   } on ArgumentError catch (e) {
-    print('Error parsing: ${file.path}');
-    print(e.message);
-    exit(1);
+    if (featureSet != null) {
+      try {
+        parsed = parseString(
+          content: content,
+          path: file.path,
+          featureSet: FeatureSet.latestLanguageVersion(),
+        );
+      } on ArgumentError {
+        print('Error parsing: ${file.path}');
+        print(e.message);
+        exit(1);
+      }
+    } else {
+      print('Error parsing: ${file.path}');
+      print(e.message);
+      exit(1);
+    }
   }
 
   final visitor = ImportExportVisitor();

@@ -20,6 +20,7 @@ import 'package:io/ansi.dart';
 import 'package:logging/logging.dart';
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'constants.dart';
@@ -27,7 +28,10 @@ import 'pubspec_config.dart';
 import 'utils.dart';
 
 /// Check for missing, under-promoted, over-promoted, and unused dependencies.
-Future<bool> checkPackage({required String root}) async {
+Future<bool> checkPackage({
+  required String root,
+  VersionConstraint? workspaceSdkConstraint,
+}) async {
   var result = true;
   if (!File('$root/pubspec.yaml').existsSync()) {
     logger.shout(red.wrap('pubspec.yaml not found'));
@@ -79,18 +83,27 @@ Future<bool> checkPackage({required String root}) async {
     sourceUrl: pubspecFile.uri,
   );
 
+  final rootSdkConstraint = pubspec.isWorkspaceRoot
+      ? pubspec.environment['sdk']
+      : workspaceSdkConstraint;
+
   var subResult = true;
   if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in pubspec.workspace ?? []) {
-      subResult &= await checkPackage(root: '$root/$package');
+      subResult &= await checkPackage(
+        root: '$root/$package',
+        workspaceSdkConstraint: rootSdkConstraint,
+      );
       logger.info('');
     }
   }
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
-  final featureSet = featureSetForSdkConstraint(pubspec.environment['sdk']);
+  final sdkConstraint = pubspec.environment['sdk'] ??
+      (pubspec.isInWorkspace ? workspaceSdkConstraint : null);
+  final featureSet = featureSetForSdkConstraint(sdkConstraint);
 
   if (!config.allowPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);

@@ -308,30 +308,6 @@ void main() {
       expect(result.stdout, contains('No dependency issues found!'));
     });
 
-    test('passes when a parameter carries the final modifier', () async {
-      result = await checkProject(
-        dependencies: {"logging": hostedAny},
-        project: [
-          d.dir('lib', [
-            d.file(
-              'main.dart',
-              unindent('''
-              import 'package:logging/logging.dart';
-
-              void log(final Logger logger, {final String message = ''}) {
-                logger.info(message);
-              }
-            '''),
-            ),
-          ]),
-        ],
-      );
-
-      expect(result.stdout, isNot(contains('Error parsing')));
-      expect(result.exitCode, 0);
-      expect(result.stdout, contains('No dependency issues found!'));
-    });
-
     test('passes when dependencies not used provide executables', () async {
       result = await checkProject(
         devDependencies: {

@@ -78,6 +78,7 @@ Future<void> checkWorkspace({
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
+  bool omitSubpackageEnvironment = false,
 }) async {
   final workspacePubspec = Pubspec(
     'workspace',
@@ -85,12 +86,15 @@ Future<void> checkWorkspace({
     dependencies: workspaceDeps,
     workspace: ['subpackage'],
   );
-  final subpackagePubspec = Pubspec(
+  final subpackagePubspecJson = Pubspec(
     'subpackage',
-    environment: requireDart36,
+    environment: omitSubpackageEnvironment ? {} : requireDart36,
     dependencies: subpackageDeps,
     resolution: 'workspace',
-  );
+  ).toJson();
+  if (omitSubpackageEnvironment) {
+    subpackagePubspecJson.remove('environment');
+  }
   final dir = d.dir('workspace', [
     ...workspace,
     d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
@@ -101,7 +105,7 @@ Future<void> checkWorkspace({
       ),
     d.dir('subpackage', [
       ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+      d.file('pubspec.yaml', jsonEncode(subpackagePubspecJson)),
       if (subpackageConfig != null)
         d.file(
           'dart_dependency_validator.yaml',

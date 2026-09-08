@@ -102,6 +102,24 @@ void main() => group('Workspaces', () {
         );
       });
 
+      test(
+        'inherits root SDK constraint for sub-packages without environment',
+        () => checkWorkspace(
+          workspace: [],
+          workspaceDeps: {},
+          subpackage: [
+            d.dir('lib', [
+              d.file(
+                'main.dart',
+                'import "package:http/http.dart"; void f(final Client c) {}',
+              ),
+            ]),
+          ],
+          subpackageDeps: dependsOnHttp,
+          omitSubpackageEnvironment: true,
+        ),
+      );
+
       group('handles configs', () {
         test(
           'at the root',
