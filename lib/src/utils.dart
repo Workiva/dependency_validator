@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:io/ansi.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
@@ -209,3 +210,33 @@ extension PubspecUtils on Pubspec {
 /// This function removes `./` paths and replaces all `\` with `/`.
 Glob makeGlob(String path) =>
     Glob(p.posix.normalize(path.replaceAll(r'\', '/')));
+
+/// Returns whether [path] contains glob wildcard syntax characters.
+bool hasGlobWildcards(String path) =>
+    path.contains('*') ||
+    path.contains('?') ||
+    path.contains('[') ||
+    path.contains('{');
+
+/// Resolves workspace member paths from [workspacePaths] relative to [root].
+///
+/// Glob patterns (for example `packages/*`) are expanded to directories
+/// containing a pubspec.yaml file, matching pub's workspace resolution
+/// behavior.
+Iterable<String> resolveWorkspaceMembers(
+  String root,
+  Iterable<String> workspacePaths,
+) sync* {
+  for (final workspacePath in workspacePaths) {
+    if (hasGlobWildcards(workspacePath)) {
+      final glob = makeGlob(workspacePath);
+      for (final entity in glob.listSync(root: root)) {
+        if (entity is! Directory) continue;
+        if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) continue;
+        yield p.relative(entity.path, from: root);
+      }
+    } else {
+      yield workspacePath;
+    }
+  }
+}

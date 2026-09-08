@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
@@ -78,15 +79,17 @@ Future<void> checkWorkspace({
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
+  List<String>? workspaceMembers,
+  String subpackagePath = 'subpackage',
 }) async {
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
     dependencies: workspaceDeps,
-    workspace: ['subpackage'],
+    workspace: workspaceMembers ?? [subpackagePath],
   );
   final subpackagePubspec = Pubspec(
-    'subpackage',
+    p.basename(subpackagePath),
     environment: requireDart36,
     dependencies: subpackageDeps,
     resolution: 'workspace',
@@ -99,7 +102,7 @@ Future<void> checkWorkspace({
         'dart_dependency_validator.yaml',
         jsonEncode(workspaceConfig.toJson()),
       ),
-    d.dir('subpackage', [
+    d.dir(subpackagePath, [
       ...subpackage,
       d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
       if (subpackageConfig != null)

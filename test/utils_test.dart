@@ -449,4 +449,70 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       });
     });
   });
+
+  group('resolveWorkspaceMembers', () {
+    test('returns literal workspace paths unchanged', () async {
+      await d.dir('root', [
+        d.dir('subpackage', [
+          d.file('pubspec.yaml', 'name: subpackage\n'),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['subpackage']).toList(),
+        ['subpackage'],
+      );
+    });
+
+    test('expands glob patterns to directories with pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('pkg_b', [
+            d.file('pubspec.yaml', 'name: pkg_b\n'),
+          ]),
+          d.dir('not_a_package', [
+            d.file('README.md', ''),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']).toList()
+          ..sort(),
+        ['packages/pkg_a', 'packages/pkg_b'],
+      );
+    });
+
+    test('ignores glob matches without pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('empty_dir', []),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']).toList(),
+        ['packages/pkg_a'],
+      );
+    });
+  });
+
+  group('hasGlobWildcards', () {
+    test('detects glob syntax', () {
+      expect(hasGlobWildcards('packages/*'), isTrue);
+      expect(hasGlobWildcards('apps/nested/pkg?'), isTrue);
+      expect(hasGlobWildcards('packages/[abc]'), isTrue);
+      expect(hasGlobWildcards('packages/{a,b}'), isTrue);
+    });
+
+    test('returns false for literal paths', () {
+      expect(hasGlobWildcards('packages/subpackage'), isFalse);
+    });
+  });
 }

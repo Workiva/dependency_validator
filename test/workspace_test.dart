@@ -149,4 +149,31 @@ void main() => group('Workspaces', () {
           ),
         );
       });
+
+      group('glob workspace patterns', () {
+        test(
+          'resolves packages/* to workspace members',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            subpackage: usesHttp,
+            subpackageDeps: dependsOnHttp,
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+          ),
+        );
+
+        test(
+          'validates each glob-matched subpackage',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            subpackage: usesHttp,
+            subpackageDeps: {},
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+            matcher: isFalse,
+          ),
+        );
+      });
     });
