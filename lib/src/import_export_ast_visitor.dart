@@ -61,6 +61,7 @@ class ImportExportVisitor extends GeneralizingAstVisitor<void> {
     for (final docImport in node.docImports) {
       _addPackageName(docImport.import.uri.stringValue, docImportPackageNames);
     }
+    node.visitChildren(this);
   }
 
   void _addPackageName(String? uri, Set<String> packageNames) {

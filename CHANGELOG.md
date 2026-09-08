@@ -3,6 +3,7 @@
 
 - Support Dart `@docImport` tags in documentation comments. Packages
   referenced only via doc imports in `lib/` are treated as dev dependencies.
+- Require Dart SDK `^3.8.0` for `@docImport` language support.
 
 # 5.0.6
 

@@ -26,6 +26,20 @@ used even if it isn't imported.
 - Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency.
 - Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
 
+## Doc imports
+
+Dart 3.8 added `@docImport` tags for documentation comments. They let you
+reference types from another package in doc comments without adding a runtime
+import. Because doc imports do not create a runtime dependency, packages
+referenced **only** via `@docImport` in `lib/` should be declared as
+`dev_dependencies`, not `dependencies`.
+
+`dependency_validator` scans `@docImport` tags the same way it scans regular
+imports and exports. If a package is referenced only through doc imports in
+`lib/`, the tool reports that it should be a dev dependency. Doc imports in
+`test/`, `tool/`, and other non-`lib/` directories are treated like usage
+outside `lib/`.
+
 ## Configuration
 
 There may be packages that are intentionally depended on but not used, or there

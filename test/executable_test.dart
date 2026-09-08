@@ -202,33 +202,11 @@ void main() {
     });
 
     group('doc imports', () {
-      test('passes when package is only referenced via doc import in lib/', () async {
-        result = await checkProject(
-          devDependencies: {'yaml': hostedAny},
-          project: [
-            d.dir('lib', [
-              d.file(
-                'main.dart',
-                unindent('''
-                /// @docImport 'package:yaml/yaml.dart';
-                library;
-
-                /// References [YamlMap] from `package:yaml/yaml.dart`.
-                class Foo {}
-              '''),
-              ),
-            ]),
-          ],
-        );
-
-        expect(result.exitCode, 0);
-        expect(result.stdout, contains('No dependency issues found!'));
-      });
-
       test(
-        'fails when doc import in lib/ is missing from pubspec',
+        'passes when package is only referenced via doc import in lib/',
         () async {
           result = await checkProject(
+            devDependencies: {'yaml': hostedAny},
             project: [
               d.dir('lib', [
                 d.file(
@@ -236,6 +214,59 @@ void main() {
                   unindent('''
                   /// @docImport 'package:yaml/yaml.dart';
                   library;
+
+                  /// References [YamlMap] from `package:yaml/yaml.dart`.
+                  class Foo {}
+                '''),
+                ),
+              ]),
+            ],
+          );
+
+          expect(result.exitCode, 0);
+          expect(result.stdout, contains('No dependency issues found!'));
+        },
+      );
+
+      test('fails when doc import in lib/ is missing from pubspec', () async {
+        result = await checkProject(
+          project: [
+            d.dir('lib', [
+              d.file(
+                'main.dart',
+                unindent('''
+                  /// @docImport 'package:yaml/yaml.dart';
+                  library;
+                '''),
+              ),
+            ]),
+          ],
+        );
+
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are only referenced via @docImport in lib/; '
+            'declare them as dev_dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test(
+        'fails when doc import outside lib/ is missing from pubspec',
+        () async {
+          result = await checkProject(
+            project: [
+              d.dir('test', [
+                d.file(
+                  'main_test.dart',
+                  unindent('''
+                  /// @docImport 'package:yaml/yaml.dart';
+                  library;
+
+                  void main() {}
                 '''),
                 ),
               ]),
@@ -274,9 +305,12 @@ void main() {
           expect(result.exitCode, 0);
           expect(
             result.stderr,
-            isNot(contains(
-              'These packages are used in lib/ and should be promoted to actual dependencies:',
-            )),
+            isNot(
+              contains(
+                'These packages are used in lib/ and should be promoted to '
+                'actual dependencies:',
+              ),
+            ),
           );
         },
       );
@@ -303,7 +337,8 @@ void main() {
           expect(
             result.stderr,
             contains(
-              'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+              'These packages are only referenced via @docImport in lib/ and '
+              'should be downgraded to dev_dependencies:',
             ),
           );
           expect(result.stderr, contains('yaml'));

@@ -235,6 +235,8 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(docImportPackagesUsedOutsidePublicDirs)}\n',
   );
 
+  packagesUsedOutsidePublicDirs.addAll(docImportPackagesUsedOutsidePublicDirs);
+
   final packagesUsedViaDocImport = docImportPackagesUsedInPublicFiles.union(
     docImportPackagesUsedOutsidePublicDirs,
   );
@@ -261,11 +263,8 @@ Future<bool> checkPackage({required String root}) async {
   }
 
   // Packages that are used outside lib/ but are not dev_dependencies.
-  final missingDevDependencies =
-      // Start with packages _only_ used outside lib/, and packages only
-      // referenced via `@docImport` in lib/.
+  final missingDevDependenciesOutsideLib =
       packagesUsedOutsidePublicDirs
-          .union(docImportPackagesUsedInPublicFiles)
           .difference(packagesUsedInPublicFiles)
           // Remove all explicitly declared dependencies
           .difference(devDeps)
@@ -275,36 +274,71 @@ Future<bool> checkPackage({required String root}) async {
         // Ignore known missing packages.
         ..removeAll(ignoredPackages);
 
-  if (missingDevDependencies.isNotEmpty) {
+  // Packages referenced only via `@docImport` in lib/.
+  final missingDevDependenciesFromDocImportInLib =
+      docImportPackagesUsedInPublicFiles
+          .difference(packagesUsedInPublicFiles)
+          .difference(packagesUsedOutsidePublicDirs)
+          // Remove all explicitly declared dependencies
+          .difference(devDeps)
+          .difference(deps)
+        // Ignore self-imports - packages have implicit access to themselves.
+        ..remove(pubspec.name)
+        // Ignore known missing packages.
+        ..removeAll(ignoredPackages);
+
+  if (missingDevDependenciesOutsideLib.isNotEmpty) {
     log(
       Level.WARNING,
       'These packages are used outside lib/ but are not dev_dependencies:',
-      missingDevDependencies,
+      missingDevDependenciesOutsideLib,
+    );
+    result = false;
+  }
+
+  if (missingDevDependenciesFromDocImportInLib.isNotEmpty) {
+    log(
+      Level.WARNING,
+      'These packages are only referenced via @docImport in lib/; '
+      'declare them as dev_dependencies:',
+      missingDevDependenciesFromDocImportInLib,
     );
     result = false;
   }
 
   // Packages that are not used in lib/, but are used elsewhere, that are
   // dependencies when they should be dev_dependencies.
-  final overPromotedDependencies =
+  final overPromotedUsedOutsideLib =
       // Start with dependencies that are not used in lib/
-      (deps
+      deps
           .difference(packagesUsedInPublicFiles)
-          // Intersect with deps that are used outside lib/ or only via
-          // `@docImport` in lib/ (excludes unused deps)
-          .intersection(
-            packagesUsedOutsidePublicDirs.union(
-              docImportPackagesUsedInPublicFiles,
-            ),
-          ))
+          // Intersect with deps that are used outside lib/ (excludes unused deps)
+          .intersection(packagesUsedOutsidePublicDirs)
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
-  if (overPromotedDependencies.isNotEmpty) {
+  final overPromotedUsedOnlyViaDocImportInLib =
+      deps
+          .difference(packagesUsedInPublicFiles)
+          .intersection(docImportPackagesUsedInPublicFiles)
+          .difference(packagesUsedOutsidePublicDirs)
+        ..removeAll(ignoredPackages);
+
+  if (overPromotedUsedOutsideLib.isNotEmpty) {
     log(
       Level.WARNING,
       'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
-      overPromotedDependencies,
+      overPromotedUsedOutsideLib,
+    );
+    result = false;
+  }
+
+  if (overPromotedUsedOnlyViaDocImportInLib.isNotEmpty) {
+    log(
+      Level.WARNING,
+      'These packages are only referenced via @docImport in lib/ and should '
+      'be downgraded to dev_dependencies:',
+      overPromotedUsedOnlyViaDocImportInLib,
     );
     result = false;
   }
@@ -354,11 +388,12 @@ Future<bool> checkPackage({required String root}) async {
     pubspec.dependencies.keys,
     '.',
   );
-  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
-        ...rootBuildConfig.globalOptions.keys,
-        for (final target in rootBuildConfig.buildTargets.values)
-          ...target.builders.keys,
-      ]
+  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) =>
+      [
+            ...rootBuildConfig.globalOptions.keys,
+            for (final target in rootBuildConfig.buildTargets.values)
+              ...target.builders.keys,
+          ]
           .map((key) => normalizeBuilderKeyUsage(key, pubspec.name))
           .any((key) => key.startsWith('$dependencyName:'));
 
@@ -397,8 +432,9 @@ Future<bool> checkPackage({required String root}) async {
       if (providesExecutable(package)) package,
   };
 
-  final nonDevPackagesWithExecutables =
-      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
+  final nonDevPackagesWithExecutables = packagesWithExecutables
+      .where(pubspec.dependencies.containsKey)
+      .toSet();
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,
@@ -445,10 +481,7 @@ Future<bool> checkPackage({required String root}) async {
 Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
     (await BuildConfig.fromPackageDir(
       path,
-    ))
-        .builderDefinitions
-        .values
-        .any((def) => def.autoApply != AutoApply.none);
+    )).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///
