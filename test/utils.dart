@@ -20,10 +20,11 @@ Future<ProcessResult> checkProject({
   List<d.Descriptor> project = const [],
   List<String> args = const [],
   bool embedConfigInPubspec = false,
+  Map<String, VersionConstraint>? environment,
 }) async {
   final pubspec = Pubspec(
     'project',
-    environment: requireDart36,
+    environment: environment ?? requireDart36,
     dependencies: dependencies,
     devDependencies: {
       ...devDependencies,
@@ -67,6 +68,10 @@ void initLogs() =>
 
 final requireDart36 = {
   "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
+};
+
+final requireDart38 = {
+  "sdk": VersionConstraint.compatibleWith(Version.parse('3.8.0')),
 };
 
 Future<void> checkWorkspace({

@@ -47,6 +47,30 @@ class Foo {}
       expect(usage.docImportPackageNames, {'meta'});
     });
 
+    test(
+      'collects doc imports from declaration doc comments without a library directive',
+      () async {
+        await d.dir('project', [
+          d.file(
+            'main.dart',
+            '''
+/// @docImport 'package:meta/meta.dart';
+
+/// References [Deprecated].
+class Foo {}
+''',
+          ),
+        ]).create();
+
+        final usage = getDartPackageUsage(
+          File('${d.sandbox}/project/main.dart'),
+        );
+
+        expect(usage.directivePackageNames, isEmpty);
+        expect(usage.docImportPackageNames, {'meta'});
+      },
+    );
+
     test('collects both directives and doc imports', () async {
       await d.dir('project', [
         d.file(
@@ -69,6 +93,69 @@ class Foo {}
 
       expect(usage.directivePackageNames, {'logging'});
       expect(usage.docImportPackageNames, {'yaml'});
+    });
+
+    test('collects package names from doc imports with show clauses', () async {
+      await d.dir('project', [
+        d.file(
+          'main.dart',
+          '''
+/// @docImport 'package:collection/collection.dart' show IterableExtension;
+
+/// References [IterableExtension].
+class Foo {}
+''',
+        ),
+      ]).create();
+
+      final usage = getDartPackageUsage(
+        File('${d.sandbox}/project/main.dart'),
+      );
+
+      expect(usage.docImportPackageNames, {'collection'});
+    });
+
+    test('collects package names from doc imports with as clauses', () async {
+      await d.dir('project', [
+        d.file(
+          'main.dart',
+          '''
+/// @docImport 'package:collection/collection.dart' as collection;
+
+/// References [collection.IterableExtension].
+class Foo {}
+''',
+        ),
+      ]).create();
+
+      final usage = getDartPackageUsage(
+        File('${d.sandbox}/project/main.dart'),
+      );
+
+      expect(usage.docImportPackageNames, {'collection'});
+    });
+
+    test('collects doc imports from bin/ files', () async {
+      await d.dir('project', [
+        d.dir('bin', [
+          d.file(
+            'main.dart',
+            '''
+/// @docImport 'package:meta/meta.dart';
+
+/// References [Deprecated].
+void main() {}
+''',
+          ),
+        ]),
+      ]).create();
+
+      final usage = getDartPackageUsage(
+        File('${d.sandbox}/project/bin/main.dart'),
+      );
+
+      expect(usage.directivePackageNames, isEmpty);
+      expect(usage.docImportPackageNames, {'meta'});
     });
 
     test('ignores relative and dart scheme imports', () async {

@@ -281,6 +281,9 @@ Future<bool> checkPackage({required String root}) async {
           .difference(packagesUsedInPublicFiles)
           // Intersect with deps that are used outside lib/ (excludes unused deps)
           .intersection(packagesUsedOutsidePublicDirs))
+        // Doc imports in lib/ are not runtime deps; accept either dependencies or
+        // dev_dependencies without flagging over-promotion.
+        ..removeAll(packagesUsedViaDocImportInPublicFiles)
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 

@@ -1,6 +1,17 @@
 # Unreleased
 <!-- Add unreleased changes here -->
 
+# 5.1.0
+
+- Added support for Dart `@docImport` documentation imports when scanning
+  package usage.
+- Packages referenced only via `@docImport` in `lib/` are accepted as either
+  `dependencies` or `dev_dependencies` and are not flagged as over-promoted,
+  missing, or unused.
+- Removed the internal `getDartDirectivePackageNames` API in favor of
+  `getDartPackageUsage`.
+- Requires Dart 3.8 or above.
+
 # 5.0.6
 
 - Allow up to analyzer 13
