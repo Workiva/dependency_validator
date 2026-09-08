@@ -90,11 +90,6 @@ Future<bool> checkPackage({required String root}) async {
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
-  final featureSet = featureSetForSdkConstraint(pubspec.environment['sdk']);
-  final derivedLanguageVersion = languageVersionForSdkConstraint(
-    pubspec.environment['sdk'],
-  );
-
   if (!config.allowPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
   }
@@ -143,8 +138,7 @@ Future<bool> checkPackage({required String root}) async {
     packagesUsedInPublicFiles.addAll(
       getDartDirectivePackageNames(
         file,
-        featureSet: featureSet,
-        derivedLanguageVersion: derivedLanguageVersion,
+        sdkConstraint: pubspec.environment['sdk'],
       ),
     );
   }
@@ -215,8 +209,7 @@ Future<bool> checkPackage({required String root}) async {
     packagesUsedOutsidePublicDirs.addAll(
       getDartDirectivePackageNames(
         file,
-        featureSet: featureSet,
-        derivedLanguageVersion: derivedLanguageVersion,
+        sdkConstraint: pubspec.environment['sdk'],
       ),
     );
   }

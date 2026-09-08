@@ -5,6 +5,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:dependency_validator/src/utils.dart';
 import 'package:pub_semver/pub_semver.dart';
 
 /// Returns the SDK language version implied by [sdkConstraint], or null when
@@ -35,9 +36,11 @@ FeatureSet featureSetForSdkConstraint(VersionConstraint? sdkConstraint) {
 /// provided dart file
 Set<String> getDartDirectivePackageNames(
   File file, {
-  FeatureSet? featureSet,
-  Version? derivedLanguageVersion,
+  VersionConstraint? sdkConstraint,
 }) {
+  final featureSet = featureSetForSdkConstraint(sdkConstraint);
+  final derivedLanguageVersion = languageVersionForSdkConstraint(sdkConstraint);
+
   ParseStringResult parsed;
   final content = file.readAsStringSync();
   try {
@@ -53,6 +56,10 @@ Set<String> getDartDirectivePackageNames(
           content: content,
           path: file.path,
           featureSet: FeatureSet.latestLanguageVersion(),
+        );
+        logger.fine(
+          'Parsed ${file.path} with latest language version after failing '
+          'with derived version $derivedLanguageVersion',
         );
       } on ArgumentError catch (retryError) {
         _reportParseError(

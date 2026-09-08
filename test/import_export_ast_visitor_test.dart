@@ -16,13 +16,9 @@
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/features.dart';
-import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:dependency_validator/src/import_export_ast_visitor.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
-
-Version _sdkLanguageVersion(FeatureSet featureSet) =>
-    getSdkLanguageVersion_forTesting(featureSet as ExperimentStatus);
 
 void main() {
   group('languageVersionForSdkConstraint', () {
@@ -52,36 +48,36 @@ void main() {
   group('featureSetForSdkConstraint', () {
     test('null constraint uses latest language version', () {
       expect(
-        _sdkLanguageVersion(featureSetForSdkConstraint(null)),
-        ExperimentStatus.currentVersion,
+        featureSetForSdkConstraint(null).isEnabled(Feature.records),
+        isTrue,
       );
     });
 
     test('any constraint uses latest language version', () {
       expect(
-        _sdkLanguageVersion(
-          featureSetForSdkConstraint(VersionConstraint.any),
+        featureSetForSdkConstraint(VersionConstraint.any).isEnabled(
+          Feature.records,
         ),
-        ExperimentStatus.currentVersion,
+        isTrue,
       );
     });
 
     test('exact version uses declared language version', () {
-      expect(
-        _sdkLanguageVersion(
-          featureSetForSdkConstraint(VersionConstraint.parse('3.6.0')),
-        ),
-        Version(3, 6, 0),
+      final featureSet = featureSetForSdkConstraint(
+        VersionConstraint.parse('3.6.0'),
       );
+
+      expect(featureSet.isEnabled(Feature.records), isTrue);
+      expect(featureSet.isEnabled(Feature.null_aware_elements), isFalse);
     });
 
     test('caret range uses min language version', () {
-      expect(
-        _sdkLanguageVersion(
-          featureSetForSdkConstraint(VersionConstraint.parse('^3.6.0')),
-        ),
-        Version(3, 6, 0),
+      final featureSet = featureSetForSdkConstraint(
+        VersionConstraint.parse('^2.12.0'),
       );
+
+      expect(featureSet.isEnabled(Feature.records), isFalse);
+      expect(featureSet.isEnabled(Feature.non_nullable), isTrue);
     });
   });
 
@@ -91,9 +87,9 @@ void main() {
         ..writeAsStringSync('''
 import 'package:logging/logging.dart';
 
-void log(List<int>? values, final Logger logger) {
-  final copied = [?values];
-  logger.info('\$copied');
+void log(final Logger logger) {
+  (int, int) record = (1, 2);
+  logger.info('\$record');
 }
 ''');
 
@@ -101,10 +97,7 @@ void log(List<int>? values, final Logger logger) {
 
       final packages = getDartDirectivePackageNames(
         file,
-        featureSet: featureSetForSdkConstraint(
-          VersionConstraint.parse('^3.0.0'),
-        ),
-        derivedLanguageVersion: Version(3, 0, 0),
+        sdkConstraint: VersionConstraint.parse('^2.12.0'),
       );
 
       expect(packages, {'logging'});
