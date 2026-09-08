@@ -22,7 +22,7 @@ used even if it isn't imported.
 [dart-build]: https://github.com/dart-lang/build
 
 - Missing: When a dependency is used in the package but not declared in the `pubspec.yaml`
-- Under-promoted: When a dependency is used within `lib/` but only declared as a dev_dependency.
+- Under-promoted: When a dependency is used within `lib/`, `bin/`, or `hook/` but only declared as a dev_dependency.
 - Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency.
 - Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
 

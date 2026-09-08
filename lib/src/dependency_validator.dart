@@ -105,7 +105,7 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(devDeps)}\n',
   );
 
-  final publicDirs = ['$root/bin/', '$root/lib/'];
+  final publicDirs = ['$root/bin/', '$root/hook/', '$root/lib/'];
   logger.fine("Excluding: $excludes");
   final publicDartFiles = [
     for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
@@ -236,7 +236,7 @@ Future<bool> checkPackage({required String root}) async {
   if (missingDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used in lib/ but are not dependencies:',
+      'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
       missingDependencies,
     );
     result = false;
@@ -294,7 +294,7 @@ Future<bool> checkPackage({required String root}) async {
   if (underPromotedDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used in lib/ and should be promoted to actual dependencies:',
+      'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
     result = false;

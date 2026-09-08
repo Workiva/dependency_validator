@@ -49,7 +49,7 @@ void main() {
         expect(result.exitCode, 1);
         expect(
           result.stderr,
-          contains('These packages are used in lib/ but are not dependencies:'),
+          contains('These packages are used in lib/, bin/, or hook/ but are not dependencies:'),
         );
         expect(result.stderr, contains('yaml'));
         expect(result.stderr, contains('some_scss_package'));
@@ -171,7 +171,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in lib/ and should be promoted to actual dependencies:',
+            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
           ),
         );
         expect(result.stderr, contains('logging'));
@@ -199,6 +199,76 @@ void main() {
           expect(result.exitCode, 0);
         },
       );
+    });
+
+    group('fails when hook scripts use dev_dependencies', () {
+      final devDependencies = {"yaml": hostedAny};
+      final config = DepValidatorConfig(ignore: ['yaml']);
+
+      final project = [
+        d.dir('hook', [
+          d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+        ]),
+      ];
+
+      test('', () async {
+        result = await checkProject(
+          project: project,
+          devDependencies: devDependencies,
+        );
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test('except when they are ignored', () async {
+        result = await checkProject(
+          project: project,
+          devDependencies: devDependencies,
+          config: config,
+        );
+        expect(result.exitCode, 0);
+      });
+    });
+
+    group('passes when hook scripts use regular dependencies', () {
+      test('', () async {
+        result = await checkProject(
+          dependencies: {"yaml": hostedAny},
+          project: [
+            d.dir('hook', [
+              d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+            ]),
+          ],
+        );
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      });
+    });
+
+    group('fails when hook scripts use undeclared dependencies', () {
+      final project = [
+        d.dir('hook', [
+          d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+        ]),
+      ];
+
+      test('', () async {
+        result = await checkProject(project: project);
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
     });
 
     group('fails when there are unused packages', () {

@@ -1,6 +1,8 @@
 # Unreleased
 <!-- Add unreleased changes here -->
 
+- Treat `hook/` as a public-facing directory when validating dependencies. Dependencies imported in hook scripts run at install time and must be regular dependencies, not dev_dependencies.
+
 # 5.0.6
 
 - Allow up to analyzer 13
