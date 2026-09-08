@@ -270,16 +270,13 @@ void main() {
             environment: requireDart38,
             project: [
               d.dir('lib', [
-                d.file(
-                  'main.dart',
-                  '''
+                d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
 library;
 
 /// References [Deprecated].
 class Foo {}
-''',
-                ),
+'''),
               ]),
             ],
           );
@@ -296,16 +293,13 @@ class Foo {}
             environment: requireDart38,
             project: [
               d.dir('lib', [
-                d.file(
-                  'main.dart',
-                  '''
+                d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
 library;
 
 /// References [Deprecated].
 class Foo {}
-''',
-                ),
+'''),
               ]),
             ],
           );
@@ -329,16 +323,13 @@ class Foo {}
             environment: requireDart38,
             project: [
               d.dir('lib', [
-                d.file(
-                  'main.dart',
-                  '''
+                d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
 library;
 
 /// References [Deprecated].
 class Foo {}
-''',
-                ),
+'''),
               ]),
             ],
           );
@@ -354,16 +345,13 @@ class Foo {}
           environment: requireDart38,
           project: [
             d.dir('lib', [
-              d.file(
-                'main.dart',
-                '''
+              d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
 library;
 
 /// References [Deprecated].
 class Foo {}
-''',
-              ),
+'''),
             ]),
           ],
         );
@@ -371,9 +359,11 @@ class Foo {}
         expect(result.exitCode, 0);
         expect(
           result.stderr,
-          isNot(contains(
-            'These packages may be unused, or you may be using assets from these packages:',
-          )),
+          isNot(
+            contains(
+              'These packages may be unused, or you may be using assets from these packages:',
+            ),
+          ),
         );
       });
     });

@@ -58,7 +58,7 @@ Future<bool> checkPackage({required String root}) async {
       .map((s) {
         try {
           return makeGlob("$root/$s");
-        } catch (_, __) {
+        } catch (_) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
         }
@@ -278,9 +278,9 @@ Future<bool> checkPackage({required String root}) async {
   final overPromotedDependencies =
       // Start with dependencies that are not used in lib/
       (deps
-          .difference(packagesUsedInPublicFiles)
-          // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsidePublicDirs))
+            .difference(packagesUsedInPublicFiles)
+            // Intersect with deps that are used outside lib/ (excludes unused deps)
+            .intersection(packagesUsedOutsidePublicDirs))
         // Doc imports in lib/ are not runtime deps; accept either dependencies or
         // dev_dependencies without flagging over-promotion.
         ..removeAll(packagesUsedViaDocImportInPublicFiles)
@@ -340,11 +340,12 @@ Future<bool> checkPackage({required String root}) async {
     pubspec.dependencies.keys,
     '.',
   );
-  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
-        ...rootBuildConfig.globalOptions.keys,
-        for (final target in rootBuildConfig.buildTargets.values)
-          ...target.builders.keys,
-      ]
+  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) =>
+      [
+            ...rootBuildConfig.globalOptions.keys,
+            for (final target in rootBuildConfig.buildTargets.values)
+              ...target.builders.keys,
+          ]
           .map((key) => normalizeBuilderKeyUsage(key, pubspec.name))
           .any((key) => key.startsWith('$dependencyName:'));
 
@@ -383,8 +384,9 @@ Future<bool> checkPackage({required String root}) async {
       if (providesExecutable(package)) package,
   };
 
-  final nonDevPackagesWithExecutables =
-      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
+  final nonDevPackagesWithExecutables = packagesWithExecutables
+      .where(pubspec.dependencies.containsKey)
+      .toSet();
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,
@@ -431,10 +433,7 @@ Future<bool> checkPackage({required String root}) async {
 Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
     (await BuildConfig.fromPackageDir(
       path,
-    ))
-        .builderDefinitions
-        .values
-        .any((def) => def.autoApply != AutoApply.none);
+    )).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///

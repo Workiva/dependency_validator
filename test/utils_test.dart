@@ -134,8 +134,9 @@ include: package:pedantic/analysis_options.1.8.0.yaml
 
           expect(input, matches(importExportDartPackageRegex));
 
-          final allMatches =
-              importExportDartPackageRegex.allMatches(input).toList();
+          final allMatches = importExportDartPackageRegex
+              .allMatches(input)
+              .toList();
           expect(allMatches, hasLength(2));
 
           expect(allMatches[0].groups([1, 2]), [importOrExport, 'foo']);

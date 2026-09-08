@@ -11,8 +11,6 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 export 'package:logging/logging.dart' show Level;
 
-import 'pubspec_to_json.dart';
-
 Future<ProcessResult> checkProject({
   DepValidatorConfig? config,
   Map<String, Dependency> dependencies = const {},
@@ -48,8 +46,8 @@ Future<ProcessResult> checkProject({
 }
 
 Dependency hostedCompatibleWith(String version) => HostedDependency(
-      version: VersionConstraint.compatibleWith(Version.parse(version)),
-    );
+  version: VersionConstraint.compatibleWith(Version.parse(version)),
+);
 
 Dependency hostedPinned(String version) =>
     HostedDependency(version: Version.parse(version));
