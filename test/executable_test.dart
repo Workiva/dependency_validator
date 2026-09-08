@@ -261,6 +261,122 @@ void main() {
       );
     });
 
+    group('doc imports', () {
+      test('passes when a dev_dependency is only referenced via doc import in lib/', () async {
+        result = await checkProject(
+          devDependencies: {'meta': hostedAny},
+          project: [
+            d.dir('lib', [
+              d.file(
+                'main.dart',
+                '''
+/// @docImport 'package:meta/meta.dart';
+library;
+
+/// References [Deprecated].
+class Foo {}
+''',
+              ),
+            ]),
+          ],
+        );
+
+        expect(result.exitCode, 0);
+        expect(result.stdout, contains('No dependency issues found!'));
+      });
+
+      test(
+        'fails when a package referenced via doc import in lib/ is missing from pubspec',
+        () async {
+          result = await checkProject(
+            project: [
+              d.dir('lib', [
+                d.file(
+                  'main.dart',
+                  '''
+/// @docImport 'package:meta/meta.dart';
+library;
+
+/// References [Deprecated].
+class Foo {}
+''',
+                ),
+              ]),
+            ],
+          );
+
+          expect(result.exitCode, 1);
+          expect(
+            result.stderr,
+            contains(
+              'These packages are used outside lib/ but are not dev_dependencies:',
+            ),
+          );
+          expect(result.stderr, contains('meta'));
+        },
+      );
+
+      test(
+        'fails when a dependency is only referenced via doc import in lib/',
+        () async {
+          result = await checkProject(
+            dependencies: {'meta': hostedAny},
+            project: [
+              d.dir('lib', [
+                d.file(
+                  'main.dart',
+                  '''
+/// @docImport 'package:meta/meta.dart';
+library;
+
+/// References [Deprecated].
+class Foo {}
+''',
+                ),
+              ]),
+            ],
+          );
+
+          expect(result.exitCode, 1);
+          expect(
+            result.stderr,
+            contains(
+              'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+            ),
+          );
+          expect(result.stderr, contains('meta'));
+        },
+      );
+
+      test('does not flag doc-import-only packages as unused', () async {
+        result = await checkProject(
+          devDependencies: {'meta': hostedAny},
+          project: [
+            d.dir('lib', [
+              d.file(
+                'main.dart',
+                '''
+/// @docImport 'package:meta/meta.dart';
+library;
+
+/// References [Deprecated].
+class Foo {}
+''',
+              ),
+            ]),
+          ],
+        );
+
+        expect(result.exitCode, 0);
+        expect(
+          result.stderr,
+          isNot(contains(
+            'These packages may be unused, or you may be using assets from these packages:',
+          )),
+        );
+      });
+    });
+
     test(
       'warns when the analyzer package is depended on but not used',
       () async {

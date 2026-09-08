@@ -131,11 +131,14 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(publicLessFiles.map((f) => f.path))}\n',
     );
 
-  // Read each file in lib/ and parse the package names from every import and
-  // export directive.
+  // Read each file in lib/ and parse the package names from every import,
+  // export directive, and doc import.
   final packagesUsedInPublicFiles = <String>{};
+  final packagesUsedViaDocImportInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    packagesUsedInPublicFiles.addAll(getDartDirectivePackageNames(file));
+    final usage = getDartPackageUsage(file);
+    packagesUsedInPublicFiles.addAll(usage.directivePackageNames);
+    packagesUsedViaDocImportInPublicFiles.addAll(usage.docImportPackageNames);
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -201,8 +204,14 @@ Future<bool> checkPackage({required String root}) async {
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
-    packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
+    final usage = getDartPackageUsage(file);
+    packagesUsedOutsidePublicDirs.addAll(usage.directivePackageNames);
+    packagesUsedOutsidePublicDirs.addAll(usage.docImportPackageNames);
   }
+
+  // Doc imports in lib/ are not runtime dependencies, so treat them like usage
+  // outside lib/ for dependency promotion checks.
+  packagesUsedOutsidePublicDirs.addAll(packagesUsedViaDocImportInPublicFiles);
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
