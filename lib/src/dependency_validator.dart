@@ -132,10 +132,13 @@ Future<bool> checkPackage({required String root}) async {
     );
 
   // Read each file in lib/ and parse the package names from every import and
-  // export directive.
+  // export directive, as well as any `@docImport`s in documentation comments.
   final packagesUsedInPublicFiles = <String>{};
+  final docImportPackagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    packagesUsedInPublicFiles.addAll(getDartDirectivePackageNames(file));
+    final usage = getDartPackageUsage(file);
+    packagesUsedInPublicFiles.addAll(usage.directivePackageNames);
+    docImportPackagesUsedInPublicFiles.addAll(usage.docImportPackageNames);
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -152,6 +155,10 @@ Future<bool> checkPackage({required String root}) async {
   logger.fine(
     'packages used in public facing files:\n'
     '${bulletItems(packagesUsedInPublicFiles)}\n',
+  );
+  logger.fine(
+    'packages used via doc imports in public facing files:\n'
+    '${bulletItems(docImportPackagesUsedInPublicFiles)}\n',
   );
 
   final publicDirGlobs = [for (final dir in publicDirs) makeGlob('$dir**')];
@@ -194,14 +201,17 @@ Future<bool> checkPackage({required String root}) async {
     );
 
   // Read each file outside lib/ and parse the package names from every
-  // import and export directive.
+  // import and export directive, as well as any `@docImport`s.
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
+  final docImportPackagesUsedOutsidePublicDirs = <String>{};
   for (final file in nonPublicDartFiles) {
-    packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
+    final usage = getDartPackageUsage(file);
+    packagesUsedOutsidePublicDirs.addAll(usage.directivePackageNames);
+    docImportPackagesUsedOutsidePublicDirs.addAll(usage.docImportPackageNames);
   }
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -219,6 +229,14 @@ Future<bool> checkPackage({required String root}) async {
   logger.fine(
     'packages used outside public dirs:\n'
     '${bulletItems(packagesUsedOutsidePublicDirs)}\n',
+  );
+  logger.fine(
+    'packages used via doc imports outside public dirs:\n'
+    '${bulletItems(docImportPackagesUsedOutsidePublicDirs)}\n',
+  );
+
+  final packagesUsedViaDocImport = docImportPackagesUsedInPublicFiles.union(
+    docImportPackagesUsedOutsidePublicDirs,
   );
 
   // Packages that are used in lib/ but are not dependencies.
@@ -244,8 +262,10 @@ Future<bool> checkPackage({required String root}) async {
 
   // Packages that are used outside lib/ but are not dev_dependencies.
   final missingDevDependencies =
-      // Start with packages _only_ used outside lib/
+      // Start with packages _only_ used outside lib/, and packages only
+      // referenced via `@docImport` in lib/.
       packagesUsedOutsidePublicDirs
+          .union(docImportPackagesUsedInPublicFiles)
           .difference(packagesUsedInPublicFiles)
           // Remove all explicitly declared dependencies
           .difference(devDeps)
@@ -270,8 +290,13 @@ Future<bool> checkPackage({required String root}) async {
       // Start with dependencies that are not used in lib/
       (deps
           .difference(packagesUsedInPublicFiles)
-          // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsidePublicDirs))
+          // Intersect with deps that are used outside lib/ or only via
+          // `@docImport` in lib/ (excludes unused deps)
+          .intersection(
+            packagesUsedOutsidePublicDirs.union(
+              docImportPackagesUsedInPublicFiles,
+            ),
+          ))
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
@@ -308,6 +333,7 @@ Future<bool> checkPackage({required String root}) async {
           // Remove all deps that were used in Dart code somewhere in this package
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
+          .difference(packagesUsedViaDocImport)
         // Remove this package, since we know they're using our executable
         ..remove(dependencyValidatorPackageName)
         ..removeAll(ignoredPackages);
