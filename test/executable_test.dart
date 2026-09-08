@@ -15,6 +15,7 @@
 @TestOn('vm')
 import 'dart:io';
 
+import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:io/io.dart';
 import 'package:test/test.dart';
@@ -50,7 +51,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
+            'These packages are used in ${publicDirsDescription()} but are not dependencies:',
           ),
         );
         expect(result.stderr, contains('yaml'));
@@ -122,7 +123,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are only used outside lib/, bin/, and hook/ and should be downgraded to dev_dependencies:',
+            'These packages are only used outside ${publicDirsDescription(conjunction: 'and')} and should be downgraded to dev_dependencies:',
           ),
         );
         expect(result.stderr, contains('path'));
@@ -173,7 +174,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
+            'These packages are used in ${publicDirsDescription()} and should be promoted to actual dependencies:',
           ),
         );
         expect(result.stderr, contains('logging'));
@@ -222,7 +223,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
+            'These packages are used in ${publicDirsDescription()} and should be promoted to actual dependencies:',
           ),
         );
         expect(result.stderr, contains('yaml'));
@@ -236,10 +237,37 @@ void main() {
         );
         expect(result.exitCode, 0);
       });
+
+      test(
+        'except when they are ignored (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            devDependencies: devDependencies,
+            config: config,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+        },
+      );
     });
 
-    group('passes when hook scripts use regular dependencies', () {
-      test('', () async {
+    test('passes when hook scripts use regular dependencies', () async {
+      result = await checkProject(
+        dependencies: {"yaml": hostedAny},
+        project: [
+          d.dir('hook', [
+            d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
+          ]),
+        ],
+      );
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No dependency issues found!'));
+    });
+
+    test(
+      'passes when hook-only dependency is not flagged as over-promoted',
+      () async {
         result = await checkProject(
           dependencies: {"yaml": hostedAny},
           project: [
@@ -249,28 +277,33 @@ void main() {
           ],
         );
         expect(result.exitCode, 0);
-        expect(result.stdout, contains('No dependency issues found!'));
-      });
-    });
+        expect(
+          result.stderr,
+          isNot(
+            contains(
+              'These packages are only used outside ${publicDirsDescription(conjunction: 'and')} and should be downgraded to dev_dependencies:',
+            ),
+          ),
+        );
+      },
+    );
 
-    group('fails when hook scripts use undeclared dependencies', () {
+    test('fails when hook scripts use undeclared dependencies', () async {
       final project = [
         d.dir('hook', [
           d.file('post_install.dart', 'import "package:yaml/yaml.dart";'),
         ]),
       ];
 
-      test('', () async {
-        result = await checkProject(project: project);
-        expect(result.exitCode, 1);
-        expect(
-          result.stderr,
-          contains(
-            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
-          ),
-        );
-        expect(result.stderr, contains('yaml'));
-      });
+      result = await checkProject(project: project);
+      expect(result.exitCode, 1);
+      expect(
+        result.stderr,
+        contains(
+          'These packages are used in ${publicDirsDescription()} but are not dependencies:',
+        ),
+      );
+      expect(result.stderr, contains('yaml'));
     });
 
     group('fails when there are unused packages', () {
@@ -414,7 +447,7 @@ void main() {
         expect(
           result.stderr,
           contains(
-            'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies',
+            'The following packages contain executables, and are only used outside of ${publicDirsDescription(conjunction: 'and')}. These should be downgraded to dev_dependencies',
           ),
         );
       },
