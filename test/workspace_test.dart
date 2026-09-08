@@ -154,25 +154,88 @@ void main() => group('Workspaces', () {
         test(
           'resolves packages/* to workspace members',
           () => checkWorkspace(
-            workspace: [],
+            workspace: [
+              d.dir('packages', [
+                d.dir('not_a_package', [
+                  d.file('README.md', ''),
+                ]),
+              ]),
+            ],
             workspaceDeps: {},
-            subpackage: usesHttp,
-            subpackageDeps: dependsOnHttp,
+            subpackage: [],
+            subpackageDeps: {},
             workspaceMembers: ['packages/*'],
-            subpackagePath: 'packages/subpackage',
+            subpackages: [
+              (
+                path: 'packages/pkg_a',
+                contents: usesHttp,
+                deps: dependsOnHttp,
+                config: null,
+              ),
+              (
+                path: 'packages/pkg_b',
+                contents: usesMeta,
+                deps: dependsOnMeta,
+                config: null,
+              ),
+            ],
           ),
         );
 
         test(
           'validates each glob-matched subpackage',
           () => checkWorkspace(
-            workspace: [],
+            workspace: [
+              d.dir('packages', [
+                d.dir('not_a_package', [
+                  d.file('README.md', ''),
+                ]),
+              ]),
+            ],
             workspaceDeps: {},
-            subpackage: usesHttp,
+            subpackage: [],
             subpackageDeps: {},
             workspaceMembers: ['packages/*'],
-            subpackagePath: 'packages/subpackage',
+            subpackages: [
+              (
+                path: 'packages/pkg_a',
+                contents: usesHttp,
+                deps: dependsOnHttp,
+                config: null,
+              ),
+              (
+                path: 'packages/pkg_b',
+                contents: usesHttp,
+                deps: {},
+                config: null,
+              ),
+            ],
             matcher: isFalse,
+          ),
+        );
+
+        test(
+          'supports mixed literal and glob workspace entries',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            subpackage: [],
+            subpackageDeps: {},
+            workspaceMembers: ['packages/foo', 'packages/*'],
+            subpackages: [
+              (
+                path: 'packages/foo',
+                contents: usesHttp,
+                deps: dependsOnHttp,
+                config: null,
+              ),
+              (
+                path: 'packages/bar',
+                contents: usesMeta,
+                deps: dependsOnMeta,
+                config: null,
+              ),
+            ],
           ),
         );
       });

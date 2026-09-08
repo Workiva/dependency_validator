@@ -70,6 +70,13 @@ final requireDart36 = {
   "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
 };
 
+typedef WorkspaceSubpackage = ({
+  String path,
+  List<d.Descriptor> contents,
+  Map<String, Dependency> deps,
+  DepValidatorConfig? config,
+});
+
 Future<void> checkWorkspace({
   required Map<String, Dependency> workspaceDeps,
   required Map<String, Dependency> subpackageDeps,
@@ -81,18 +88,23 @@ Future<void> checkWorkspace({
   Matcher matcher = isTrue,
   List<String>? workspaceMembers,
   String subpackagePath = 'subpackage',
+  List<WorkspaceSubpackage>? subpackages,
 }) async {
+  final resolvedSubpackages = subpackages ??
+      [
+        (
+          path: subpackagePath,
+          contents: subpackage,
+          deps: subpackageDeps,
+          config: subpackageConfig,
+        ),
+      ];
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
     dependencies: workspaceDeps,
-    workspace: workspaceMembers ?? [subpackagePath],
-  );
-  final subpackagePubspec = Pubspec(
-    p.basename(subpackagePath),
-    environment: requireDart36,
-    dependencies: subpackageDeps,
-    resolution: 'workspace',
+    workspace:
+        workspaceMembers ?? resolvedSubpackages.map((s) => s.path).toList(),
   );
   final dir = d.dir('workspace', [
     ...workspace,
@@ -102,15 +114,26 @@ Future<void> checkWorkspace({
         'dart_dependency_validator.yaml',
         jsonEncode(workspaceConfig.toJson()),
       ),
-    d.dir(subpackagePath, [
-      ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
-      if (subpackageConfig != null)
+    for (final subpackageSpec in resolvedSubpackages)
+      d.dir(subpackageSpec.path, [
+        ...subpackageSpec.contents,
         d.file(
-          'dart_dependency_validator.yaml',
-          jsonEncode(subpackageConfig.toJson()),
+          'pubspec.yaml',
+          jsonEncode(
+            Pubspec(
+              p.basename(subpackageSpec.path),
+              environment: requireDart36,
+              dependencies: subpackageSpec.deps,
+              resolution: 'workspace',
+            ).toJson(),
+          ),
         ),
-    ]),
+        if (subpackageSpec.config != null)
+          d.file(
+            'dart_dependency_validator.yaml',
+            jsonEncode(subpackageSpec.config!.toJson()),
+          ),
+      ]),
   ]);
   await dir.create();
   Logger.root.level = logLevel;

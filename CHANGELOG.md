@@ -1,5 +1,8 @@
 # Unreleased
-<!-- Add unreleased changes here -->
+
+- Added support for glob patterns in `workspace:` entries (for example
+  `packages/*`). Only directories containing a `pubspec.yaml` are treated as
+  workspace members. (ref #176)
 
 # 5.0.6
 

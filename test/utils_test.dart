@@ -459,7 +459,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       ]).create();
 
       expect(
-        resolveWorkspaceMembers('${d.sandbox}/root', ['subpackage']).toList(),
+        resolveWorkspaceMembers('${d.sandbox}/root', ['subpackage']),
         ['subpackage'],
       );
     });
@@ -480,8 +480,7 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       ]).create();
 
       expect(
-        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']).toList()
-          ..sort(),
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
         ['packages/pkg_a', 'packages/pkg_b'],
       );
     });
@@ -497,8 +496,56 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       ]).create();
 
       expect(
-        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']).toList(),
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
         ['packages/pkg_a'],
+      );
+    });
+
+    test('deduplicates overlapping literal and glob paths', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [
+            d.file('pubspec.yaml', 'name: foo\n'),
+          ]),
+          d.dir('bar', [
+            d.file('pubspec.yaml', 'name: bar\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', [
+          'packages/*',
+          'packages/foo',
+        ]),
+        ['packages/bar', 'packages/foo'],
+      );
+    });
+
+    test('returns sorted results independent of filesystem order', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('zebra', [
+            d.file('pubspec.yaml', 'name: zebra\n'),
+          ]),
+          d.dir('alpha', [
+            d.file('pubspec.yaml', 'name: alpha\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/alpha', 'packages/zebra'],
+      );
+    });
+
+    test('returns null for invalid glob syntax', () async {
+      await d.dir('root', []).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/[a']),
+        isNull,
       );
     });
   });

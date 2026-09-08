@@ -218,25 +218,44 @@ bool hasGlobWildcards(String path) =>
     path.contains('[') ||
     path.contains('{');
 
+String _normalizeWorkspaceMemberPath(String path) =>
+    p.posix.normalize(path.replaceAll(r'\', '/'));
+
 /// Resolves workspace member paths from [workspacePaths] relative to [root].
 ///
 /// Glob patterns (for example `packages/*`) are expanded to directories
 /// containing a pubspec.yaml file, matching pub's workspace resolution
 /// behavior.
-Iterable<String> resolveWorkspaceMembers(
+///
+/// Returns a sorted, deduplicated list with posix-normalized path separators.
+/// Returns `null` if any workspace path has invalid glob syntax.
+List<String>? resolveWorkspaceMembers(
   String root,
   Iterable<String> workspacePaths,
-) sync* {
+) {
+  final members = <String>{};
   for (final workspacePath in workspacePaths) {
     if (hasGlobWildcards(workspacePath)) {
-      final glob = makeGlob(workspacePath);
-      for (final entity in glob.listSync(root: root)) {
-        if (entity is! Directory) continue;
-        if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) continue;
-        yield p.relative(entity.path, from: root);
+      try {
+        final glob = makeGlob(workspacePath);
+        for (final entity in glob.listSync(root: root)) {
+          if (entity is! Directory) continue;
+          if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) {
+            continue;
+          }
+          members.add(
+            _normalizeWorkspaceMemberPath(
+              p.relative(entity.path, from: root),
+            ),
+          );
+        }
+      } on FormatException {
+        logger.shout(yellow.wrap('invalid glob syntax: "$workspacePath"'));
+        return null;
       }
     } else {
-      yield workspacePath;
+      members.add(_normalizeWorkspaceMemberPath(workspacePath));
     }
   }
+  return (members.toList()..sort());
 }

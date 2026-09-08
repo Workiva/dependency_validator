@@ -58,7 +58,12 @@ This package supports [Pub Workspaces](https://dart.dev/tools/pub/workspaces), a
 workspace:
   - pkg1
   - pkg2
+  - packages/*
 ```
+
+Glob patterns such as `packages/*` are supported. Only directories that contain
+a `pubspec.yaml` are treated as workspace members; other directories matched by
+the glob are ignored.
 
 and your sub-packages should have `resolution: workspace` in their `pubspec.yaml`s. For more information, see the linked documentation.
 
