@@ -74,6 +74,9 @@ Future<void> checkWorkspace({
   required Map<String, Dependency> subpackageDeps,
   required List<d.Descriptor> workspace,
   required List<d.Descriptor> subpackage,
+  List<String> workspaceMembers = const ['subpackage'],
+  String subpackagePath = 'subpackage',
+  List<d.Descriptor> extraDirs = const [],
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
@@ -83,7 +86,7 @@ Future<void> checkWorkspace({
     'workspace',
     environment: requireDart36,
     dependencies: workspaceDeps,
-    workspace: ['subpackage'],
+    workspace: workspaceMembers,
   );
   final subpackagePubspec = Pubspec(
     'subpackage',
@@ -99,7 +102,8 @@ Future<void> checkWorkspace({
         'dart_dependency_validator.yaml',
         jsonEncode(workspaceConfig.toJson()),
       ),
-    d.dir('subpackage', [
+    ...extraDirs,
+    d.dir(subpackagePath, [
       ...subpackage,
       d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
       if (subpackageConfig != null)

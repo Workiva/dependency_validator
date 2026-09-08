@@ -149,4 +149,44 @@ void main() => group('Workspaces', () {
           ),
         );
       });
+
+      group('glob workspace patterns', () {
+        test(
+          'resolves packages/* to subpackages with pubspec.yaml',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+            subpackage: usesHttp,
+            subpackageDeps: dependsOnHttp,
+          ),
+        );
+
+        test(
+          'ignores directories without pubspec.yaml',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+            extraDirs: [d.dir('packages/no_pubspec', [])],
+            subpackage: usesHttp,
+            subpackageDeps: dependsOnHttp,
+          ),
+        );
+
+        test(
+          'fails when a glob-matched subpackage has an issue',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+            subpackage: usesHttp,
+            subpackageDeps: {},
+            matcher: isFalse,
+          ),
+        );
+      });
     });

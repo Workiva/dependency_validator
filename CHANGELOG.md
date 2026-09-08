@@ -1,6 +1,8 @@
 # Unreleased
 <!-- Add unreleased changes here -->
 
+- Support glob patterns in Pub Workspace resolution (e.g. `packages/*`).
+
 # 5.0.6
 
 - Allow up to analyzer 13

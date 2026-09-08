@@ -21,6 +21,64 @@ import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
+  group('resolveWorkspaceMembers', () {
+    test('returns literal paths unchanged', () async {
+      await d.dir('root', [
+        d.dir('pkg', [d.file('pubspec.yaml', 'name: pkg')]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['pkg']),
+        ['pkg'],
+      );
+    });
+
+    test('expands glob patterns to directories with pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [d.file('pubspec.yaml', 'name: foo')]),
+          d.dir('bar', [d.file('pubspec.yaml', 'name: bar')]),
+          d.dir('no_pubspec', []),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/bar', 'packages/foo'],
+      );
+    });
+
+    test('combines glob and literal workspace members', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [d.file('pubspec.yaml', 'name: foo')]),
+        ]),
+        d.dir('standalone', [d.file('pubspec.yaml', 'name: standalone')]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', [
+          'packages/*',
+          'standalone',
+        ]),
+        ['packages/foo', 'standalone'],
+      );
+    });
+  });
+
+  group('looksLikeGlob', () {
+    test('detects glob metacharacters', () {
+      expect(looksLikeGlob('packages/*'), isTrue);
+      expect(looksLikeGlob('packages/**'), isTrue);
+      expect(looksLikeGlob('pkg?'), isTrue);
+    });
+
+    test('returns false for literal paths', () {
+      expect(looksLikeGlob('packages/foo'), isFalse);
+      expect(looksLikeGlob('subpackage'), isFalse);
+    });
+  });
+
   group('getAnalysisOptionsIncludePackage', () {
     test('no analysis_options.yaml', () {
       expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);

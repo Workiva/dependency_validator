@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:io/ansi.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
@@ -209,3 +210,39 @@ extension PubspecUtils on Pubspec {
 /// This function removes `./` paths and replaces all `\` with `/`.
 Glob makeGlob(String path) =>
     Glob(p.posix.normalize(path.replaceAll(r'\', '/')));
+
+/// Returns whether [path] looks like a glob pattern.
+bool looksLikeGlob(String path) => Glob.quote(path) != path;
+
+/// Resolves workspace member patterns to concrete package paths.
+///
+/// Glob patterns are expanded to directories beneath [root] that contain a
+/// `pubspec.yaml`, matching how `dart pub` resolves workspace members.
+/// Non-glob entries are returned as-is.
+List<String> resolveWorkspaceMembers(
+  String root,
+  Iterable<String> patterns,
+) {
+  final members = <String>{};
+  for (final pattern in patterns) {
+    final normalized = p.posix.normalize(pattern.replaceAll(r'\', '/'));
+    if (looksLikeGlob(normalized)) {
+      try {
+        final glob = makeGlob(normalized);
+        for (final entity in glob.listSync(root: root)) {
+          if (entity is! Directory) continue;
+          final pubspec = File(p.join(entity.path, 'pubspec.yaml'));
+          if (!pubspec.existsSync()) continue;
+          members.add(
+            p.posix.normalize(p.relative(entity.path, from: root)),
+          );
+        }
+      } on FormatException {
+        // Invalid glob syntax; skip this pattern.
+      }
+    } else {
+      members.add(normalized);
+    }
+  }
+  return members.toList()..sort();
+}
