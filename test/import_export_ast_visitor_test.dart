@@ -43,9 +43,26 @@ class Foo {}
         await d.dir('project', [
           d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
-
 /// References [Deprecated].
 class Foo {}
+'''),
+        ]).create();
+
+        final usage = getDartPackageUsage(
+          File('${d.sandbox}/project/main.dart'),
+        );
+
+        expect(usage.directivePackageNames, isEmpty);
+        expect(usage.docImportPackageNames, {'meta'});
+      },
+    );
+
+    test(
+      'collects file-level dangling doc imports from beginToken.precedingComments',
+      () async {
+        await d.dir('project', [
+          d.file('main.dart', '''
+/// @docImport 'package:meta/meta.dart';
 '''),
         ]).create();
 
@@ -81,6 +98,7 @@ class Foo {}
       await d.dir('project', [
         d.file('main.dart', '''
 /// @docImport 'package:collection/collection.dart' show IterableExtension;
+library;
 
 /// References [IterableExtension].
 class Foo {}
@@ -96,6 +114,7 @@ class Foo {}
       await d.dir('project', [
         d.file('main.dart', '''
 /// @docImport 'package:collection/collection.dart' as collection;
+library;
 
 /// References [collection.IterableExtension].
 class Foo {}
@@ -112,7 +131,6 @@ class Foo {}
         d.dir('bin', [
           d.file('main.dart', '''
 /// @docImport 'package:meta/meta.dart';
-
 /// References [Deprecated].
 void main() {}
 '''),

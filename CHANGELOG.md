@@ -1,6 +1,3 @@
-# Unreleased
-<!-- Add unreleased changes here -->
-
 # 6.0.0
 
 - Added support for Dart `@docImport` documentation imports when scanning

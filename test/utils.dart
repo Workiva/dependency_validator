@@ -9,6 +9,8 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
+import 'pubspec_to_json.dart';
+
 export 'package:logging/logging.dart' show Level;
 
 Future<ProcessResult> checkProject({
@@ -29,7 +31,7 @@ Future<ProcessResult> checkProject({
       'dependency_validator': PathDependency(Directory.current.absolute.path),
     },
   );
-  final pubspecJson = pubspec.toJson();
+  final pubspecJson = pubspecToJson(pubspec);
   if (embedConfigInPubspec && config != null) {
     pubspecJson['dependency_validator'] = config.toJson();
   }
@@ -96,7 +98,7 @@ Future<void> checkWorkspace({
   );
   final dir = d.dir('workspace', [
     ...workspace,
-    d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
+    d.file('pubspec.yaml', jsonEncode(pubspecToJson(workspacePubspec))),
     if (workspaceConfig != null)
       d.file(
         'dart_dependency_validator.yaml',
@@ -104,7 +106,7 @@ Future<void> checkWorkspace({
       ),
     d.dir('subpackage', [
       ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+      d.file('pubspec.yaml', jsonEncode(pubspecToJson(subpackagePubspec))),
       if (subpackageConfig != null)
         d.file(
           'dart_dependency_validator.yaml',
