@@ -24,8 +24,8 @@ used even if it isn't imported.
 - Missing: When a dependency is used in the package but not declared in the `pubspec.yaml`
 - Under-promoted: When a dependency is used within `lib/` but only declared as a dev_dependency.
 - Under-promoted (hook): When a dependency is used within `hook/` but only declared as a dev_dependency. Hook scripts run at install time and require regular dependencies.
-- Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency.
-- Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
+- Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency. Packages imported from `hook/` are exempt.
+- Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`. Packages imported from `hook/` are exempt.
 
 ## Configuration
 

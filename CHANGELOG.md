@@ -2,6 +2,7 @@
 <!-- Add unreleased changes here -->
 
 - Validate that dependencies used in `hook/` are regular dependencies, not dev_dependencies.
+  **Potentially breaking:** packages that previously passed validation but declare hook dependencies as `dev_dependencies` will now fail. Move those dependencies to the `dependencies` section on upgrade.
 
 # 5.0.6
 

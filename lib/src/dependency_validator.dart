@@ -291,9 +291,7 @@ Future<bool> checkPackage({required String root}) async {
 
   // Packages that are used in hook/ but are not dependencies.
   final missingHookDependencies =
-      packagesUsedInHook
-          .difference(deps)
-          .difference(devDeps)
+      packagesUsedInHook.difference(deps).difference(devDeps)
         ..remove(pubspec.name)
         ..removeAll(ignoredPackages);
 
@@ -368,8 +366,8 @@ Future<bool> checkPackage({required String root}) async {
   }
 
   // Packages that are used in hook/, but are dev_dependencies.
-  final underPromotedHookDependencies =
-      devDeps.intersection(packagesUsedInHook)..removeAll(ignoredPackages);
+  final underPromotedHookDependencies = devDeps.intersection(packagesUsedInHook)
+    ..removeAll(ignoredPackages);
 
   if (underPromotedHookDependencies.isNotEmpty) {
     log(

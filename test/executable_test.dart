@@ -216,7 +216,8 @@ void main() {
         expect(result.exitCode, 1);
         expect(
           result.stderr,
-          contains('These packages are used in hook/ but are not dependencies:'),
+          contains(
+              'These packages are used in hook/ but are not dependencies:'),
         );
         expect(result.stderr, contains('yaml'));
       });
@@ -234,17 +235,37 @@ void main() {
     });
 
     group('passes when hook dependencies are regular dependencies', () {
+      final project = [
+        d.dir('hook', [
+          d.file('build.dart', 'import "package:path/path.dart";'),
+        ]),
+      ];
+      final dependencies = {'path': hostedAny};
+
       test('', () async {
         result = await checkProject(
-          project: [
-            d.dir('hook', [
-              d.file('build.dart', 'import "package:path/path.dart";'),
-            ]),
-          ],
-          dependencies: {'path': hostedAny},
+          project: project,
+          dependencies: dependencies,
         );
         expect(result.exitCode, 0);
         expect(result.stdout, contains('No dependency issues found!'));
+        expect(result.stderr, isNot(contains('may be unused')));
+      });
+
+      test('and are not reported as over-promoted', () async {
+        result = await checkProject(
+          project: project,
+          dependencies: dependencies,
+        );
+        expect(result.exitCode, 0);
+        expect(
+          result.stderr,
+          isNot(
+            contains(
+              'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+            ),
+          ),
+        );
       });
     });
 
