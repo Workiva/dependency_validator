@@ -74,22 +74,40 @@ Future<void> checkWorkspace({
   required Map<String, Dependency> subpackageDeps,
   required List<d.Descriptor> workspace,
   required List<d.Descriptor> subpackage,
+  List<String> workspaceMembers = const ['subpackage'],
+  String subpackagePath = 'subpackage',
+  List<d.Descriptor> siblingPackageDirs = const [],
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
+  List<String>? capturedLogs,
 }) async {
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
     dependencies: workspaceDeps,
-    workspace: ['subpackage'],
+    workspace: workspaceMembers,
   );
   final subpackagePubspec = Pubspec(
     'subpackage',
     environment: requireDart36,
     dependencies: subpackageDeps,
     resolution: 'workspace',
+  );
+  final subpackageContents = [
+    ...subpackage,
+    d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+    if (subpackageConfig != null)
+      d.file(
+        'dart_dependency_validator.yaml',
+        jsonEncode(subpackageConfig.toJson()),
+      ),
+  ];
+  final subpackageDescriptor = _buildSubpackageDescriptor(
+    subpackagePath,
+    subpackageContents,
+    siblingPackageDirs,
   );
   final dir = d.dir('workspace', [
     ...workspace,
@@ -99,18 +117,37 @@ Future<void> checkWorkspace({
         'dart_dependency_validator.yaml',
         jsonEncode(workspaceConfig.toJson()),
       ),
-    d.dir('subpackage', [
-      ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
-      if (subpackageConfig != null)
-        d.file(
-          'dart_dependency_validator.yaml',
-          jsonEncode(subpackageConfig.toJson()),
-        ),
-    ]),
+    subpackageDescriptor,
   ]);
   await dir.create();
   Logger.root.level = logLevel;
-  final result = await checkPackage(root: '${d.sandbox}/workspace');
-  expect(result, matcher);
+  final logs = capturedLogs ?? <String>[];
+  final subscription = Logger.root.onRecord
+      .map((record) => record.message)
+      .listen(logs.add);
+  try {
+    final result = await checkPackage(root: '${d.sandbox}/workspace');
+    expect(result, matcher);
+  } finally {
+    await subscription.cancel();
+  }
+}
+
+d.Descriptor _buildSubpackageDescriptor(
+  String subpackagePath,
+  List<d.Descriptor> contents,
+  List<d.Descriptor> siblingDirs,
+) {
+  final parts = subpackagePath.split('/');
+  if (parts.length == 1) {
+    return d.dir(parts.single, contents);
+  }
+  return d.dir(parts.first, [
+    ...siblingDirs,
+    _buildSubpackageDescriptor(
+      parts.sublist(1).join('/'),
+      contents,
+      const [],
+    ),
+  ]);
 }

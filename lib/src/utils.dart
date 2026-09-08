@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:io/ansi.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
@@ -209,3 +210,57 @@ extension PubspecUtils on Pubspec {
 /// This function removes `./` paths and replaces all `\` with `/`.
 Glob makeGlob(String path) =>
     Glob(p.posix.normalize(path.replaceAll(r'\', '/')));
+
+/// Returns whether [path] contains glob metacharacters.
+bool looksLikeGlob(String path) => RegExp(r'[*?\[\]{}]').hasMatch(path);
+
+/// Resolves workspace member patterns to concrete package paths.
+///
+/// Glob patterns are expanded to directories beneath [root] that contain a
+/// `pubspec.yaml`, matching [dart pub workspace glob support][glob-docs]
+/// (see also workiva/dependency_validator#176). Non-glob entries are returned
+/// as-is. Directories whose path contains a hidden segment (e.g. `.dart_tool/`)
+/// are skipped, and symbolic links are not followed.
+///
+/// [glob-docs]: https://dart.dev/tools/pub/workspaces#glob-pattern-support
+List<String> resolveWorkspaceMembers(
+  String root,
+  Iterable<String> patterns,
+) {
+  final members = <String>{};
+  for (final pattern in patterns) {
+    final normalized = p.posix.normalize(pattern.replaceAll(r'\', '/'));
+    if (looksLikeGlob(normalized)) {
+      final Glob glob;
+      try {
+        glob = makeGlob(normalized);
+      } on FormatException {
+        logger.shout(yellow.wrap('invalid glob syntax: "$pattern"'));
+        continue;
+      }
+      var matchedAny = false;
+      for (final entity in glob.listSync(root: root, followLinks: false)) {
+        if (entity is! Directory) continue;
+        if (p
+            .split(entity.path)
+            .any((segment) => segment != '.' && segment.startsWith('.'))) {
+          continue;
+        }
+        final pubspec = File(p.join(entity.path, 'pubspec.yaml'));
+        if (!pubspec.existsSync()) continue;
+        matchedAny = true;
+        members.add(
+          p.posix.normalize(p.relative(entity.path, from: root)),
+        );
+      }
+      if (!matchedAny) {
+        logger.warning(
+          yellow.wrap('glob pattern "$pattern" matched no packages'),
+        );
+      }
+    } else {
+      members.add(normalized);
+    }
+  }
+  return members.toList()..sort();
+}

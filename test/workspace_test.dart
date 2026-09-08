@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -5,6 +7,7 @@ import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'utils.dart';
+import 'pubspec_to_json.dart';
 
 final usesHttp = [
   d.dir('lib', [d.file('main.dart', 'import "package:http/http.dart";')]),
@@ -147,6 +150,101 @@ void main() => group('Workspaces', () {
             subpackageDeps: {},
             matcher: isFalse,
           ),
+        );
+      });
+
+      group('glob workspace patterns', () {
+        test(
+          'resolves packages/* to subpackages with pubspec.yaml',
+          () async {
+            final logs = <String>[];
+            await checkWorkspace(
+              workspace: [],
+              workspaceDeps: {},
+              workspaceMembers: ['packages/*'],
+              subpackagePath: 'packages/subpackage',
+              subpackage: usesHttp,
+              subpackageDeps: dependsOnHttp,
+              logLevel: Level.INFO,
+              capturedLogs: logs,
+            );
+            expect(
+              logs,
+              contains('Validating dependencies for subpackage...'),
+            );
+          },
+        );
+
+        test(
+          'ignores directories without pubspec.yaml',
+          () async {
+            final logs = <String>[];
+            await checkWorkspace(
+              workspace: [],
+              workspaceDeps: {},
+              workspaceMembers: ['packages/*'],
+              subpackagePath: 'packages/subpackage',
+              siblingPackageDirs: [d.dir('no_pubspec', [])],
+              subpackage: usesHttp,
+              subpackageDeps: dependsOnHttp,
+              logLevel: Level.INFO,
+              capturedLogs: logs,
+            );
+            expect(
+              logs,
+              contains('Validating dependencies for subpackage...'),
+            );
+          },
+        );
+
+        test(
+          'fails when a glob-matched subpackage has an issue',
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['packages/*'],
+            subpackagePath: 'packages/subpackage',
+            subpackage: usesHttp,
+            subpackageDeps: {},
+            matcher: isFalse,
+          ),
+        );
+
+        test(
+          'literal packages/foo does not match packages/foo_extra',
+          () async {
+            final logs = <String>[];
+            final fooExtraPubspec = Pubspec(
+              'foo_extra',
+              environment: requireDart36,
+              dependencies: {},
+              resolution: 'workspace',
+            );
+            await checkWorkspace(
+              workspace: [],
+              workspaceDeps: {},
+              workspaceMembers: ['packages/foo'],
+              subpackagePath: 'packages/foo',
+              siblingPackageDirs: [
+                d.dir('foo_extra', [
+                  d.file('pubspec.yaml', jsonEncode(fooExtraPubspec.toJson())),
+                ]),
+              ],
+              subpackage: usesHttp,
+              subpackageDeps: dependsOnHttp,
+              logLevel: Level.INFO,
+              capturedLogs: logs,
+              matcher: isTrue,
+            );
+            expect(
+              logs,
+              contains('Validating dependencies for subpackage...'),
+            );
+            expect(
+              logs.where((l) => l.contains('Validating dependencies for foo_extra')),
+              isEmpty,
+            );
+          },
         );
       });
     });

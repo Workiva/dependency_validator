@@ -80,10 +80,16 @@ Future<bool> checkPackage({required String root}) async {
   );
 
   var subResult = true;
+  final workspaceMembers = pubspec.isWorkspaceRoot
+      ? resolveWorkspaceMembers(root, pubspec.workspace ?? [])
+      : const <String>[];
   if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
-    for (final package in pubspec.workspace ?? []) {
-      subResult &= await checkPackage(root: '$root/$package');
+    logger.fine(
+      'workspace members:\n${bulletItems(workspaceMembers)}\n',
+    );
+    for (final package in workspaceMembers) {
+      subResult &= await checkPackage(root: p.join(root, package));
       logger.info('');
     }
   }
@@ -157,8 +163,8 @@ Future<bool> checkPackage({required String root}) async {
   final publicDirGlobs = [for (final dir in publicDirs) makeGlob('$dir**')];
 
   final subpackageGlobs = [
-    for (final subpackage in pubspec.workspace ?? [])
-      makeGlob('$root/$subpackage**'),
+    for (final subpackage in workspaceMembers)
+      makeGlob('${p.posix.join(root, subpackage)}/**'),
   ];
 
   logger.fine('subpackage globs: $subpackageGlobs');

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 @TestOn('vm')
+import 'package:logging/logging.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -21,6 +22,131 @@ import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
 void main() {
+  group('resolveWorkspaceMembers', () {
+    test('returns literal paths unchanged', () async {
+      await d.dir('root', [
+        d.dir('pkg', [d.file('pubspec.yaml', 'name: pkg')]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['pkg']),
+        ['pkg'],
+      );
+    });
+
+    test('expands glob patterns to directories with pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [d.file('pubspec.yaml', 'name: foo')]),
+          d.dir('bar', [d.file('pubspec.yaml', 'name: bar')]),
+          d.dir('no_pubspec', []),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/bar', 'packages/foo'],
+      );
+    });
+
+    test('combines glob and literal workspace members', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [d.file('pubspec.yaml', 'name: foo')]),
+        ]),
+        d.dir('standalone', [d.file('pubspec.yaml', 'name: standalone')]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', [
+          'packages/*',
+          'standalone',
+        ]),
+        ['packages/foo', 'standalone'],
+      );
+    });
+
+    test('ignores hidden directories', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('visible', [d.file('pubspec.yaml', 'name: visible')]),
+          d.dir('.hidden', [d.file('pubspec.yaml', 'name: hidden')]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/visible'],
+      );
+    });
+
+    test('logs invalid glob syntax', () async {
+      await d.dir('root', []).create();
+      final logs = <String>[];
+      Logger.root.level = Level.SHOUT;
+      final subscription = Logger.root.onRecord
+          .map((record) => record.message)
+          .listen(logs.add);
+      addTearDown(subscription.cancel);
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/[z-a]']),
+        isEmpty,
+      );
+      expect(
+        logs,
+        contains(startsWith('invalid glob syntax: "packages/[z-a]"')),
+      );
+    });
+
+    test('warns when glob matches no packages', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('no_pubspec', []),
+        ]),
+      ]).create();
+      final logs = <String>[];
+      Logger.root.level = Level.WARNING;
+      final subscription = Logger.root.onRecord
+          .map((record) => record.message)
+          .listen(logs.add);
+      addTearDown(subscription.cancel);
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        isEmpty,
+      );
+      expect(
+        logs,
+        contains('glob pattern "packages/*" matched no packages'),
+      );
+    });
+  });
+
+  group('looksLikeGlob', () {
+    test('detects glob metacharacters', () {
+      expect(looksLikeGlob('packages/*'), isTrue);
+      expect(looksLikeGlob('packages/**'), isTrue);
+      expect(looksLikeGlob('pkg?'), isTrue);
+    });
+
+    test('returns false for literal paths', () {
+      expect(looksLikeGlob('packages/foo'), isFalse);
+      expect(looksLikeGlob('subpackage'), isFalse);
+      expect(looksLikeGlob('my-package'), isFalse);
+      expect(looksLikeGlob('pkg.v2'), isFalse);
+      expect(looksLikeGlob('pkg,extra'), isFalse);
+    });
+  });
+
+  group('makeGlob', () {
+    test('subpackage boundary does not match sibling directories', () {
+      final glob = makeGlob('/root/packages/foo/**');
+      expect(glob.matches('/root/packages/foo/lib/a.dart'), isTrue);
+      expect(glob.matches('/root/packages/foo_extra/lib/a.dart'), isFalse);
+    });
+  });
+
   group('getAnalysisOptionsIncludePackage', () {
     test('no analysis_options.yaml', () {
       expect(getAnalysisOptionsIncludePackage(path: d.sandbox), isNull);
