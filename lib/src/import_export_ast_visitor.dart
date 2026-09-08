@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:pub_semver/pub_semver.dart';
 
 /// Package names referenced in a Dart file via import/export directives and
 /// doc imports.
@@ -26,14 +24,7 @@ class DartPackageUsage {
 DartPackageUsage getDartPackageUsage(File file) {
   ParseStringResult parsed;
   try {
-    parsed = parseString(
-      content: file.readAsStringSync(),
-      path: file.path,
-      featureSet: FeatureSet.fromEnableFlags2(
-        sdkLanguageVersion: Version.parse('3.8.0'),
-        flags: const [],
-      ),
-    );
+    parsed = parseString(content: file.readAsStringSync(), path: file.path);
   } on ArgumentError catch (e) {
     print('Error parsing: ${file.path}');
     print(e.message);
