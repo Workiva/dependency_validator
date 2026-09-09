@@ -1,5 +1,6 @@
 # Unreleased
 <!-- Add unreleased changes here -->
+- Ignore nested packages when validating surrounding packages (#173).
 
 # 5.0.5
 

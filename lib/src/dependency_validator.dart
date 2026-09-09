@@ -105,16 +105,31 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(devDeps)}\n',
   );
 
+  final nestedPackages = listNestedPackages(root);
+  final nestedPackageGlobs = [
+    for (final nested in nestedPackages)
+      makeGlob('${p.normalize(nested.path)}/**'),
+    for (final subpackage in pubspec.workspace ?? [])
+      makeGlob('${p.normalize('$root/$subpackage')}/**'),
+  ];
+  logger.fine(
+    'nested package globs:\n'
+    '${bulletItems(nestedPackageGlobs.map((g) => g.pattern))}\n',
+  );
+
   final publicDirs = ['$root/bin/', '$root/lib/'];
   logger.fine("Excluding: $excludes");
   final publicDartFiles = [
-    for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listDartFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
   final publicScssFiles = [
-    for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listScssFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
   final publicLessFiles = [
-    for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listLessFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
 
   logger
@@ -156,27 +171,20 @@ Future<bool> checkPackage({required String root}) async {
 
   final publicDirGlobs = [for (final dir in publicDirs) makeGlob('$dir**')];
 
-  final subpackageGlobs = [
-    for (final subpackage in pubspec.workspace ?? [])
-      makeGlob('$root/$subpackage**'),
-  ];
-
-  logger.fine('subpackage globs: $subpackageGlobs');
-
   final nonPublicDartFiles = listDartFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
   final nonPublicScssFiles = listScssFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
   final nonPublicLessFiles = listLessFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
 
   logger
