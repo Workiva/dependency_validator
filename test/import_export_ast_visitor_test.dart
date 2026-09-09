@@ -11,7 +11,8 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 void main() {
   group('featureSetForSdkConstraint', () {
     test('bounded constraint ^3.6.0 uses language version 3.6', () {
-      final constraint = VersionConstraint.compatibleWith(Version.parse('3.6.0'));
+      final constraint =
+          VersionConstraint.compatibleWith(Version.parse('3.6.0'));
       final featureSet = featureSetForSdkConstraint(constraint);
 
       expectSameLanguageVersion(featureSet, 3, 6);
