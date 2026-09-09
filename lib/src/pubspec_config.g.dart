@@ -7,20 +7,15 @@ part of 'pubspec_config.dart';
 // **************************************************************************
 
 PubspecDepValidatorConfig _$PubspecDepValidatorConfigFromJson(Map json) =>
-    $checkedCreate(
-      'PubspecDepValidatorConfig',
-      json,
-      ($checkedConvert) {
-        final val = PubspecDepValidatorConfig(
-          dependencyValidator: $checkedConvert(
-            'dependency_validator',
-            (v) => v == null ? null : DepValidatorConfig.fromJson(v as Map),
-          ),
-        );
-        return val;
-      },
-      fieldKeyMap: const {'dependencyValidator': 'dependency_validator'},
-    );
+    $checkedCreate('PubspecDepValidatorConfig', json, ($checkedConvert) {
+      final val = PubspecDepValidatorConfig(
+        dependencyValidator: $checkedConvert(
+          'dependency_validator',
+          (v) => v == null ? null : DepValidatorConfig.fromJson(v as Map),
+        ),
+      );
+      return val;
+    }, fieldKeyMap: const {'dependencyValidator': 'dependency_validator'});
 
 DepValidatorConfig _$DepValidatorConfigFromJson(Map json) =>
     $checkedCreate('DepValidatorConfig', json, ($checkedConvert) {

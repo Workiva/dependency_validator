@@ -483,16 +483,17 @@ include: package:pedantic/analysis_options.1.8.0.yaml
           ]),
         ]),
         d.dir('.dart_tool', [
-          d.dir('hidden_sub', [
-            d.file('pubspec.yaml', 'name: hidden_sub'),
-          ]),
+          d.dir('hidden_sub', [d.file('pubspec.yaml', 'name: hidden_sub')]),
         ]),
       ]).create();
 
-      final nested = listNestedPackages('${d.sandbox}/complex_pkg')
-          .map((dir) => p.relative(dir.path, from: '${d.sandbox}/complex_pkg'))
-          .toList()
-        ..sort();
+      final nested =
+          listNestedPackages('${d.sandbox}/complex_pkg')
+              .map(
+                (dir) => p.relative(dir.path, from: '${d.sandbox}/complex_pkg'),
+              )
+              .toList()
+            ..sort();
 
       expect(nested, [
         p.join('example', 'host_name'),
