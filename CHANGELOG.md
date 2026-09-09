@@ -1,5 +1,6 @@
 # Unreleased
 <!-- Add unreleased changes here -->
+- Ignore nested packages when validating surrounding packages (#173).
 
 - Parse files with the language version the package declares instead of the
   newest one the analyzer knows about, which may be unreleased and reject
