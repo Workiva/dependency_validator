@@ -94,6 +94,27 @@ Iterable<File> listFilesWithExtensionIn(
       .where((file) => excludes.every((glob) => !glob.matches(file.path)));
 }
 
+/// Returns an iterable of all directories containing a `pubspec.yaml` file
+/// within [dirPath], excluding [dirPath] itself.
+///
+/// This also excludes directories inside hidden directories, like `.dart_tool/`.
+Iterable<Directory> listNestedPackages(String dirPath) {
+  final rootDir = Directory(dirPath);
+  if (!rootDir.existsSync()) return [];
+
+  final rootCanonicalPath = p.canonicalize(rootDir.path);
+
+  return rootDir
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where(
+        (file) => !p.split(file.path).any((d) => d != '.' && d.startsWith('.')),
+      )
+      .where((file) => p.basename(file.path) == 'pubspec.yaml')
+      .map((file) => file.parent)
+      .where((dir) => p.canonicalize(dir.path) != rootCanonicalPath);
+}
+
 /// Logs the given [message] at [level] and lists all of the given [dependencies].
 void log(Level level, String message, Iterable<String> dependencies) {
   final sortedDependencies = dependencies.toList()..sort();

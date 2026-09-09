@@ -13,6 +13,7 @@
 // limitations under the License.
 
 @TestOn('vm')
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -448,6 +449,55 @@ include: package:pedantic/analysis_options.1.8.0.yaml
           DependencyPinEvaluation.notAPin,
         );
       });
+    });
+  });
+
+  group('listNestedPackages', () {
+    test('returns empty when no directory exists', () {
+      expect(listNestedPackages('${d.sandbox}/non_existent'), isEmpty);
+    });
+
+    test('returns empty when only root pubspec exists', () async {
+      await d.dir('pkg', [
+        d.file('pubspec.yaml', 'name: pkg'),
+        d.dir('lib', [d.file('pkg.dart', 'void main() {}')]),
+      ]).create();
+
+      expect(listNestedPackages('${d.sandbox}/pkg'), isEmpty);
+    });
+
+    test('discovers nested packages in subdirectories', () async {
+      await d.dir('complex_pkg', [
+        d.file('pubspec.yaml', 'name: complex_pkg'),
+        d.dir('lib', [d.file('main.dart', 'void main() {}')]),
+        d.dir('example', [
+          d.dir('host_name', [
+            d.file('pubspec.yaml', 'name: host_name'),
+            d.dir('tool', [d.file('ffigen.dart', 'void main() {}')]),
+          ]),
+        ]),
+        d.dir('pkgs', [
+          d.dir('nested_sub', [
+            d.file('pubspec.yaml', 'name: nested_sub'),
+            d.dir('lib', [d.file('nested.dart', 'void main() {}')]),
+          ]),
+        ]),
+        d.dir('.dart_tool', [
+          d.dir('hidden_sub', [
+            d.file('pubspec.yaml', 'name: hidden_sub'),
+          ]),
+        ]),
+      ]).create();
+
+      final nested = listNestedPackages('${d.sandbox}/complex_pkg')
+          .map((dir) => p.relative(dir.path, from: '${d.sandbox}/complex_pkg'))
+          .toList()
+        ..sort();
+
+      expect(nested, [
+        p.join('example', 'host_name'),
+        p.join('pkgs', 'nested_sub'),
+      ]);
     });
   });
 }
