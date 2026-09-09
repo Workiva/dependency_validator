@@ -75,6 +75,63 @@ class Foo {}
       },
     );
 
+    test('ignores @docImport text in non-doc comments', () async {
+      await d.dir('project', [
+        d.file('main.dart', '''
+// @docImport 'package:meta/meta.dart';
+/* @docImport 'package:yaml/yaml.dart'; */
+// /// @docImport 'package:logging/logging.dart';
+class Foo {}
+'''),
+      ]).create();
+
+      final usage = getDartPackageUsage(File('${d.sandbox}/project/main.dart'));
+
+      expect(usage.directivePackageNames, isEmpty);
+      expect(usage.docImportPackageNames, isEmpty);
+    });
+
+    test(
+      'ignores @docImport inside fenced code blocks in doc comments',
+      () async {
+        await d.dir('project', [
+          d.file('main.dart', '''
+/// Example:
+/// ```dart
+/// /// @docImport 'package:meta/meta.dart';
+/// ```
+library;
+
+/** Another example:
+ * ```
+ * /// @docImport 'package:yaml/yaml.dart';
+ * ```
+ */
+class Foo {}
+'''),
+        ]).create();
+
+        final usage = getDartPackageUsage(
+          File('${d.sandbox}/project/main.dart'),
+        );
+
+        expect(usage.docImportPackageNames, isEmpty);
+      },
+    );
+
+    test('ignores @docImport mentioned mid-line in a doc comment', () async {
+      await d.dir('project', [
+        d.file('main.dart', '''
+/// Use `@docImport 'package:meta/meta.dart';` to reference [Deprecated].
+library;
+'''),
+      ]).create();
+
+      final usage = getDartPackageUsage(File('${d.sandbox}/project/main.dart'));
+
+      expect(usage.docImportPackageNames, isEmpty);
+    });
+
     test('collects both directives and doc imports', () async {
       await d.dir('project', [
         d.file('main.dart', '''

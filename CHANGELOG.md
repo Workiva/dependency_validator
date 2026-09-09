@@ -1,14 +1,16 @@
-# 6.0.0
+# Unreleased
+<!-- Add unreleased changes here -->
 
 - Added support for Dart `@docImport` documentation imports when scanning
   package usage.
 - Packages referenced only via `@docImport` in `lib/` must still be declared
   in `pubspec.yaml` as either a `dependency` or `dev_dependency`; when
   declared, they are accepted in either section and are not flagged as
-  over-promoted or unused.
+  over-promoted or unused. If such a package also has real imports outside
+  `lib/`, the normal over-promotion check still applies.
 - Removed the internal `getDartDirectivePackageNames` API in favor of
   `getDartPackageUsage`.
-- Requires Dart 3.8 or above.
+- **Breaking:** requires Dart 3.8 or above.
 
 # 5.0.6
 

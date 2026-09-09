@@ -44,28 +44,60 @@ DartPackageUsage getDartPackageUsage(File file) {
   );
 }
 
+/// Collects `@docImport` package names from comment tokens that are not
+/// attached to any AST node (e.g. a file containing only a doc comment).
+///
+/// Mirrors the analyzer's own doc comment parsing as closely as is practical:
+/// only `///` and `/** */` doc comments are considered, `@docImport` must start
+/// a line, and fenced code blocks are skipped.
 void _collectDocImportsFromPrecedingComments(
   Token? commentToken,
   Set<String> docImportPackageNames,
 ) {
+  var inFencedCodeBlock = false;
   for (var token = commentToken; token != null; token = token.next) {
     if (token is! CommentToken) continue;
-    _collectDocImportsFromCommentLexeme(token.lexeme, docImportPackageNames);
+
+    final lexeme = token.lexeme;
+    final isBlockDocComment = lexeme.startsWith('/**');
+    if (!isBlockDocComment && !lexeme.startsWith('///')) continue;
+
+    // A block doc comment is self-contained; don't carry fence state into it.
+    if (isBlockDocComment) inFencedCodeBlock = false;
+
+    for (final line in lexeme.split('\n')) {
+      final content = _stripDocCommentDecoration(line);
+      if (content.startsWith('```')) {
+        inFencedCodeBlock = !inFencedCodeBlock;
+        continue;
+      }
+      if (inFencedCodeBlock) continue;
+      _collectDocImportFromLine(content, docImportPackageNames);
+    }
   }
 }
 
-final _docImportUriPattern = RegExp(
-  r'''@docImport\s+(['"])(.+?)\1''',
-  multiLine: true,
-);
-
-void _collectDocImportsFromCommentLexeme(
-  String lexeme,
-  Set<String> docImportPackageNames,
-) {
-  for (final match in _docImportUriPattern.allMatches(lexeme)) {
-    _addPackageName(match.group(2), docImportPackageNames);
+/// Strips the leading `///`, `/**`, or ` * ` and trailing `*/` from a single
+/// line of a doc comment lexeme.
+String _stripDocCommentDecoration(String line) {
+  var content = line.trim();
+  if (content.startsWith('///') || content.startsWith('/**')) {
+    content = content.substring(3);
+  } else if (content.startsWith('*')) {
+    content = content.substring(1);
   }
+  if (content.endsWith('*/')) {
+    content = content.substring(0, content.length - 2);
+  }
+  return content.trim();
+}
+
+final _docImportUriPattern = RegExp(r'''^@docImport\s+(['"])(.+?)\1''');
+
+void _collectDocImportFromLine(String line, Set<String> docImportPackageNames) {
+  final match = _docImportUriPattern.firstMatch(line);
+  if (match == null) return;
+  _addPackageName(match.group(2), docImportPackageNames);
 }
 
 void _addPackageName(String? uri, Set<String> packageNames) {

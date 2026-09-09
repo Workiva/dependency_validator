@@ -197,21 +197,20 @@ Future<bool> checkPackage({required String root}) async {
     );
 
   // Read each file outside lib/ and parse the package names from every
-  // import and export directive.
+  // import, export directive, and doc import.
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
+  final packagesUsedViaDocImportOutsidePublicDirs = <String>{};
   for (final file in nonPublicDartFiles) {
     final usage = getDartPackageUsage(file);
     packagesUsedOutsidePublicDirs.addAll(usage.directivePackageNames);
-    packagesUsedOutsidePublicDirs.addAll(usage.docImportPackageNames);
+    packagesUsedViaDocImportOutsidePublicDirs.addAll(
+      usage.docImportPackageNames,
+    );
   }
-
-  // Doc imports in lib/ are not runtime dependencies, so treat them like usage
-  // outside lib/ for dependency promotion checks.
-  packagesUsedOutsidePublicDirs.addAll(packagesUsedViaDocImportInPublicFiles);
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
     for (final match in matches) {
@@ -224,6 +223,19 @@ Future<bool> checkPackage({required String root}) async {
       packagesUsedOutsidePublicDirs.add(match.group(1)!);
     }
   }
+
+  // Packages that are doc-imported in lib/ and have no real (non-doc) usage
+  // anywhere outside lib/. Doc imports are not runtime dependencies, so these
+  // are valid in either `dependencies` or `dev_dependencies`. A package with
+  // real usage outside lib/ is still subject to the normal over-promotion check.
+  final packagesUsedOnlyViaDocImport = packagesUsedViaDocImportInPublicFiles
+      .difference(packagesUsedOutsidePublicDirs);
+
+  // Doc imports are not runtime dependencies, so treat them like usage outside
+  // lib/ for the missing/unused dependency checks.
+  packagesUsedOutsidePublicDirs
+    ..addAll(packagesUsedViaDocImportOutsidePublicDirs)
+    ..addAll(packagesUsedViaDocImportInPublicFiles);
 
   logger.fine(
     'packages used outside public dirs:\n'
@@ -281,9 +293,9 @@ Future<bool> checkPackage({required String root}) async {
             .difference(packagesUsedInPublicFiles)
             // Intersect with deps that are used outside lib/ (excludes unused deps)
             .intersection(packagesUsedOutsidePublicDirs))
-        // Doc imports in lib/ are not runtime deps; accept either dependencies or
-        // dev_dependencies without flagging over-promotion.
-        ..removeAll(packagesUsedViaDocImportInPublicFiles)
+        // Doc-import-only packages are accepted in either dependencies or
+        // dev_dependencies.
+        ..removeAll(packagesUsedOnlyViaDocImport)
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
