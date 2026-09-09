@@ -227,8 +227,12 @@ String _normalizeWorkspaceMemberPath(String path) =>
 /// containing a pubspec.yaml file, matching pub's workspace resolution
 /// behavior.
 ///
+/// A glob pattern that matches no package directories logs a warning, since
+/// pub itself rejects such an entry and it usually indicates a typo.
+///
 /// Returns a sorted, deduplicated list with posix-normalized path separators.
-/// Returns `null` if any workspace path has invalid glob syntax.
+/// Returns `null` if any workspace path has invalid glob syntax or cannot be
+/// listed.
 List<String>? resolveWorkspaceMembers(
   String root,
   Iterable<String> workspacePaths,
@@ -236,22 +240,45 @@ List<String>? resolveWorkspaceMembers(
   final members = <String>{};
   for (final workspacePath in workspacePaths) {
     if (hasGlobWildcards(workspacePath)) {
+      final Glob glob;
       try {
-        final glob = makeGlob(workspacePath);
-        for (final entity in glob.listSync(root: root)) {
-          if (entity is! Directory) continue;
-          if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) {
-            continue;
-          }
-          members.add(
-            _normalizeWorkspaceMemberPath(
-              p.relative(entity.path, from: root),
-            ),
-          );
-        }
+        glob = makeGlob(workspacePath);
       } on FormatException {
         logger.shout(yellow.wrap('invalid glob syntax: "$workspacePath"'));
         return null;
+      }
+
+      final List<FileSystemEntity> matches;
+      try {
+        matches = glob.listSync(root: root);
+      } on FileSystemException catch (e) {
+        logger.shout(
+          yellow.wrap(
+            'failed to list workspace glob "$workspacePath": ${e.message}'
+            '${e.path != null ? ' (${e.path})' : ''}',
+          ),
+        );
+        return null;
+      }
+
+      var matchedPackage = false;
+      for (final entity in matches) {
+        if (entity is! Directory) continue;
+        if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) {
+          continue;
+        }
+        matchedPackage = true;
+        members.add(
+          _normalizeWorkspaceMemberPath(p.relative(entity.path, from: root)),
+        );
+      }
+      if (!matchedPackage) {
+        logger.warning(
+          yellow.wrap(
+            'No workspace packages matching "$workspacePath". '
+            'Check the pattern for typos.',
+          ),
+        );
       }
     } else {
       members.add(_normalizeWorkspaceMemberPath(workspacePath));

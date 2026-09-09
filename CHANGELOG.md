@@ -2,7 +2,10 @@
 
 - Added support for glob patterns in `workspace:` entries (for example
   `packages/*`). Only directories containing a `pubspec.yaml` are treated as
-  workspace members. (ref #176)
+  workspace members. A glob that matches no packages logs a warning. (ref #176)
+- Workspace members are now validated in sorted order (deduplicated across
+  overlapping entries) rather than in the order they are listed in `workspace:`.
+  This only affects the order of log output.
 
 # 5.0.6
 

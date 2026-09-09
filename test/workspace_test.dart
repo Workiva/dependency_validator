@@ -151,19 +151,25 @@ void main() => group('Workspaces', () {
       });
 
       group('glob workspace patterns', () {
-        test(
-          'resolves packages/* to workspace members',
-          () => checkWorkspace(
-            workspace: [
-              d.dir('packages', [
-                d.dir('not_a_package', [
-                  d.file('README.md', ''),
-                ]),
-              ]),
-            ],
+        /// A `packages/` directory containing a non-package sibling that a
+        /// `packages/*` glob must skip.
+        final packagesDirWithNonPackage = [
+          d.dir('packages', [
+            d.dir('not_a_package', [
+              d.file('README.md', ''),
+            ]),
+          ]),
+        ];
+
+        /// Returns how many times [name] was validated according to [logs].
+        int timesValidated(List<String> logs, String name) => logs
+            .where((m) => m == 'Validating dependencies for $name...')
+            .length;
+
+        test('resolves packages/* to workspace members', () async {
+          final logs = await checkWorkspace(
+            workspace: packagesDirWithNonPackage,
             workspaceDeps: {},
-            subpackage: [],
-            subpackageDeps: {},
             workspaceMembers: ['packages/*'],
             subpackages: [
               (
@@ -179,22 +185,19 @@ void main() => group('Workspaces', () {
                 config: null,
               ),
             ],
-          ),
-        );
+            logLevel: Level.INFO,
+          );
 
-        test(
-          'validates each glob-matched subpackage',
-          () => checkWorkspace(
-            workspace: [
-              d.dir('packages', [
-                d.dir('not_a_package', [
-                  d.file('README.md', ''),
-                ]),
-              ]),
-            ],
+          expect(timesValidated(logs, 'pkg_a'), 1);
+          expect(timesValidated(logs, 'pkg_b'), 1);
+          expect(timesValidated(logs, 'workspace'), 1);
+          expect(logs, isNot(contains(contains('not_a_package'))));
+        });
+
+        test('validates each glob-matched subpackage', () async {
+          final logs = await checkWorkspace(
+            workspace: packagesDirWithNonPackage,
             workspaceDeps: {},
-            subpackage: [],
-            subpackageDeps: {},
             workspaceMembers: ['packages/*'],
             subpackages: [
               (
@@ -210,17 +213,20 @@ void main() => group('Workspaces', () {
                 config: null,
               ),
             ],
+            logLevel: Level.INFO,
             matcher: isFalse,
-          ),
-        );
+          );
 
-        test(
-          'supports mixed literal and glob workspace entries',
-          () => checkWorkspace(
+          expect(timesValidated(logs, 'pkg_a'), 1);
+          expect(timesValidated(logs, 'pkg_b'), 1);
+          // The missing dependency is reported for pkg_b, not pkg_a.
+          expect(logs, contains(contains('not dependencies')));
+        });
+
+        test('supports mixed literal and glob workspace entries', () async {
+          final logs = await checkWorkspace(
             workspace: [],
             workspaceDeps: {},
-            subpackage: [],
-            subpackageDeps: {},
             workspaceMembers: ['packages/foo', 'packages/*'],
             subpackages: [
               (
@@ -236,7 +242,40 @@ void main() => group('Workspaces', () {
                 config: null,
               ),
             ],
-          ),
-        );
+            logLevel: Level.INFO,
+          );
+
+          // `packages/foo` is matched by both entries but validated once.
+          expect(timesValidated(logs, 'foo'), 1);
+          expect(timesValidated(logs, 'bar'), 1);
+        });
+
+        test('warns when a glob matches no packages', () async {
+          final logs = await checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['pacakges/*'],
+            subpackages: [],
+            logLevel: Level.WARNING,
+          );
+
+          expect(
+            logs,
+            contains(contains('No workspace packages matching "pacakges/*"')),
+          );
+        });
+
+        test('fails on invalid glob syntax', () async {
+          final logs = await checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['packages/[a'],
+            subpackages: [],
+            logLevel: Level.WARNING,
+            matcher: isFalse,
+          );
+
+          expect(logs, contains(contains('invalid glob syntax')));
+        });
       });
     });

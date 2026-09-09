@@ -77,25 +77,43 @@ typedef WorkspaceSubpackage = ({
   DepValidatorConfig? config,
 });
 
-Future<void> checkWorkspace({
+/// Creates a workspace in the test sandbox and runs [checkPackage] on it.
+///
+/// By default the workspace has a single sub-package at `subpackage/`
+/// described by [subpackage], [subpackageDeps], and [subpackageConfig]. Pass
+/// [subpackages] instead to create several sub-packages at arbitrary paths;
+/// the single-sub-package parameters must then be omitted.
+///
+/// [workspaceMembers] overrides the root pubspec's `workspace:` list (for
+/// example to use glob patterns); it defaults to the sub-package paths.
+///
+/// Returns the log messages emitted at or above [logLevel] while validating.
+Future<List<String>> checkWorkspace({
   required Map<String, Dependency> workspaceDeps,
-  required Map<String, Dependency> subpackageDeps,
   required List<d.Descriptor> workspace,
-  required List<d.Descriptor> subpackage,
+  Map<String, Dependency>? subpackageDeps,
+  List<d.Descriptor>? subpackage,
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
   List<String>? workspaceMembers,
-  String subpackagePath = 'subpackage',
   List<WorkspaceSubpackage>? subpackages,
 }) async {
+  if (subpackages != null) {
+    expect(
+      subpackage ?? subpackageDeps ?? subpackageConfig,
+      isNull,
+      reason: 'Pass either `subpackages` or the single-subpackage parameters '
+          '(`subpackage`, `subpackageDeps`, `subpackageConfig`), not both.',
+    );
+  }
   final resolvedSubpackages = subpackages ??
       [
         (
-          path: subpackagePath,
-          contents: subpackage,
-          deps: subpackageDeps,
+          path: 'subpackage',
+          contents: subpackage ?? const [],
+          deps: subpackageDeps ?? const {},
           config: subpackageConfig,
         ),
       ];
@@ -137,6 +155,14 @@ Future<void> checkWorkspace({
   ]);
   await dir.create();
   Logger.root.level = logLevel;
-  final result = await checkPackage(root: '${d.sandbox}/workspace');
-  expect(result, matcher);
+  final messages = <String>[];
+  final subscription =
+      Logger.root.onRecord.listen((record) => messages.add(record.message));
+  try {
+    final result = await checkPackage(root: '${d.sandbox}/workspace');
+    expect(result, matcher);
+  } finally {
+    await subscription.cancel();
+  }
+  return messages;
 }

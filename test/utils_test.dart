@@ -13,6 +13,10 @@
 // limitations under the License.
 
 @TestOn('vm')
+import 'dart:async';
+import 'dart:io';
+
+import 'package:logging/logging.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
@@ -546,6 +550,88 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       expect(
         resolveWorkspaceMembers('${d.sandbox}/root', ['packages/[a']),
         isNull,
+      );
+    });
+
+    group('logging', () {
+      late List<LogRecord> records;
+      late StreamSubscription<LogRecord> subscription;
+
+      setUp(() {
+        records = [];
+        Logger.root.level = Level.ALL;
+        subscription = Logger.root.onRecord.listen(records.add);
+      });
+
+      tearDown(() => subscription.cancel());
+
+      test('warns when a glob matches no package directories', () async {
+        await d.dir('root', [
+          d.dir('packages', [
+            d.dir('not_a_package', [d.file('README.md', '')]),
+          ]),
+        ]).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+          isEmpty,
+        );
+        expect(
+          records.where((r) => r.level == Level.WARNING).map((r) => r.message),
+          [contains('No workspace packages matching "packages/*"')],
+        );
+      });
+
+      test('warns when a glob matches nothing at all', () async {
+        await d.dir('root', []).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['missing/*']),
+          isEmpty,
+        );
+        expect(
+          records.map((r) => r.message),
+          [contains('No workspace packages matching "missing/*"')],
+        );
+      });
+
+      test('does not warn when a glob matches a package', () async {
+        await d.dir('root', [
+          d.dir('packages', [
+            d.dir('pkg_a', [d.file('pubspec.yaml', 'name: pkg_a\n')]),
+          ]),
+        ]).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+          ['packages/pkg_a'],
+        );
+        expect(records, isEmpty);
+      });
+
+      test(
+        'returns null and shouts when a glob directory cannot be listed',
+        () async {
+          await d.dir('root', [
+            d.dir('packages', [
+              d.dir('pkg_a', [d.file('pubspec.yaml', 'name: pkg_a\n')]),
+            ]),
+          ]).create();
+          final packagesDir = Directory('${d.sandbox}/root/packages');
+          await Process.run('chmod', ['000', packagesDir.path]);
+          addTearDown(() => Process.run('chmod', ['755', packagesDir.path]));
+
+          expect(
+            resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+            isNull,
+          );
+          expect(
+            records.where((r) => r.level == Level.SHOUT).map((r) => r.message),
+            [contains('failed to list workspace glob "packages/*"')],
+          );
+        },
+        // Relies on POSIX permissions being enforced for the current user.
+        skip: Platform.isWindows || Platform.environment['USER'] == 'root',
       );
     });
   });

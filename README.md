@@ -63,7 +63,12 @@ workspace:
 
 Glob patterns such as `packages/*` are supported. Only directories that contain
 a `pubspec.yaml` are treated as workspace members; other directories matched by
-the glob are ignored.
+the glob are ignored. A glob that matches no packages logs a warning.
+
+> **Note:** `dependency_validator` will expand glob entries regardless of your
+> SDK constraint, but pub itself only supports glob patterns in `workspace:` when
+> the root package's SDK constraint is `^3.11.0` or higher. On older SDKs, pub
+> treats the entry as a literal path and `pub get` will fail.
 
 and your sub-packages should have `resolution: workspace` in their `pubspec.yaml`s. For more information, see the linked documentation.
 
