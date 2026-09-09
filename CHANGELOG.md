@@ -1,6 +1,10 @@
 # Unreleased
 <!-- Add unreleased changes here -->
 
+- Parse files with the language version the package declares instead of the
+  newest one the analyzer knows about, which may be unreleased and reject
+  valid code
+
 # 5.0.6
 
 - Allow up to analyzer 13
