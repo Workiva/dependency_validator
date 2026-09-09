@@ -251,12 +251,48 @@ void main() {
       );
     });
 
+    group('fails when hook link scripts use dev_dependencies', () {
+      final devDependencies = {"yaml": hostedAny};
+
+      test('', () async {
+        result = await checkProject(
+          devDependencies: devDependencies,
+          project: [
+            d.dir('hook', [
+              d.file('link.dart', 'import "package:yaml/yaml.dart";'),
+            ]),
+          ],
+        );
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are used in lib/, bin/, or hook/ and should be promoted to actual dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
+    });
+
     test('passes when hook scripts use regular dependencies', () async {
       result = await checkProject(
         dependencies: {"yaml": hostedAny},
         project: [
           d.dir('hook', [
             d.file('build.dart', 'import "package:yaml/yaml.dart";'),
+          ]),
+        ],
+      );
+      expect(result.exitCode, 0);
+      expect(result.stdout, contains('No dependency issues found!'));
+    });
+
+    test('passes when hook link scripts use regular dependencies', () async {
+      result = await checkProject(
+        dependencies: {"yaml": hostedAny},
+        project: [
+          d.dir('hook', [
+            d.file('link.dart', 'import "package:yaml/yaml.dart";'),
           ]),
         ],
       );
@@ -287,22 +323,49 @@ void main() {
       },
     );
 
-    test('fails when hook scripts use undeclared dependencies', () async {
+    group('fails when hook scripts use undeclared dependencies', () {
       final project = [
         d.dir('hook', [
           d.file('build.dart', 'import "package:yaml/yaml.dart";'),
         ]),
       ];
+      final excludeHook = DepValidatorConfig(exclude: ['hook/**']);
 
-      result = await checkProject(project: project);
-      expect(result.exitCode, 1);
-      expect(
-        result.stderr,
-        contains(
-          'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
-        ),
+      test('', () async {
+        result = await checkProject(project: project);
+        expect(result.exitCode, 1);
+        expect(
+          result.stderr,
+          contains(
+            'These packages are used in lib/, bin/, or hook/ but are not dependencies:',
+          ),
+        );
+        expect(result.stderr, contains('yaml'));
+      });
+
+      test('except when hook is excluded', () async {
+        result = await checkProject(project: project, config: excludeHook);
+        expect(result.exitCode, 0);
+        expect(result.stderr, isEmpty);
+      });
+
+      test(
+        'except when hook is excluded (deprecated pubspec method)',
+        () async {
+          result = await checkProject(
+            project: project,
+            config: excludeHook,
+            embedConfigInPubspec: true,
+          );
+          expect(result.exitCode, 0);
+          expect(
+            result.stderr,
+            contains(
+              'Configuring dependency_validator in pubspec.yaml is deprecated',
+            ),
+          );
+        },
       );
-      expect(result.stderr, contains('yaml'));
     });
 
     group('fails when there are unused packages', () {

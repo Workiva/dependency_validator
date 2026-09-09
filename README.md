@@ -26,7 +26,7 @@ used even if it isn't imported.
 - Over-promoted: When a dependency is only used outside `lib/`, `bin/`, and `hook/` but declared as a dependency.
 - Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
 
-Hook scripts in `hook/` run at build/link time (for example, `dart build` or `flutter build`), so their imports must be regular `dependencies`. Use `ignore` or `exclude` in `dart_dependency_validator.yaml` if a hook-only dependency should not be validated.
+Hook scripts in `hook/` (for example, `build.dart` and `link.dart`) run at build/link time (`dart build`, `flutter build`), so their imports must be regular `dependencies`. To opt out, use `ignore` to suppress warnings for a specific package name (for example, a dev_dependency used only in hooks), or `exclude: ["hook/**"]` to skip scanning the hook directory entirely (which also skips missing-dependency checks in hook files).
 
 ## Configuration
 
