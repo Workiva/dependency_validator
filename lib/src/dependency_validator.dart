@@ -119,7 +119,7 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(nestedPackageGlobs.map((g) => g.pattern))}\n',
   );
 
-  final publicDirs = ['$root/bin/', '$root/lib/'];
+  final publicDirs = [for (final dir in publicDirNames) '$root/$dir/'];
   logger.fine("Excluding: $excludes");
   final publicDartFiles = [
     for (final dir in publicDirs)
@@ -250,7 +250,7 @@ Future<bool> checkPackage({required String root}) async {
   if (missingDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used in lib/ but are not dependencies:',
+      'These packages are used in ${publicDirsDescription()} but are not dependencies:',
       missingDependencies,
     );
     result = false;
@@ -272,7 +272,7 @@ Future<bool> checkPackage({required String root}) async {
   if (missingDevDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used outside lib/ but are not dev_dependencies:',
+      'These packages are used outside ${publicDirsDescription(conjunction: 'and')} but are not dev_dependencies:',
       missingDevDependencies,
     );
     result = false;
@@ -292,7 +292,7 @@ Future<bool> checkPackage({required String root}) async {
   if (overPromotedDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are only used outside lib/ and should be downgraded to dev_dependencies:',
+      'These packages are only used outside ${publicDirsDescription(conjunction: 'and')} and should be downgraded to dev_dependencies:',
       overPromotedDependencies,
     );
     result = false;
@@ -308,7 +308,7 @@ Future<bool> checkPackage({required String root}) async {
   if (underPromotedDependencies.isNotEmpty) {
     log(
       Level.WARNING,
-      'These packages are used in lib/ and should be promoted to actual dependencies:',
+      'These packages are used in ${publicDirsDescription()} and should be promoted to actual dependencies:',
       underPromotedDependencies,
     );
     result = false;
@@ -390,7 +390,7 @@ Future<bool> checkPackage({required String root}) async {
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,
-      'The following packages contain executables, and are only used outside of lib/. These should be downgraded to dev_dependencies:',
+      'The following packages contain executables, and are only used outside of ${publicDirsDescription(conjunction: 'and')}. These should be downgraded to dev_dependencies:',
       unusedDependencies,
       nonDevPackagesWithExecutables,
     );
