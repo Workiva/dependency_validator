@@ -58,7 +58,7 @@ Future<bool> checkPackage({required String root}) async {
       .map((s) {
         try {
           return makeGlob("$root/$s");
-        } catch (_, __) {
+        } catch (_) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
         }
@@ -148,13 +148,14 @@ Future<bool> checkPackage({required String root}) async {
       '${bulletItems(publicLessFiles.map((f) => f.path))}\n',
     );
 
-  // Read each file in lib/ and parse the package names from every import and
-  // export directive.
+  // Read each file in lib/ and parse the package names from every import,
+  // export directive, and doc import.
   final packagesUsedInPublicFiles = <String>{};
+  final packagesUsedViaDocImportInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    packagesUsedInPublicFiles.addAll(
-      getDartDirectivePackageNames(file, featureSet: featureSet),
-    );
+    final usage = getDartPackageUsage(file, featureSet: featureSet);
+    packagesUsedInPublicFiles.addAll(usage.directivePackageNames);
+    packagesUsedViaDocImportInPublicFiles.addAll(usage.docImportPackageNames);
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -206,15 +207,18 @@ Future<bool> checkPackage({required String root}) async {
     );
 
   // Read each file outside lib/ and parse the package names from every
-  // import and export directive.
+  // import, export directive, and doc import.
   final packagesUsedOutsidePublicDirs = <String>{
     // For more info on analysis options:
     // https://dart.dev/guides/language/analysis-options#the-analysis-options-file
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
+  final packagesUsedViaDocImportOutsidePublicDirs = <String>{};
   for (final file in nonPublicDartFiles) {
-    packagesUsedOutsidePublicDirs.addAll(
-      getDartDirectivePackageNames(file, featureSet: featureSet),
+    final usage = getDartPackageUsage(file, featureSet: featureSet);
+    packagesUsedOutsidePublicDirs.addAll(usage.directivePackageNames);
+    packagesUsedViaDocImportOutsidePublicDirs.addAll(
+      usage.docImportPackageNames,
     );
   }
   for (final file in nonPublicScssFiles) {
@@ -229,6 +233,19 @@ Future<bool> checkPackage({required String root}) async {
       packagesUsedOutsidePublicDirs.add(match.group(1)!);
     }
   }
+
+  // Packages that are doc-imported in lib/ and have no real (non-doc) usage
+  // anywhere outside lib/. Doc imports are not runtime dependencies, so these
+  // are valid in either `dependencies` or `dev_dependencies`. A package with
+  // real usage outside lib/ is still subject to the normal over-promotion check.
+  final packagesUsedOnlyViaDocImport = packagesUsedViaDocImportInPublicFiles
+      .difference(packagesUsedOutsidePublicDirs);
+
+  // Doc imports are not runtime dependencies, so treat them like usage outside
+  // lib/ for the missing/unused dependency checks.
+  packagesUsedOutsidePublicDirs
+    ..addAll(packagesUsedViaDocImportOutsidePublicDirs)
+    ..addAll(packagesUsedViaDocImportInPublicFiles);
 
   logger.fine(
     'packages used outside public dirs:\n'
@@ -283,9 +300,12 @@ Future<bool> checkPackage({required String root}) async {
   final overPromotedDependencies =
       // Start with dependencies that are not used in lib/
       (deps
-          .difference(packagesUsedInPublicFiles)
-          // Intersect with deps that are used outside lib/ (excludes unused deps)
-          .intersection(packagesUsedOutsidePublicDirs))
+            .difference(packagesUsedInPublicFiles)
+            // Intersect with deps that are used outside lib/ (excludes unused deps)
+            .intersection(packagesUsedOutsidePublicDirs))
+        // Doc-import-only packages are accepted in either dependencies or
+        // dev_dependencies.
+        ..removeAll(packagesUsedOnlyViaDocImport)
         // Ignore known over-promoted packages.
         ..removeAll(ignoredPackages);
 
@@ -342,11 +362,12 @@ Future<bool> checkPackage({required String root}) async {
     pubspec.dependencies.keys,
     '.',
   );
-  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) => [
-        ...rootBuildConfig.globalOptions.keys,
-        for (final target in rootBuildConfig.buildTargets.values)
-          ...target.builders.keys,
-      ]
+  bool rootPackageReferencesDependencyInBuildYaml(String dependencyName) =>
+      [
+            ...rootBuildConfig.globalOptions.keys,
+            for (final target in rootBuildConfig.buildTargets.values)
+              ...target.builders.keys,
+          ]
           .map((key) => normalizeBuilderKeyUsage(key, pubspec.name))
           .any((key) => key.startsWith('$dependencyName:'));
 
@@ -385,8 +406,9 @@ Future<bool> checkPackage({required String root}) async {
       if (providesExecutable(package)) package,
   };
 
-  final nonDevPackagesWithExecutables =
-      packagesWithExecutables.where(pubspec.dependencies.containsKey).toSet();
+  final nonDevPackagesWithExecutables = packagesWithExecutables
+      .where(pubspec.dependencies.containsKey)
+      .toSet();
   if (nonDevPackagesWithExecutables.isNotEmpty) {
     logIntersection(
       Level.WARNING,
@@ -433,10 +455,7 @@ Future<bool> checkPackage({required String root}) async {
 Future<bool> dependencyDefinesAutoAppliedBuilder(String path) async =>
     (await BuildConfig.fromPackageDir(
       path,
-    ))
-        .builderDefinitions
-        .values
-        .any((def) => def.autoApply != AutoApply.none);
+    )).builderDefinitions.values.any((def) => def.autoApply != AutoApply.none);
 
 /// Checks for dependency pins.
 ///

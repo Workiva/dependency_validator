@@ -9,9 +9,9 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
-export 'package:logging/logging.dart' show Level;
-
 import 'pubspec_to_json.dart';
+
+export 'package:logging/logging.dart' show Level;
 
 Future<ProcessResult> checkProject({
   DepValidatorConfig? config,
@@ -20,17 +20,18 @@ Future<ProcessResult> checkProject({
   List<d.Descriptor> project = const [],
   List<String> args = const [],
   bool embedConfigInPubspec = false,
+  Map<String, VersionConstraint>? environment,
 }) async {
   final pubspec = Pubspec(
     'project',
-    environment: requireDart36,
+    environment: environment ?? requireDart36,
     dependencies: dependencies,
     devDependencies: {
       ...devDependencies,
       'dependency_validator': PathDependency(Directory.current.absolute.path),
     },
   );
-  final pubspecJson = pubspec.toJson();
+  final pubspecJson = pubspecToJson(pubspec);
   if (embedConfigInPubspec && config != null) {
     pubspecJson['dependency_validator'] = config.toJson();
   }
@@ -47,8 +48,8 @@ Future<ProcessResult> checkProject({
 }
 
 Dependency hostedCompatibleWith(String version) => HostedDependency(
-      version: VersionConstraint.compatibleWith(Version.parse(version)),
-    );
+  version: VersionConstraint.compatibleWith(Version.parse(version)),
+);
 
 Dependency hostedPinned(String version) =>
     HostedDependency(version: Version.parse(version));
@@ -67,6 +68,10 @@ void initLogs() =>
 
 final requireDart36 = {
   "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
+};
+
+final requireDart38 = {
+  "sdk": VersionConstraint.compatibleWith(Version.parse('3.8.0')),
 };
 
 Future<void> checkWorkspace({
@@ -93,7 +98,7 @@ Future<void> checkWorkspace({
   );
   final dir = d.dir('workspace', [
     ...workspace,
-    d.file('pubspec.yaml', jsonEncode(workspacePubspec.toJson())),
+    d.file('pubspec.yaml', jsonEncode(pubspecToJson(workspacePubspec))),
     if (workspaceConfig != null)
       d.file(
         'dart_dependency_validator.yaml',
@@ -101,7 +106,7 @@ Future<void> checkWorkspace({
       ),
     d.dir('subpackage', [
       ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
+      d.file('pubspec.yaml', jsonEncode(pubspecToJson(subpackagePubspec))),
       if (subpackageConfig != null)
         d.file(
           'dart_dependency_validator.yaml',
