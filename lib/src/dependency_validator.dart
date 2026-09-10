@@ -90,6 +90,8 @@ Future<bool> checkPackage({required String root}) async {
 
   logger.info('Validating dependencies for ${pubspec.name}...');
 
+  final featureSet = featureSetForSdkConstraint(pubspec.environment['sdk']);
+
   if (!config.allowPins) {
     checkPubspecForPins(pubspec, ignoredPackages: ignoredPackages);
   }
@@ -105,16 +107,31 @@ Future<bool> checkPackage({required String root}) async {
     '${bulletItems(devDeps)}\n',
   );
 
+  final nestedPackages = listNestedPackages(root);
+  final nestedPackageGlobs = [
+    for (final nested in nestedPackages)
+      makeGlob('${p.normalize(nested.path)}/**'),
+    for (final subpackage in pubspec.workspace ?? [])
+      makeGlob('${p.normalize('$root/$subpackage')}/**'),
+  ];
+  logger.fine(
+    'nested package globs:\n'
+    '${bulletItems(nestedPackageGlobs.map((g) => g.pattern))}\n',
+  );
+
   final publicDirs = [for (final dir in publicDirNames) '$root/$dir/'];
   logger.fine("Excluding: $excludes");
   final publicDartFiles = [
-    for (final dir in publicDirs) ...listDartFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listDartFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
   final publicScssFiles = [
-    for (final dir in publicDirs) ...listScssFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listScssFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
   final publicLessFiles = [
-    for (final dir in publicDirs) ...listLessFilesIn(dir, excludes),
+    for (final dir in publicDirs)
+      ...listLessFilesIn(dir, [...excludes, ...nestedPackageGlobs]),
   ];
 
   logger
@@ -135,7 +152,9 @@ Future<bool> checkPackage({required String root}) async {
   // export directive.
   final packagesUsedInPublicFiles = <String>{};
   for (final file in publicDartFiles) {
-    packagesUsedInPublicFiles.addAll(getDartDirectivePackageNames(file));
+    packagesUsedInPublicFiles.addAll(
+      getDartDirectivePackageNames(file, featureSet: featureSet),
+    );
   }
   for (final file in publicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
@@ -156,27 +175,20 @@ Future<bool> checkPackage({required String root}) async {
 
   final publicDirGlobs = [for (final dir in publicDirs) makeGlob('$dir**')];
 
-  final subpackageGlobs = [
-    for (final subpackage in pubspec.workspace ?? [])
-      makeGlob('$root/$subpackage**'),
-  ];
-
-  logger.fine('subpackage globs: $subpackageGlobs');
-
   final nonPublicDartFiles = listDartFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
   final nonPublicScssFiles = listScssFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
   final nonPublicLessFiles = listLessFilesIn('$root/', [
     ...excludes,
     ...publicDirGlobs,
-    ...subpackageGlobs,
+    ...nestedPackageGlobs,
   ]);
 
   logger
@@ -201,7 +213,9 @@ Future<bool> checkPackage({required String root}) async {
     if (optionsIncludePackage != null) optionsIncludePackage,
   };
   for (final file in nonPublicDartFiles) {
-    packagesUsedOutsidePublicDirs.addAll(getDartDirectivePackageNames(file));
+    packagesUsedOutsidePublicDirs.addAll(
+      getDartDirectivePackageNames(file, featureSet: featureSet),
+    );
   }
   for (final file in nonPublicScssFiles) {
     final matches = importScssPackageRegex.allMatches(file.readAsStringSync());
