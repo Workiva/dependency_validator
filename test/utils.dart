@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dependency_validator/src/dependency_validator.dart';
 import 'package:dependency_validator/src/pubspec_config.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:test/test.dart';
@@ -69,27 +70,60 @@ final requireDart36 = {
   "sdk": VersionConstraint.compatibleWith(Version.parse('3.6.0')),
 };
 
-Future<void> checkWorkspace({
+typedef WorkspaceSubpackage = ({
+  String path,
+  List<d.Descriptor> contents,
+  Map<String, Dependency> deps,
+  DepValidatorConfig? config,
+});
+
+/// Creates a workspace in the test sandbox and runs [checkPackage] on it.
+///
+/// By default the workspace has a single sub-package at `subpackage/`
+/// described by [subpackage], [subpackageDeps], and [subpackageConfig]. Pass
+/// [subpackages] instead to create several sub-packages at arbitrary paths;
+/// the single-sub-package parameters must then be omitted.
+///
+/// [workspaceMembers] overrides the root pubspec's `workspace:` list (for
+/// example to use glob patterns); it defaults to the sub-package paths.
+///
+/// Returns the log messages emitted at or above [logLevel] while validating.
+Future<List<String>> checkWorkspace({
   required Map<String, Dependency> workspaceDeps,
-  required Map<String, Dependency> subpackageDeps,
   required List<d.Descriptor> workspace,
-  required List<d.Descriptor> subpackage,
+  Map<String, Dependency>? subpackageDeps,
+  List<d.Descriptor>? subpackage,
   DepValidatorConfig? workspaceConfig,
   DepValidatorConfig? subpackageConfig,
   Level logLevel = Level.OFF,
   Matcher matcher = isTrue,
+  List<String>? workspaceMembers,
+  List<WorkspaceSubpackage>? subpackages,
 }) async {
+  if (subpackages != null &&
+      (subpackage != null ||
+          subpackageDeps != null ||
+          subpackageConfig != null)) {
+    throw ArgumentError(
+      'Pass either `subpackages` or the single-subpackage parameters '
+      '(`subpackage`, `subpackageDeps`, `subpackageConfig`), not both.',
+    );
+  }
+  final resolvedSubpackages = subpackages ??
+      [
+        (
+          path: 'subpackage',
+          contents: subpackage ?? const [],
+          deps: subpackageDeps ?? const {},
+          config: subpackageConfig,
+        ),
+      ];
   final workspacePubspec = Pubspec(
     'workspace',
     environment: requireDart36,
     dependencies: workspaceDeps,
-    workspace: ['subpackage'],
-  );
-  final subpackagePubspec = Pubspec(
-    'subpackage',
-    environment: requireDart36,
-    dependencies: subpackageDeps,
-    resolution: 'workspace',
+    workspace:
+        workspaceMembers ?? resolvedSubpackages.map((s) => s.path).toList(),
   );
   final dir = d.dir('workspace', [
     ...workspace,
@@ -99,18 +133,37 @@ Future<void> checkWorkspace({
         'dart_dependency_validator.yaml',
         jsonEncode(workspaceConfig.toJson()),
       ),
-    d.dir('subpackage', [
-      ...subpackage,
-      d.file('pubspec.yaml', jsonEncode(subpackagePubspec.toJson())),
-      if (subpackageConfig != null)
+    for (final subpackageSpec in resolvedSubpackages)
+      d.dir(subpackageSpec.path, [
+        ...subpackageSpec.contents,
         d.file(
-          'dart_dependency_validator.yaml',
-          jsonEncode(subpackageConfig.toJson()),
+          'pubspec.yaml',
+          jsonEncode(
+            Pubspec(
+              p.basename(subpackageSpec.path),
+              environment: requireDart36,
+              dependencies: subpackageSpec.deps,
+              resolution: 'workspace',
+            ).toJson(),
+          ),
         ),
-    ]),
+        if (subpackageSpec.config != null)
+          d.file(
+            'dart_dependency_validator.yaml',
+            jsonEncode(subpackageSpec.config!.toJson()),
+          ),
+      ]),
   ]);
   await dir.create();
   Logger.root.level = logLevel;
-  final result = await checkPackage(root: '${d.sandbox}/workspace');
-  expect(result, matcher);
+  final messages = <String>[];
+  final subscription =
+      Logger.root.onRecord.listen((record) => messages.add(record.message));
+  try {
+    final result = await checkPackage(root: '${d.sandbox}/workspace');
+    expect(result, matcher);
+  } finally {
+    await subscription.cancel();
+  }
+  return messages;
 }
