@@ -579,7 +579,8 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       );
     });
 
-    test('returns null when literal path is the workspace root itself', () async {
+    test('returns null when literal path is the workspace root itself',
+        () async {
       await d.dir('root', [
         d.file('pubspec.yaml', 'name: root\n'),
       ]).create();
@@ -605,7 +606,8 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       );
     });
 
-    test('returns null when literal path is an absolute path outside root', () async {
+    test('returns null when literal path is an absolute path outside root',
+        () async {
       await d.dir('root', [
         d.file('pubspec.yaml', 'name: root\n'),
       ]).create();

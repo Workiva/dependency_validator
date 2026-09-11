@@ -278,7 +278,8 @@ void main() => group('Workspaces', () {
           expect(logs, contains(contains('invalid glob syntax')));
         });
 
-        test('fails when a workspace member points to workspace root itself', () async {
+        test('fails when a workspace member points to workspace root itself',
+            () async {
           final logs = await checkWorkspace(
             workspace: [],
             workspaceDeps: {},
@@ -290,11 +291,13 @@ void main() => group('Workspaces', () {
 
           expect(
             logs,
-            contains(contains('must be in a subdirectory of the workspace root')),
+            contains(
+                contains('must be in a subdirectory of the workspace root')),
           );
         });
 
-        test('fails when a workspace member escapes the workspace root', () async {
+        test('fails when a workspace member escapes the workspace root',
+            () async {
           final logs = await checkWorkspace(
             workspace: [],
             workspaceDeps: {},
@@ -306,7 +309,8 @@ void main() => group('Workspaces', () {
 
           expect(
             logs,
-            contains(contains('must be in a subdirectory of the workspace root')),
+            contains(
+                contains('must be in a subdirectory of the workspace root')),
           );
         });
       });
