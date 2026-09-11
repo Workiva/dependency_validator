@@ -237,7 +237,9 @@ bool hasGlobWildcards(String path) =>
     path.contains('*') ||
     path.contains('?') ||
     path.contains('[') ||
-    path.contains('{');
+    path.contains(']') ||
+    path.contains('{') ||
+    path.contains('}');
 
 String _normalizeWorkspaceMemberPath(String path) =>
     p.posix.normalize(path.replaceAll(r'\', '/'));
@@ -252,12 +254,13 @@ String _normalizeWorkspaceMemberPath(String path) =>
 /// pub itself rejects such an entry and it usually indicates a typo.
 ///
 /// Returns a sorted, deduplicated list with posix-normalized path separators.
-/// Returns `null` if any workspace path has invalid glob syntax or cannot be
-/// listed.
+/// Returns `null` if any workspace path has invalid glob syntax, escapes the
+/// workspace root, or cannot be listed.
 List<String>? resolveWorkspaceMembers(
   String root,
   Iterable<String> workspacePaths,
 ) {
+  final canonicalRoot = p.canonicalize(root);
   final members = <String>{};
   for (final workspacePath in workspacePaths) {
     if (hasGlobWildcards(workspacePath)) {
@@ -265,19 +268,17 @@ List<String>? resolveWorkspaceMembers(
       try {
         glob = makeGlob(workspacePath);
       } on FormatException {
-        logger.shout(yellow.wrap('invalid glob syntax: "$workspacePath"'));
+        logger.shout('invalid glob syntax: "$workspacePath"');
         return null;
       }
 
       final List<FileSystemEntity> matches;
       try {
-        matches = glob.listSync(root: root);
+        matches = glob.listSync(root: root, followLinks: false);
       } on FileSystemException catch (e) {
         logger.shout(
-          yellow.wrap(
-            'failed to list workspace glob "$workspacePath": ${e.message}'
-            '${e.path != null ? ' (${e.path})' : ''}',
-          ),
+          'failed to list workspace glob "$workspacePath": ${e.message}'
+          '${e.path != null ? ' (${e.path})' : ''}',
         );
         return null;
       }
@@ -285,24 +286,41 @@ List<String>? resolveWorkspaceMembers(
       var matchedPackage = false;
       for (final entity in matches) {
         if (entity is! Directory) continue;
+        final canonicalEntity = p.canonicalize(entity.path);
+        if (!p.isWithin(canonicalRoot, canonicalEntity)) continue;
+
+        final relPath = _normalizeWorkspaceMemberPath(
+          p.relative(entity.path, from: root),
+        );
+        if (p.split(relPath).any((d) => d != '.' && d.startsWith('.'))) {
+          continue;
+        }
+
         if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) {
           continue;
         }
         matchedPackage = true;
-        members.add(
-          _normalizeWorkspaceMemberPath(p.relative(entity.path, from: root)),
-        );
+        members.add(relPath);
       }
       if (!matchedPackage) {
         logger.warning(
-          yellow.wrap(
-            'No workspace packages matching "$workspacePath". '
-            'Check the pattern for typos.',
-          ),
+          'No workspace packages matching "$workspacePath". '
+          'Check the pattern for typos.',
         );
       }
     } else {
-      members.add(_normalizeWorkspaceMemberPath(workspacePath));
+      final normalized = _normalizeWorkspaceMemberPath(workspacePath);
+      final fullPath = p.normalize(
+        p.isAbsolute(normalized) ? normalized : p.join(root, normalized),
+      );
+      final canonicalPath = p.canonicalize(fullPath);
+      if (!p.isWithin(canonicalRoot, canonicalPath)) {
+        logger.shout(
+          'Workspace member "$workspacePath" must be in a subdirectory of the workspace root.',
+        );
+        return null;
+      }
+      members.add(normalized);
     }
   }
   return (members.toList()..sort());

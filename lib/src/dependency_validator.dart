@@ -58,7 +58,7 @@ Future<bool> checkPackage({required String root}) async {
       .map((s) {
         try {
           return makeGlob("$root/$s");
-        } catch (_, __) {
+        } catch (_) {
           logger.shout(yellow.wrap('invalid glob syntax: "$s"'));
           return null;
         }
@@ -80,14 +80,12 @@ Future<bool> checkPackage({required String root}) async {
   );
 
   List<String> workspaceMembers = const [];
+  var subResult = true;
   if (pubspec.isWorkspaceRoot) {
     final resolved = resolveWorkspaceMembers(root, pubspec.workspace ?? []);
     if (resolved == null) return false;
     workspaceMembers = resolved;
-  }
 
-  var subResult = true;
-  if (pubspec.isWorkspaceRoot) {
     logger.fine('In a workspace. Recursing through sub-packages...');
     for (final package in workspaceMembers) {
       subResult &= await checkPackage(root: p.join(root, package));
@@ -115,11 +113,13 @@ Future<bool> checkPackage({required String root}) async {
   );
 
   final nestedPackages = listNestedPackages(root);
-  final nestedPackageGlobs = [
-    for (final nested in nestedPackages)
-      makeGlob('${p.normalize(nested.path)}/**'),
+  final nestedPackagePaths = {
+    for (final nested in nestedPackages) p.normalize(nested.path),
     for (final subpackage in workspaceMembers)
-      makeGlob('${p.join(root, subpackage)}/**'),
+      p.normalize(p.join(root, subpackage)),
+  };
+  final nestedPackageGlobs = [
+    for (final path in nestedPackagePaths) makeGlob('$path/**'),
   ];
   logger.fine(
     'nested package globs:\n'

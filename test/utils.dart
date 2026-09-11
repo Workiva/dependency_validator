@@ -100,12 +100,13 @@ Future<List<String>> checkWorkspace({
   List<String>? workspaceMembers,
   List<WorkspaceSubpackage>? subpackages,
 }) async {
-  if (subpackages != null) {
-    expect(
-      subpackage ?? subpackageDeps ?? subpackageConfig,
-      isNull,
-      reason: 'Pass either `subpackages` or the single-subpackage parameters '
-          '(`subpackage`, `subpackageDeps`, `subpackageConfig`), not both.',
+  if (subpackages != null &&
+      (subpackage != null ||
+          subpackageDeps != null ||
+          subpackageConfig != null)) {
+    throw ArgumentError(
+      'Pass either `subpackages` or the single-subpackage parameters '
+      '(`subpackage`, `subpackageDeps`, `subpackageConfig`), not both.',
     );
   }
   final resolvedSubpackages = subpackages ??

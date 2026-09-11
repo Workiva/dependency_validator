@@ -277,5 +277,37 @@ void main() => group('Workspaces', () {
 
           expect(logs, contains(contains('invalid glob syntax')));
         });
+
+        test('fails when a workspace member points to workspace root itself', () async {
+          final logs = await checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['.'],
+            subpackages: [],
+            logLevel: Level.SHOUT,
+            matcher: isFalse,
+          );
+
+          expect(
+            logs,
+            contains(contains('must be in a subdirectory of the workspace root')),
+          );
+        });
+
+        test('fails when a workspace member escapes the workspace root', () async {
+          final logs = await checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            workspaceMembers: ['../outside'],
+            subpackages: [],
+            logLevel: Level.SHOUT,
+            matcher: isFalse,
+          );
+
+          expect(
+            logs,
+            contains(contains('must be in a subdirectory of the workspace root')),
+          );
+        });
       });
     });

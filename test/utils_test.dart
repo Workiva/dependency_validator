@@ -25,6 +25,8 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
 
+import 'utils.dart';
+
 void main() {
   group('getAnalysisOptionsIncludePackage', () {
     test('no analysis_options.yaml', () {
@@ -554,6 +556,66 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       );
     });
 
+    test('ignores matches in hidden directories', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('.hidden_pkg', [
+            d.file('pubspec.yaml', 'name: hidden_pkg\n'),
+          ]),
+        ]),
+        d.dir('.dart_tool', [
+          d.dir('tool_pkg', [
+            d.file('pubspec.yaml', 'name: tool_pkg\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*', '*/*']),
+        ['packages/pkg_a'],
+      );
+    });
+
+    test('returns null when literal path is the workspace root itself', () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['.']),
+        isNull,
+      );
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['./']),
+        isNull,
+      );
+    });
+
+    test('returns null when literal path escapes the workspace root', () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['../outside']),
+        isNull,
+      );
+    });
+
+    test('returns null when literal path is an absolute path outside root', () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['/some/absolute/path']),
+        isNull,
+      );
+    });
+
     group('logging', () {
       late List<LogRecord> records;
       late StreamSubscription<LogRecord> subscription;
@@ -643,10 +705,14 @@ include: package:pedantic/analysis_options.1.8.0.yaml
       expect(hasGlobWildcards('apps/nested/pkg?'), isTrue);
       expect(hasGlobWildcards('packages/[abc]'), isTrue);
       expect(hasGlobWildcards('packages/{a,b}'), isTrue);
+      expect(hasGlobWildcards('packages/pkg]'), isTrue);
+      expect(hasGlobWildcards('packages/pkg}'), isTrue);
     });
 
     test('returns false for literal paths', () {
       expect(hasGlobWildcards('packages/subpackage'), isFalse);
+      expect(hasGlobWildcards('packages/sub-package'), isFalse);
+      expect(hasGlobWildcards('packages/sub_package'), isFalse);
     });
   });
 
@@ -697,5 +763,22 @@ include: package:pedantic/analysis_options.1.8.0.yaml
         p.join('pkgs', 'nested_sub'),
       ]);
     });
+  });
+
+  group('checkWorkspace', () {
+    test(
+      'throws ArgumentError when mixing subpackages and subpackage params',
+      () async {
+        expect(
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            subpackages: [],
+            subpackage: [],
+          ),
+          throwsArgumentError,
+        );
+      },
+    );
   });
 }
