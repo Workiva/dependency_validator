@@ -18,6 +18,6 @@ jobs:
       sdk: 3.7.2 # mirrors .tool-versions
 
   unit-tests:
-    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@v0.1.14
+    uses: Workiva/gha-dart-oss/.github/workflows/test-unit.yaml@rob/fix-skipped-tests-fallback
     with:
       sdk: 3.7.2 # mirrors .tool-versions
