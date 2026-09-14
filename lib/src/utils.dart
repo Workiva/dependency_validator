@@ -15,6 +15,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:io/ansi.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:logging/logging.dart';
@@ -230,3 +231,97 @@ extension PubspecUtils on Pubspec {
 /// This function removes `./` paths and replaces all `\` with `/`.
 Glob makeGlob(String path) =>
     Glob(p.posix.normalize(path.replaceAll(r'\', '/')));
+
+/// Returns whether [path] contains glob wildcard syntax characters.
+bool hasGlobWildcards(String path) =>
+    path.contains('*') ||
+    path.contains('?') ||
+    path.contains('[') ||
+    path.contains(']') ||
+    path.contains('{') ||
+    path.contains('}');
+
+String _normalizeWorkspaceMemberPath(String path) =>
+    p.posix.normalize(path.replaceAll(r'\', '/'));
+
+/// Resolves workspace member paths from [workspacePaths] relative to [root].
+///
+/// Glob patterns (for example `packages/*`) are expanded to directories
+/// containing a pubspec.yaml file, matching pub's workspace resolution
+/// behavior.
+///
+/// A glob pattern that matches no package directories logs a warning, since
+/// pub itself rejects such an entry and it usually indicates a typo.
+///
+/// Returns a sorted, deduplicated list with posix-normalized path separators.
+/// Returns `null` if any workspace path has invalid glob syntax, escapes the
+/// workspace root, or cannot be listed.
+List<String>? resolveWorkspaceMembers(
+  String root,
+  Iterable<String> workspacePaths,
+) {
+  final canonicalRoot = p.canonicalize(root);
+  final members = <String>{};
+  for (final workspacePath in workspacePaths) {
+    if (hasGlobWildcards(workspacePath)) {
+      final Glob glob;
+      try {
+        glob = makeGlob(workspacePath);
+      } on FormatException {
+        logger.shout('invalid glob syntax: "$workspacePath"');
+        return null;
+      }
+
+      final List<FileSystemEntity> matches;
+      try {
+        matches = glob.listSync(root: root, followLinks: false);
+      } on FileSystemException catch (e) {
+        logger.shout(
+          'failed to list workspace glob "$workspacePath": ${e.message}'
+          '${e.path != null ? ' (${e.path})' : ''}',
+        );
+        return null;
+      }
+
+      var matchedPackage = false;
+      for (final entity in matches) {
+        if (entity is! Directory) continue;
+        final canonicalEntity = p.canonicalize(entity.path);
+        if (!p.isWithin(canonicalRoot, canonicalEntity)) continue;
+
+        final relPath = _normalizeWorkspaceMemberPath(
+          p.relative(entity.path, from: root),
+        );
+        if (p.split(relPath).any((d) => d != '.' && d.startsWith('.'))) {
+          continue;
+        }
+
+        if (!File(p.join(entity.path, 'pubspec.yaml')).existsSync()) {
+          continue;
+        }
+        matchedPackage = true;
+        members.add(relPath);
+      }
+      if (!matchedPackage) {
+        logger.warning(
+          'No workspace packages matching "$workspacePath". '
+          'Check the pattern for typos.',
+        );
+      }
+    } else {
+      final normalized = _normalizeWorkspaceMemberPath(workspacePath);
+      final fullPath = p.normalize(
+        p.isAbsolute(normalized) ? normalized : p.join(root, normalized),
+      );
+      final canonicalPath = p.canonicalize(fullPath);
+      if (!p.isWithin(canonicalRoot, canonicalPath)) {
+        logger.shout(
+          'Workspace member "$workspacePath" must be in a subdirectory of the workspace root.',
+        );
+        return null;
+      }
+      members.add(normalized);
+    }
+  }
+  return (members.toList()..sort());
+}

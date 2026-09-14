@@ -13,6 +13,10 @@
 // limitations under the License.
 
 @TestOn('vm')
+import 'dart:async';
+import 'dart:io';
+
+import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
@@ -20,6 +24,8 @@ import 'package:test_descriptor/test_descriptor.dart' as d;
 
 import 'package:dependency_validator/src/constants.dart';
 import 'package:dependency_validator/src/utils.dart';
+
+import 'utils.dart';
 
 void main() {
   group('getAnalysisOptionsIncludePackage', () {
@@ -451,6 +457,267 @@ include: package:pedantic/analysis_options.1.8.0.yaml
     });
   });
 
+  group('resolveWorkspaceMembers', () {
+    test('returns literal workspace paths unchanged', () async {
+      await d.dir('root', [
+        d.dir('subpackage', [
+          d.file('pubspec.yaml', 'name: subpackage\n'),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['subpackage']),
+        ['subpackage'],
+      );
+    });
+
+    test('expands glob patterns to directories with pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('pkg_b', [
+            d.file('pubspec.yaml', 'name: pkg_b\n'),
+          ]),
+          d.dir('not_a_package', [
+            d.file('README.md', ''),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/pkg_a', 'packages/pkg_b'],
+      );
+    });
+
+    test('ignores glob matches without pubspec.yaml', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('empty_dir', []),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/pkg_a'],
+      );
+    });
+
+    test('deduplicates overlapping literal and glob paths', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('foo', [
+            d.file('pubspec.yaml', 'name: foo\n'),
+          ]),
+          d.dir('bar', [
+            d.file('pubspec.yaml', 'name: bar\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', [
+          'packages/*',
+          'packages/foo',
+        ]),
+        ['packages/bar', 'packages/foo'],
+      );
+    });
+
+    test('returns sorted results independent of filesystem order', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('zebra', [
+            d.file('pubspec.yaml', 'name: zebra\n'),
+          ]),
+          d.dir('alpha', [
+            d.file('pubspec.yaml', 'name: alpha\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+        ['packages/alpha', 'packages/zebra'],
+      );
+    });
+
+    test('returns null for invalid glob syntax', () async {
+      await d.dir('root', []).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/[a']),
+        isNull,
+      );
+    });
+
+    test('ignores matches in hidden directories', () async {
+      await d.dir('root', [
+        d.dir('packages', [
+          d.dir('pkg_a', [
+            d.file('pubspec.yaml', 'name: pkg_a\n'),
+          ]),
+          d.dir('.hidden_pkg', [
+            d.file('pubspec.yaml', 'name: hidden_pkg\n'),
+          ]),
+        ]),
+        d.dir('.dart_tool', [
+          d.dir('tool_pkg', [
+            d.file('pubspec.yaml', 'name: tool_pkg\n'),
+          ]),
+        ]),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*', '*/*']),
+        ['packages/pkg_a'],
+      );
+    });
+
+    test('returns null when literal path is the workspace root itself',
+        () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['.']),
+        isNull,
+      );
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['./']),
+        isNull,
+      );
+    });
+
+    test('returns null when literal path escapes the workspace root', () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['../outside']),
+        isNull,
+      );
+    });
+
+    test('returns null when literal path is an absolute path outside root',
+        () async {
+      await d.dir('root', [
+        d.file('pubspec.yaml', 'name: root\n'),
+      ]).create();
+
+      expect(
+        resolveWorkspaceMembers('${d.sandbox}/root', ['/some/absolute/path']),
+        isNull,
+      );
+    });
+
+    group('logging', () {
+      late List<LogRecord> records;
+      late StreamSubscription<LogRecord> subscription;
+
+      setUp(() {
+        records = [];
+        Logger.root.level = Level.ALL;
+        subscription = Logger.root.onRecord.listen(records.add);
+      });
+
+      tearDown(() => subscription.cancel());
+
+      test('warns when a glob matches no package directories', () async {
+        await d.dir('root', [
+          d.dir('packages', [
+            d.dir('not_a_package', [d.file('README.md', '')]),
+          ]),
+        ]).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+          isEmpty,
+        );
+        expect(
+          records.where((r) => r.level == Level.WARNING).map((r) => r.message),
+          [contains('No workspace packages matching "packages/*"')],
+        );
+      });
+
+      test('warns when a glob matches nothing at all', () async {
+        await d.dir('root', []).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['missing/*']),
+          isEmpty,
+        );
+        expect(
+          records.map((r) => r.message),
+          [contains('No workspace packages matching "missing/*"')],
+        );
+      });
+
+      test('does not warn when a glob matches a package', () async {
+        await d.dir('root', [
+          d.dir('packages', [
+            d.dir('pkg_a', [d.file('pubspec.yaml', 'name: pkg_a\n')]),
+          ]),
+        ]).create();
+
+        expect(
+          resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+          ['packages/pkg_a'],
+        );
+        expect(records, isEmpty);
+      });
+
+      test(
+        'returns null and shouts when a glob directory cannot be listed',
+        () async {
+          await d.dir('root', [
+            d.dir('packages', [
+              d.dir('pkg_a', [d.file('pubspec.yaml', 'name: pkg_a\n')]),
+            ]),
+          ]).create();
+          final packagesDir = Directory('${d.sandbox}/root/packages');
+          await Process.run('chmod', ['000', packagesDir.path]);
+          addTearDown(() => Process.run('chmod', ['755', packagesDir.path]));
+
+          expect(
+            resolveWorkspaceMembers('${d.sandbox}/root', ['packages/*']),
+            isNull,
+          );
+          expect(
+            records.where((r) => r.level == Level.SHOUT).map((r) => r.message),
+            [contains('failed to list workspace glob "packages/*"')],
+          );
+        },
+        // Relies on POSIX permissions being enforced for the current user.
+        skip: Platform.isWindows || Platform.environment['USER'] == 'root',
+      );
+    });
+  });
+
+  group('hasGlobWildcards', () {
+    test('detects glob syntax', () {
+      expect(hasGlobWildcards('packages/*'), isTrue);
+      expect(hasGlobWildcards('apps/nested/pkg?'), isTrue);
+      expect(hasGlobWildcards('packages/[abc]'), isTrue);
+      expect(hasGlobWildcards('packages/{a,b}'), isTrue);
+      expect(hasGlobWildcards('packages/pkg]'), isTrue);
+      expect(hasGlobWildcards('packages/pkg}'), isTrue);
+    });
+
+    test('returns false for literal paths', () {
+      expect(hasGlobWildcards('packages/subpackage'), isFalse);
+      expect(hasGlobWildcards('packages/sub-package'), isFalse);
+      expect(hasGlobWildcards('packages/sub_package'), isFalse);
+    });
+  });
+
   group('listNestedPackages', () {
     test('returns empty when no directory exists', () {
       expect(listNestedPackages('${d.sandbox}/non_existent'), isEmpty);
@@ -498,5 +765,22 @@ include: package:pedantic/analysis_options.1.8.0.yaml
         p.join('pkgs', 'nested_sub'),
       ]);
     });
+  });
+
+  group('checkWorkspace', () {
+    test(
+      'throws ArgumentError when mixing subpackages and subpackage params',
+      () async {
+        expect(
+          () => checkWorkspace(
+            workspace: [],
+            workspaceDeps: {},
+            subpackages: [],
+            subpackage: [],
+          ),
+          throwsArgumentError,
+        );
+      },
+    );
   });
 }
