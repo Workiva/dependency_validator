@@ -315,7 +315,7 @@ Future<bool> checkPackage({required String root}) async {
   }
 
   // Packages that are not used anywhere but are dependencies.
-  final unusedDependencies =
+  final rawUnusedDependencies =
       // Start with all explicitly declared dependencies
       deps
           .union(devDeps)
@@ -323,8 +323,9 @@ Future<bool> checkPackage({required String root}) async {
           .difference(packagesUsedInPublicFiles)
           .difference(packagesUsedOutsidePublicDirs)
         // Remove this package, since we know they're using our executable
-        ..remove(dependencyValidatorPackageName)
-        ..removeAll(ignoredPackages);
+        ..remove(dependencyValidatorPackageName);
+  final unusedDependencies = rawUnusedDependencies.toSet()
+    ..removeAll(ignoredPackages);
 
   final packageConfig = await findPackageConfig(Directory.current);
   if (packageConfig == null) {
@@ -405,7 +406,7 @@ Future<bool> checkPackage({required String root}) async {
   );
   unusedDependencies.removeAll(packagesWithExecutables);
 
-  if (unusedDependencies.contains('analyzer')) {
+  if (rawUnusedDependencies.contains('analyzer')) {
     logger.warning(
       yellow.wrap(
         'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
