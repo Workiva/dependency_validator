@@ -6,6 +6,11 @@
   newest one the analyzer knows about, which may be unreleased and reject
   valid code
 
+- Allow up to analyzer 14
+
+- Fix warning when `analyzer` is depended on but not used so that it is still
+  emitted when `analyzer` is in the `ignore` list.
+
 # 5.0.6
 
 - Allow up to analyzer 13

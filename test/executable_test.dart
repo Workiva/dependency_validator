@@ -335,9 +335,9 @@ void main() {
     test('passes when dependencies not used provide executables', () async {
       result = await checkProject(
         devDependencies: {
-          "build_runner": hostedCompatibleWith('2.3.3'),
+          "build_runner": hostedAny,
           'coverage': hostedAny,
-          'dart_style': hostedCompatibleWith('2.3.2'),
+          'dart_style': hostedAny,
         },
         project: [
           d.dir('lib', [d.file('main.dart', 'book fake = true;')]),
@@ -353,9 +353,9 @@ void main() {
       () async {
         result = await checkProject(
           dependencies: {
-            "build_runner": hostedCompatibleWith('2.3.3'),
+            "build_runner": hostedAny,
             "coverage": hostedAny,
-            "dart_style": hostedCompatibleWith('2.3.2'),
+            "dart_style": hostedAny,
           },
           project: [
             d.dir('lib', [d.file('main.dart', 'bool fake = true;')]),
@@ -377,9 +377,9 @@ void main() {
       () async {
         result = await checkProject(
           devDependencies: {
-            'build_test': hostedCompatibleWith('2.0.1'),
-            'build_vm_compilers': hostedCompatibleWith('1.0.3'),
-            'build_web_compilers': hostedCompatibleWith('3.2.7'),
+            'build_test': hostedAny,
+            'json_serializable': hostedAny,
+            'build_web_compilers': hostedAny,
           },
           project: [
             d.dir('lib', [d.file('main.dart', 'book fake = true;')]),
