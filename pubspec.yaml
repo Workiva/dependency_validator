@@ -4,10 +4,10 @@ description: Checks for missing, under-promoted, over-promoted, and unused depen
 homepage: https://github.com/Workiva/dependency_validator
 
 environment:
-  sdk: ^3.0.0
+  sdk: ^3.8.0
 
 dependencies:
-  analyzer: ">=7.1.0 <15.0.0"
+  analyzer: ">=8.0.0 <15.0.0"
   args: ^2.0.0
   build_config: ^1.0.0
   checked_yaml: ^2.0.1
@@ -18,7 +18,7 @@ dependencies:
   package_config: ">=2.0.0 <4.0.0"
   path: ^1.8.0
   pub_semver: ^2.0.0
-  pubspec_parse: ^1.5.0
+  pubspec_parse: ^1.6.0
   yaml: ^3.1.0
 
 dev_dependencies:
