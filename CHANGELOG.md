@@ -1,5 +1,10 @@
 # Unreleased
 <!-- Add unreleased changes here -->
+
+- **Breaking Change:** Treat `hook/` as a public-facing directory when validating dependencies. Dependencies imported in hook scripts run at build/link time (dart build, flutter build) and must be regular dependencies, not dev_dependencies.
+This is enabled by default, and will break the execution of dependency_validator if it occurs within the codebase.
+Resolution is to either move the dependency to `dependencies`, or `ignore`/`exclude` it.
+
 - Ignore nested packages when validating surrounding packages (#173).
 
 - Parse files with the language version the package declares instead of the

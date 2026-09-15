@@ -14,6 +14,16 @@ final RegExp importLessPackageRegex = RegExp(
   r'@import\s+(?:\(.*\)\s+)?"(?:packages\/|package:\/\/)([a-zA-Z1-9_-]+)\/',
 );
 
+/// Directory names treated as public-facing for dependency validation.
+const publicDirNames = ['lib', 'bin', 'hook'];
+
+/// Human-readable list of [publicDirNames], e.g. `lib/, bin/, or hook/`.
+String publicDirsDescription({String conjunction = 'or'}) {
+  final dirs = [for (final name in publicDirNames) '$name/'];
+  if (dirs.length == 1) return dirs.first;
+  return '${dirs.sublist(0, dirs.length - 1).join(', ')}, $conjunction ${dirs.last}';
+}
+
 /// String key in pubspec.yaml for the dependencies map.
 const String dependenciesKey = 'dependencies';
 
