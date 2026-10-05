@@ -22,9 +22,11 @@ used even if it isn't imported.
 [dart-build]: https://github.com/dart-lang/build
 
 - Missing: When a dependency is used in the package but not declared in the `pubspec.yaml`
-- Under-promoted: When a dependency is used within `lib/` but only declared as a dev_dependency.
-- Over-promoted: When a dependency is only used outside `lib/` but declared as a dependency.
+- Under-promoted: When a dependency is used within `lib/`, `bin/`, or `hook/` but only declared as a dev_dependency.
+- Over-promoted: When a dependency is only used outside `lib/`, `bin/`, and `hook/` but declared as a dependency.
 - Unused: When a dependency is not used in the package but declared in the `pubspec.yaml`.
+
+Hook scripts in `hook/` (for example, `build.dart` and `link.dart`) run at build/link time (`dart build`, `flutter build`), so their imports must be regular `dependencies`. To opt out, use `ignore` to suppress warnings for a specific package name (for example, a dev_dependency used only in hooks), or `exclude: ["hook/**"]` to skip scanning the hook directory entirely (which also skips missing-dependency checks in hook files).
 
 ## Configuration
 
