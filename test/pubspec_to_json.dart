@@ -1,56 +1,27 @@
-import "package:pubspec_parse/pubspec_parse.dart";
-
-extension<K, V> on Map<K, V> {
-  Iterable<(K, V)> get records sync* {
-    for (final entry in entries) {
-      yield (entry.key, entry.value);
-    }
-  }
-}
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 typedef Json = Map<String, dynamic>;
 
-extension on Dependency {
-  Json toJson() => switch (this) {
-        SdkDependency(:final sdk, :final version) => {
-            "sdk": sdk,
-            "version": version.toString(),
-          },
-        HostedDependency(:final hosted, :final version) => {
-            if (hosted != null) "hosted": hosted.url.toString(),
-            "version": version.toString(),
-          },
-        GitDependency(:final url, :final ref, :final path) => {
-            "git": {
-              "url": url.toString(),
-              if (path != null) "ref": ref,
-              if (path != null) "path": path,
-            },
-          },
-        PathDependency(:final path) => {"path": path.replaceAll(r'\', '/')},
-      };
-}
-
-/// An as-needed implementation of `Pubspec.toJson` for testing.
+/// Serializes [pubspec] for test sandbox `pubspec.yaml` files.
 ///
-/// See: https://github.com/dart-lang/tools/issues/1801
-extension PubspecToJson on Pubspec {
-  Json toJson() => {
-        "name": name,
-        "environment": {
-          for (final (sdk, version) in environment.records)
-            sdk: version.toString(),
-        },
-        if (resolution != null) "resolution": resolution,
-        if (workspace != null) "workspace": workspace,
-        "dependencies": {
-          for (final (name, dependency) in dependencies.records)
-            name: dependency.toJson(),
-        },
-        "dev_dependencies": {
-          for (final (name, dependency) in devDependencies.records)
-            name: dependency.toJson(),
-        },
-        // ...
-      };
+/// [Pubspec.toJson] from `pubspec_parse` includes null fields that `pub`
+/// rejects, so this helper omits null and empty entries.
+Json pubspecToJson(Pubspec pubspec) => _omitNullAndEmpty(pubspec.toJson());
+
+Json _omitNullAndEmpty(Json json) {
+  final result = <String, dynamic>{};
+  for (final entry in json.entries) {
+    final value = entry.value;
+    if (value == null) continue;
+    if (value is Map) {
+      final nested = _omitNullAndEmpty(Map<String, dynamic>.from(value));
+      if (nested.isNotEmpty) {
+        result[entry.key] = nested;
+      }
+      continue;
+    }
+    if (value is List && value.isEmpty) continue;
+    result[entry.key] = value;
+  }
+  return result;
 }
