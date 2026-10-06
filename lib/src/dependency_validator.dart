@@ -410,7 +410,7 @@ Future<bool> checkPackage({required String root}) async {
     logger.warning(
       yellow.wrap(
         'You do not need to depend on `analyzer` to run the Dart analyzer.\n'
-        'Instead, just run the `dartanalyzer` executable that is bundled with the Dart SDK.',
+        'Instead, just run `dart analyze` that is included with the Dart SDK.',
       ),
     );
   }
